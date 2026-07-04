@@ -1,7 +1,5 @@
-# Generated output (can be regenerated from spec + script)
-output/fcstd/
-output/dxf/
-output/svg/
+# Generated output (regenerable from spec + homedesign pipeline)
+output/
 
 # Python
 __pycache__/

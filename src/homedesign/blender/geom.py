@@ -1,0 +1,33 @@
+"""Shared bpy mesh-building helpers. Runs inside Blender."""
+import bmesh
+import bpy
+
+
+def make_box(name, x, y, z, w, d, h, collection, material=None):
+    """Axis-aligned box: (x,y,z) is the min corner, in meters."""
+    mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    bmesh.ops.scale(bm, vec=(w, d, h), verts=bm.verts)
+    bmesh.ops.translate(bm, vec=(x + w / 2, y + d / 2, z + h / 2), verts=bm.verts)
+    bm.to_mesh(mesh)
+    bm.free()
+
+    if material:
+        obj.data.materials.append(material)
+    return obj
+
+
+def boolean_difference(target, cutter, collection):
+    mod = target.modifiers.new(name="cut", type="BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.object = cutter
+    mod.solver = "EXACT"
+    dg = bpy.context.evaluated_depsgraph_get()
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    collection.objects.unlink(cutter) if cutter.name in collection.objects else None
+    bpy.data.objects.remove(cutter, do_unlink=True)

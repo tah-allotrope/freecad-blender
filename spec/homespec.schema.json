@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "homespec.schema.json",
+  "title": "Home Design Spec",
+  "type": "object",
+  "required": ["meta", "site", "storeys"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "style": {"type": "string", "enum": ["modern-minimal"], "default": "modern-minimal"}
+      }
+    },
+    "site": {
+      "type": "object",
+      "required": ["plot_width_mm", "plot_depth_mm"],
+      "additionalProperties": false,
+      "properties": {
+        "plot_width_mm": {"type": "number", "exclusiveMinimum": 0},
+        "plot_depth_mm": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "storeys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["level", "height_mm", "rooms"],
+        "additionalProperties": false,
+        "properties": {
+          "level": {"type": "integer", "minimum": 0},
+          "name": {"type": "string"},
+          "height_mm": {"type": "number", "exclusiveMinimum": 0, "default": 3000},
+          "roof": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {"type": "string", "enum": ["flat", "gable", "shed"]},
+              "pitch_deg": {"type": "number", "minimum": 0, "maximum": 60, "default": 20},
+              "overhang_mm": {"type": "number", "minimum": 0, "default": 300}
+            }
+          },
+          "stairs": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "room": {"type": "string"},
+              "direction": {"type": "string", "enum": ["up", "down", "up_and_down"], "default": "up"}
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "type": {
+                  "type": "string",
+                  "enum": ["bedroom", "bathroom", "kitchen", "living", "dining", "hall",
+                            "stairwell", "garage", "balcony", "office", "storage"]
+                },
+                "rect": {
+                  "type": "object",
+                  "required": ["x", "y", "w", "d"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {"type": "number", "minimum": 0},
+                    "y": {"type": "number", "minimum": 0},
+                    "w": {"type": "number", "exclusiveMinimum": 0},
+                    "d": {"type": "number", "exclusiveMinimum": 0}
+                  }
+                },
+                "relative": {
+                  "type": "object",
+                  "required": ["adjacent_to", "side", "w", "d"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "adjacent_to": {"type": "string"},
+                    "side": {"type": "string", "enum": ["north", "south", "east", "west"]},
+                    "w": {"type": "number", "exclusiveMinimum": 0},
+                    "d": {"type": "number", "exclusiveMinimum": 0}
+                  }
+                }
+              },
+              "oneOf": [
+                {"required": ["rect"]},
+                {"required": ["relative"]}
+              ]
+            }
+          },
+          "openings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "between"],
+              "additionalProperties": false,
+              "properties": {
+                "type": {"type": "string", "enum": ["door", "window"]},
+                "between": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {"type": "string"}
+                },
+                "width_mm": {"type": "number", "exclusiveMinimum": 0, "default": 900},
+                "sill_mm": {"type": "number", "minimum": 0, "default": 0},
+                "head_mm": {"type": "number", "exclusiveMinimum": 0, "default": 2100}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

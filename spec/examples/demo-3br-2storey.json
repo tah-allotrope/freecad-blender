@@ -1,0 +1,60 @@
+{
+  "meta": {"name": "demo-3br-2storey", "style": "modern-minimal"},
+  "site": {"plot_width_mm": 10000, "plot_depth_mm": 8000},
+  "storeys": [
+    {
+      "level": 0,
+      "name": "Ground Floor",
+      "height_mm": 3000,
+      "stairs": {"room": "stairwell", "direction": "up"},
+      "rooms": [
+        {"id": "kitchen", "type": "kitchen", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+        {"id": "living", "type": "living", "rect": {"x": 4000, "y": 0, "w": 6000, "d": 4000}},
+        {"id": "hall", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1500}},
+        {"id": "garage", "type": "garage", "rect": {"x": 0, "y": 5500, "w": 4000, "d": 2500}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 4000, "y": 5500, "w": 2000, "d": 2500}},
+        {"id": "office", "type": "office", "rect": {"x": 6000, "y": 5500, "w": 4000, "d": 2500}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["kitchen", "living"], "width_mm": 3800},
+        {"type": "door", "between": ["hall", "living"], "width_mm": 1200},
+        {"type": "door", "between": ["hall", "garage"], "width_mm": 900},
+        {"type": "door", "between": ["hall", "stairwell"], "width_mm": 900},
+        {"type": "door", "between": ["hall", "office"], "width_mm": 900},
+        {"type": "door", "between": ["living", "exterior"], "width_mm": 1000},
+        {"type": "door", "between": ["garage", "exterior"], "width_mm": 3000},
+        {"type": "window", "between": ["kitchen", "exterior"], "width_mm": 1200, "sill_mm": 900},
+        {"type": "window", "between": ["living", "exterior"], "width_mm": 2400, "sill_mm": 600},
+        {"type": "window", "between": ["office", "exterior"], "width_mm": 1500, "sill_mm": 900}
+      ]
+    },
+    {
+      "level": 1,
+      "name": "Upper Floor",
+      "height_mm": 3000,
+      "stairs": {"room": "stairwell", "direction": "down"},
+      "roof": {"type": "gable", "pitch_deg": 25, "overhang_mm": 400},
+      "rooms": [
+        {"id": "master", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 6000, "d": 4000}},
+        {"id": "ensuite", "type": "bathroom", "rect": {"x": 6000, "y": 0, "w": 1500, "d": 4000}},
+        {"id": "bedroom2", "type": "bedroom", "rect": {"x": 7500, "y": 0, "w": 2500, "d": 4000}},
+        {"id": "hall2", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1500}},
+        {"id": "bathroom", "type": "bathroom", "rect": {"x": 0, "y": 5500, "w": 3000, "d": 2500}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 3000, "y": 5500, "w": 2000, "d": 2500}},
+        {"id": "bedroom3", "type": "bedroom", "rect": {"x": 5000, "y": 5500, "w": 5000, "d": 2500}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["master", "ensuite"], "width_mm": 900},
+        {"type": "door", "between": ["master", "hall2"], "width_mm": 900},
+        {"type": "door", "between": ["bedroom2", "hall2"], "width_mm": 900},
+        {"type": "door", "between": ["hall2", "bathroom"], "width_mm": 800},
+        {"type": "door", "between": ["hall2", "stairwell"], "width_mm": 900},
+        {"type": "door", "between": ["hall2", "bedroom3"], "width_mm": 900},
+        {"type": "window", "between": ["master", "exterior"], "width_mm": 2000, "sill_mm": 900},
+        {"type": "window", "between": ["bedroom2", "exterior"], "width_mm": 1500, "sill_mm": 900},
+        {"type": "window", "between": ["bedroom3", "exterior"], "width_mm": 1800, "sill_mm": 900},
+        {"type": "window", "between": ["bathroom", "exterior"], "width_mm": 600, "sill_mm": 1500}
+      ]
+    }
+  ]
+}

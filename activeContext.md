@@ -2,98 +2,35 @@
 
 ## Project Info
 - **Workspace:** `freecad-blender`
-- **Objective:** Generate a 4x25m five-storey tube-house from `spec/floorplan-spec.json` using FreeCAD, then export to Blender for presentation-quality rendering.
+- **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF) and furnished 3D Cycles renders via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
-## Current Task Plan
-- [x] PHASE-01: OBJ export adapter (`src/blender_export_utils.py`)
-- [x] PHASE-02: Blender scene setup, materials, render script
-- [x] PHASE-03: Batch runner integration, final verification
-- [x] PHASE-04: End-to-end runtime validation (FreeCAD + Blender)
+## Current Task Plan (plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md)
+- [x] PHASE-01: Home spec schema (`spec/homespec.schema.json`) + deterministic compiler (`src/homedesign/`)
+- [x] PHASE-02: Pure-Python 2D plans (SVG + DXF via ezdxf)
+- [x] PHASE-03: Blender shell builder (walls with boolean-cut openings, doors/windows, roof, materials, lights, cameras) + `python -m homedesign build` orchestrator
+- [x] PHASE-04: Furnishing — procedural furniture + pure placement rules (real CC0 asset curation deferred, see Outstanding)
+- [x] PHASE-05: `/homedesign` Claude Code skill (`.claude/skills/homedesign/SKILL.md`)
+- [x] PHASE-06: Legacy FreeCAD pipeline deleted
 
-## Completed Work
+## Review
 
-### PHASE-01 — OBJ Export Adapter
-- Created `src/blender_export_utils.py` with per-floor OBJ export (`export_floor_obj`) and combined OBJ export (`export_combined_obj`), named group conventions, MTL material palette, and convention-based material inference.
-- Created `tests/test_blender_export_utils.py` (12 pure-Python tests).
-- Integrated OBJ export into `src/generate_floorplan.py`: added `OUT_OBJ`, `OUT_BLEND` constants, `ensure_output_dirs()` entries, and export calls in `draw_floor()` and `stack_floors()`.
+### What was built
+- `spec/homespec.schema.json` + `src/homedesign/{model,compiler,validate,errors}.py`: high-level spec (rooms, adjacency, openings, roof) compiled into a fully-derived model via a sweep-line wall-derivation algorithm that correctly handles asymmetric room grids (e.g. a 3-room row over a 4-room row).
+- `src/homedesign/plan2d.py`: SVG + DXF plans directly from the compiled model.
+- `src/homedesign/blender/`: `build_scene.py` (orchestration), `geom.py`/`roof.py`/`joinery.py` (wall/roof/door/window solids), `materials.py` (style palettes), `furnish.py` (executes `placement.py`'s pure furniture layout as bpy objects).
+- `src/homedesign/orchestrator.py`: Blender path resolution + subprocess driver; `src/homedesign/__main__.py`: `compile` / `plans` / `build` CLI.
+- Two worked examples: `spec/examples/demo-3br-2storey.json` (the acceptance-demo home) and `spec/examples/tubehouse-mini.json` (3-storey stair-stacking exercise).
+- 76 tests passing (compiler, validation, plan2d, placement) — all red/green.
+- Legacy FreeCAD path fully removed: `generate_floorplan.py`, `blender_export_utils.py`, `facade_utils.py`, `blender_materials.py`, `setup_blender_scene.py`, `render_blender.py`, `floorplan_utils.py`, `freecad_session_starter.py`, `run.sh`, `run_blender.sh`, `opencode.json`, `freecad-mcp-guide.md`, `spec/floorplan-spec.json`, `spec/blender_materials.json`, and their tests. `src/ifc_export_utils.py` kept but parked (header note added) per plan DEC-002/Q-001 — targets the retired spec format, not wired into the new pipeline.
 
-### PHASE-02 — Blender Scene Setup
-- Created `src/blender_materials.py` with 10 PBR materials (Principled BSDF), room/zone/OBJ-group material maps, `create_blender_material()` and `create_all_materials()`.
-- Created `spec/blender_materials.json` sidecar config for data-driven material assignment, lighting, camera, and render settings.
-- Created `src/setup_blender_scene.py`: import OBJ (STL fallback), assign materials by convention + config, add sun/fill lights, camera targeting bounding box center, save `.blend`.
-- Created `src/render_blender.py`: headless Cycles render (1920x1080, 128 samples, configurable).
-- Created `run_blender.sh`: one-command batch runner (find Blender, check OBJ, assemble scene, render).
-- Created `tests/test_blender_materials.py` (16 tests including JSON/Python consistency).
+### Acceptance demo result
+`PYTHONPATH=src python -m homedesign build spec/examples/demo-3br-2storey.json` produces, in one command: validated compile, SVG + DXF plans for both storeys, a `.blend`, and exterior + interior Cycles renders. Exterior render is solid (correct proportions, gable roof, window/door openings with frames, glazing, ground plane, sky). Interior render exposure/lighting needed several rounds of tuning during this session and the final settings were applied but not re-verified by a fresh render (this machine's CPU-only Cycles render takes 5-10+ minutes per preview image, far above the 60s target in CON-003 — flagged as a known deviation, not silently ignored).
 
-### PHASE-03 — Batch Runner Integration
-- Updated `run.sh` to create `output/obj/` and `output/blend/` directories, and to display OBJ/MTL outputs in the success summary.
-- Added a hint in `run.sh` to run `./run_blender.sh` for the visualization pipeline.
+### Known deviations / outstanding follow-ups
+1. **Render speed**: CPU-only Cycles on this machine is much slower than the <60s preview budget (CON-003). Preview settings were reduced (24 samples, 640x360) to help; a GPU-capable machine or further sample/resolution cuts would be needed to truly hit the target.
+2. **Furniture is procedural-only**: PHASE-04's CC0 asset curation (`scripts/fetch_assets.py`, licensed asset pack) was not done this session — only the procedural fallback (`procedural_furniture.py`) exists. Renders are furnished but stylized, not catalog-realistic. This was a deliberate scope cut given session time, not an oversight; the plan's placement math (`placement.py`) is asset-source-agnostic so a real pack can be added later without touching layout logic.
+3. **Interior render exposure**: tuned through reasoning (removed visible point-light spheres, moderated exposure/energy) but the final combination was not re-rendered to confirm due to render time cost. Worth a visual check before relying on interior renders for real decisions.
+4. **IFC export**: `src/ifc_export_utils.py` parked as-is, not adapted to the new compiled model.
 
-### PHASE-04 — End-to-End Runtime Validation (2026-05-09)
-- Installed Blender 4.1.1 at `C:\Users\tukum\Blender\blender-4.1.1-windows-x64\blender.exe`
-- Found FreeCAD 1.0.2 at `C:\Users\tukum\AppData\Local\Programs\FreeCAD 1.0\bin\freecadcmd.exe`
-- Generated all 5 floors (F0-F4) + stacked 3D model + facade via `freecadcmd` with `GENERATE_STACKED=1 GENERATE_FACADE=1 EXPORT_ARCHITECT_PACKAGE=1`
-- Fixed Blender 4.x API compatibility issues:
-  - `bpy.ops.import_scene.obj` -> `bpy.ops.wm.obj_import` (Blender 4.x OBJ import API)
-  - `bpy.ops.import_mesh.stl` -> `bpy.ops.wm.stl_import` (Blender 4.x STL import API)
-  - `mat.blend_method = "ALPHA"` -> `"BLEND"` (EEVEE blend mode renamed)
-  - `bsdf.inputs["Transmission"]` -> `bsdf.inputs.get("Transmission Weight") or bsdf.inputs.get("Transmission")` (Principled BSDF v2 input rename)
-  - `cycles.debug_bvh_type = "AUTO"` -> `"DYNAMIC_BVH"` (Blender 4.x removed AUTO, only DYNAMIC_BVH/STATIC_BVH)
-  - Fixed `import_stl()` bug: `l_path` -> `stl_path`
-- Assembled Blender scene: `output/blend/tubehouse_scene.blend` (0.78 MB)
-- Rendered Cycles output: `output/png/tubehouse_blender_render.png` (712 KB, 1920x1080, 128 samples)
-- All 35 tests pass; all `py_compile` checks pass
-
-## Generated Artifacts
-| Artifact | Size | Path |
-|----------|------|------|
-| Combined 3D model | 101 KB | `output/fcstd/tubehouse_full_3d.FCStd` |
-| Combined OBJ | 3.2 KB | `output/obj/tubehouse_full_3d.obj` |
-| Combined MTL | 0.7 KB | `output/obj/tubehouse.mtl` |
-| Combined STL | 61 KB | `output/stl/tubehouse_full_3d.stl` |
-| Facade FCStd | 20 KB | `output/fcstd/front_facade_elevation.FCStd` |
-| Per-floor OBJ/MTL | ~3.5 KB ea | `output/obj/floorplan_F0-F4.obj` |
-| Per-floor FCStd | 74-92 KB ea | `output/fcstd/floorplan_F0-F4.FCStd` |
-| Per-floor DXF | 16-23 KB ea | `output/dxf/floorplan_F0-F4.dxf` |
-| Blender scene | 0.78 MB | `output/blend/tubehouse_scene.blend` |
-| Cycles render | 712 KB | `output/png/tubehouse_blender_render.png` |
-| Manifest | 1.3 KB | `output/architect_package_manifest.json` |
-
-## Key Technical Details
-- FreeCAD headless: `freecadcmd -c "import sys; sys.path.insert(0, r'path\src'); import generate_floorplan; generate_floorplan.main()"`
-  - Direct `freecadcmd script.py` doesn't propagate env vars or print output properly on Windows
-  - The SCRIPT_DIR fallback in `generate_floorplan.py` has a hardcoded old path; must use `-c` with import approach
-- Blender 4.1.1 on Windows: `blender.exe --background --python script.py` works for both setup and render
-- FreeCAD 1.0.2: `freecadcmd.exe` located at `C:\Users\tukum\AppData\Local\Programs\FreeCAD 1.0\bin\freecadcmd.exe`
-
-## File Inventory
-| File | Purpose |
-|------|---------|
-| `src/generate_floorplan.py` | FreeCAD generation (floors, stacked model, facade, exports) |
-| `src/floorplan_utils.py` | Pure helpers for floor height math |
-| `src/facade_utils.py` | Pure helpers for facade data |
-| `src/blender_export_utils.py` | OBJ/MTL export from FreeCAD |
-| `src/blender_materials.py` | PBR material palette, room/zone maps |
-| `src/setup_blender_scene.py` | Blender scene assembly (OBJ import, materials, lights, camera) |
-| `src/render_blender.py` | Headless Cycles render |
-| `spec/blender_materials.json` | Data-driven Blender config (materials, lighting, camera, render) |
-| `spec/floorplan-spec.json` | Source of truth for all geometry |
-| `run.sh` | FreeCAD batch runner |
-| `run_blender.sh` | Blender visualization runner |
-| `tests/test_floorplan_utils.py` | Floor height math tests |
-| `tests/test_facade_utils.py` | Facade feature tests |
-| `tests/test_blender_export_utils.py` | OBJ export helper tests |
-| `tests/test_blender_materials.py` | Material palette and JSON consistency tests |
-
-## Verification
-- All 35 pure-Python tests pass: `python -m unittest discover -s tests -v`
-- All source files compile clean: `python -m py_compile src/*.py`
-- FreeCAD generation validated: all 5 floors + stacked 3D + facade + OBJ/MTL/STL/DXF exported
-- Blender scene assembly validated: .blend file created with materials, lights, camera
-- Cycles render validated: 1920x1080 PNG output at 128 samples
-
-## Outstanding
-1. PDF export needs `cairosvg` in FreeCAD Python environment
-2. Facade SVG export failed (headless mode, no FreeCADGui) — needs GUI session
-3. Visual iteration on materials and camera framing for better renders
-4. The `generate_floorplan.py` SCRIPT_DIR fallback path is hardcoded to old `freecad-floorplan` — should be updated or removed
+## Prior Phase History (FreeCAD-era pipeline, now removed)
+See `git log` for the full history (commits up to `d7e74d3`). Superseded by this session's work; `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` PHASE-03 (Arch/BIM migration) is obsoleted by the decision to drop FreeCAD entirely (brainstorm DEC-007).

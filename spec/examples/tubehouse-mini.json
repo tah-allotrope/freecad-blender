@@ -1,0 +1,64 @@
+{
+  "meta": {"name": "tubehouse-mini", "style": "modern-minimal"},
+  "site": {"plot_width_mm": 4000, "plot_depth_mm": 12000},
+  "storeys": [
+    {
+      "level": 0,
+      "name": "Ground Floor",
+      "height_mm": 3200,
+      "stairs": {"room": "stairwell", "direction": "up"},
+      "rooms": [
+        {"id": "living", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 5000}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 0, "y": 5000, "w": 1500, "d": 2000}},
+        {"id": "hall", "type": "hall", "rect": {"x": 1500, "y": 5000, "w": 2500, "d": 2000}},
+        {"id": "bedroom", "type": "bedroom", "rect": {"x": 0, "y": 7000, "w": 4000, "d": 5000}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["hall", "stairwell"], "width_mm": 900},
+        {"type": "door", "between": ["hall", "living"], "width_mm": 1200},
+        {"type": "door", "between": ["hall", "bedroom"], "width_mm": 900},
+        {"type": "door", "between": ["living", "exterior"], "width_mm": 1000},
+        {"type": "window", "between": ["living", "exterior"], "width_mm": 1500, "sill_mm": 900},
+        {"type": "window", "between": ["bedroom", "exterior"], "width_mm": 1500, "sill_mm": 900}
+      ]
+    },
+    {
+      "level": 1,
+      "name": "Second Floor",
+      "height_mm": 3000,
+      "stairs": {"room": "stairwell", "direction": "up_and_down"},
+      "rooms": [
+        {"id": "living", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 5000}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 0, "y": 5000, "w": 1500, "d": 2000}},
+        {"id": "hall", "type": "hall", "rect": {"x": 1500, "y": 5000, "w": 2500, "d": 2000}},
+        {"id": "bedroom", "type": "bedroom", "rect": {"x": 0, "y": 7000, "w": 4000, "d": 5000}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["hall", "stairwell"], "width_mm": 900},
+        {"type": "door", "between": ["hall", "living"], "width_mm": 1200},
+        {"type": "door", "between": ["hall", "bedroom"], "width_mm": 900},
+        {"type": "window", "between": ["living", "exterior"], "width_mm": 1500, "sill_mm": 900},
+        {"type": "window", "between": ["bedroom", "exterior"], "width_mm": 1500, "sill_mm": 900}
+      ]
+    },
+    {
+      "level": 2,
+      "name": "Top Floor",
+      "height_mm": 3000,
+      "roof": {"type": "flat", "overhang_mm": 300},
+      "rooms": [
+        {"id": "living", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 5000}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 0, "y": 5000, "w": 1500, "d": 2000}},
+        {"id": "hall", "type": "hall", "rect": {"x": 1500, "y": 5000, "w": 2500, "d": 2000}},
+        {"id": "bedroom", "type": "bedroom", "rect": {"x": 0, "y": 7000, "w": 4000, "d": 5000}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["hall", "stairwell"], "width_mm": 900},
+        {"type": "door", "between": ["hall", "living"], "width_mm": 1200},
+        {"type": "door", "between": ["hall", "bedroom"], "width_mm": 900},
+        {"type": "window", "between": ["living", "exterior"], "width_mm": 1500, "sill_mm": 900},
+        {"type": "window", "between": ["bedroom", "exterior"], "width_mm": 1500, "sill_mm": 900}
+      ]
+    }
+  ]
+}

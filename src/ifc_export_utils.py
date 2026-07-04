@@ -1,4 +1,12 @@
-"""IFC4 export from spec JSON via IfcOpenShell — no FreeCAD dependency."""
+"""IFC4 export from spec JSON via IfcOpenShell — no FreeCAD dependency.
+
+Parked: this targets the retired low-level `floorplan-spec.json` format
+(removed with the FreeCAD pipeline). Not wired into the src/homedesign/
+idea->2D->3D pipeline. See plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md
+DEC-002 / Q-001 — IFC export was deliberately deferred, not deleted, in case
+a BIM-format need comes up later. Adapting it means mapping the compiled
+homedesign model's storeys/rooms/walls into these same ifcopenshell calls.
+"""
 
 import json
 import math

@@ -1,7 +1,7 @@
 ---
 title: "Upgrade OBJ Pipeline and Add IFC Export"
 date: 2026-05-11
-status: "draft"
+status: "superseded — PHASE-03 (Arch/BIM migration) obsoleted by 2026-07-04-idea-floorplan-3d-home-tool-plan.md, which drops FreeCAD entirely for a Python+Blender pipeline"
 request: "Multi-phase plan based on floorplan-to-3D workflow research: improve OBJ quality, add glTF, add IFC via IfcOpenShell, migrate to FreeCAD Arch workbench"
 plan_type: "multi-phase"
 research_inputs:

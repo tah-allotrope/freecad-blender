@@ -1,0 +1,93 @@
+---
+name: homedesign
+description: Turn a natural-language home idea into validated 2D floor plans and furnished 3D Cycles renders, and apply conversational edits to an existing design. Use when the user says "/homedesign", asks to design/generate a house or floorplan, or asks to edit a home design already produced by this skill (e.g. "make the kitchen bigger").
+---
+
+# /homedesign
+
+Turns a plain-language home idea into 2D floor plans (SVG + DXF) and furnished
+3D Cycles renders, via a compact high-level spec and a deterministic Python
+compiler (`src/homedesign/`). No FreeCAD is involved anywhere in this flow.
+
+## Spec format
+
+Read `spec/homespec.schema.json` for the authoritative schema. Read
+`spec/examples/demo-3br-2storey.json` and `spec/examples/tubehouse-mini.json`
+as worked examples before writing a new spec — they show the corridor
+pattern that keeps room adjacency (and therefore door/window placement)
+correct.
+
+Cheat sheet:
+- `meta.name` — used as the output file stem everywhere.
+- `site.plot_width_mm` / `plot_depth_mm` — the buildable footprint.
+- `storeys[]` — each has `level` (0-based), `height_mm`, `rooms[]`,
+  `openings[]`, optional `stairs` (`{room, direction}`), optional `roof`
+  (`{type: flat|gable|shed, pitch_deg, overhang_mm}` — only put a roof on the
+  top storey).
+- `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
+  at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`
+  placement solved against an already-placed room.
+- `openings[]` — `{type: door|window, between: [room_id, room_id_or_"exterior"], width_mm, sill_mm, head_mm}`.
+  A door/window can only be placed where two rooms (or a room and
+  `"exterior"`) actually share a wall — the compiler derives walls from room
+  geometry, so **every room must be reachable via a chain of doors from an
+  exterior door**, or the design will look right but not compile as a livable
+  home.
+- **Design rule that avoids the #1 mistake**: lay each storey out as stacked
+  rows tiling the full plot, with a full-width corridor row (a `hall` room
+  spanning the whole plot width) between any row of more than ~2 rooms and
+  the row below it. This guarantees every room on both sides of the corridor
+  shares a full wall with it, so a door always exists. See the demo spec.
+
+## Workflow
+
+1. **Author or patch the spec.** For a new idea, write
+   `output/specs/<slug>.json` from scratch following the schema and the
+   corridor pattern above. For an edit request ("make the kitchen bigger",
+   "add a bedroom"), load the existing `output/specs/<slug>.json` and make
+   the smallest JSON edit that satisfies the request — do not regenerate the
+   whole spec. This keeps edits diffable and round-trippable.
+2. **Build.** Run:
+   ```
+   PYTHONPATH=src python -m homedesign build output/specs/<slug>.json
+   ```
+   This validates the spec (schema + geometric sanity), compiles it,
+   generates SVG/DXF plans, and drives a headless Blender build + preview
+   render. It prints every artifact path, ending with `blender build: <N>s`.
+3. **If the command exits nonzero**, its stderr is a list of
+   `[code] path: message` errors (schema errors, room overlap, opening on a
+   nonexistent wall, opening too wide for its wall, stairwell too narrow,
+   missing stair continuity, etc.). Fix the spec directly from these
+   messages — they are precise and machine-generated — and re-run. Do not
+   guess at unrelated fixes.
+4. **Self-correct visually, bounded to 3 passes.** Once the build succeeds,
+   Read the `output/png/<slug>_exterior.png` and `_interior.png` renders and
+   the `output/svg/<slug>_f*.svg` plans. Look for: rooms that don't read as
+   the requested type, obviously wrong proportions, a roof that doesn't span
+   the building, missing furniture in furnished rooms, or a completely dark
+   interior render (means the room got no light — should not happen, but if
+   it does, check the room actually compiled rather than re-running blindly).
+   If something is visibly wrong, patch the spec and rebuild. Stop after 3
+   build attempts either way and present the current best result — don't
+   loop indefinitely.
+5. **Present.** Show the renders and plans, and summarize the design in a
+   sentence or two (room count, layout, notable features). Mention that
+   `--final` gives a full-quality render (512 samples, 1080p) if the user
+   wants a polished still instead of the fast preview.
+6. **Conversational edits.** When the user asks for a change, go back to
+   step 1 against the *same* spec file and re-run step 2 onward. Summarize
+   what changed in the spec (e.g. "widened the kitchen from 4.0m to 4.6m and
+   shrank the office by the same amount") rather than re-describing the
+   whole house.
+
+## Known limitations (by design, not bugs)
+
+- Rectilinear geometry only: axis-aligned walls, flat/gable/shed roofs, no
+  curved or diagonal walls, no split levels.
+- Furniture is procedural (parametric boxes), not photoreal asset models —
+  there is no bundled CC0 asset library yet. Renders read as furnished but
+  stylized, not catalog-photo realistic.
+- IFC/BIM export is not wired to this pipeline (`src/ifc_export_utils.py`
+  targets the retired low-level spec format and is not part of this flow).
+- Preview renders are low-sample Cycles for speed; always available via
+  `--final` for a slower, cleaner still.
