@@ -135,48 +135,85 @@ def add_interior_lights(model, structure):
             structure.objects.link(light)
 
 
+def _find_room(model, room_id):
+    for storey in model["storeys"]:
+        for room in storey["rooms"]:
+            if room["id"] == room_id:
+                return storey, room
+    return None
+
+
+def _find_default_interior_room(model):
+    interior_priority = ["living", "master", "bedroom", "kitchen"]
+    for level_target in interior_priority:
+        for storey in model["storeys"]:
+            for room in storey["rooms"]:
+                if room["id"] == level_target or room["type"] == level_target:
+                    return storey, room
+    return None
+
+
+def _build_exterior_front_camera(name, model, plot_w, plot_d, total_height, centroid):
+    cam_data = bpy.data.cameras.new(name)
+    cam = bpy.data.objects.new(name, cam_data)
+    dist = max(plot_w, plot_d) * 1.6 + 5
+    cam.location = (centroid[0] - dist * 0.7, centroid[1] - dist * 0.9, total_height * 0.9 + 2)
+    _point_at(cam, centroid)
+    bpy.context.scene.collection.objects.link(cam)
+    return cam
+
+
+def _build_exterior_aerial_camera(name, model, plot_w, plot_d, total_height, centroid):
+    cam_data = bpy.data.cameras.new(name)
+    cam = bpy.data.objects.new(name, cam_data)
+    dist = max(plot_w, plot_d) * 1.4 + 5
+    cam.location = (centroid[0] + dist * 0.5, centroid[1] - dist * 0.5, total_height * 2.2 + 6)
+    _point_at(cam, centroid)
+    bpy.context.scene.collection.objects.link(cam)
+    return cam
+
+
+def _build_room_camera(name, storey, room):
+    cx = room["rect"]["x"] / 1000 + room["rect"]["w"] / 2000
+    cy = room["rect"]["y"] / 1000 + room["rect"]["d"] / 2000
+    base_z = storey["base_z"] / 1000
+    room_w = room["rect"]["w"] / 1000
+    room_d = room["rect"]["d"] / 1000
+    cam_data = bpy.data.cameras.new(name)
+    cam = bpy.data.objects.new(name, cam_data)
+    cam_x = room["rect"]["x"] / 1000 + min(1.2, room_w * 0.25)
+    cam_y = room["rect"]["y"] / 1000 + min(1.2, room_d * 0.25)
+    eye_z = base_z + 1.5
+    cam.location = (cam_x, cam_y, eye_z)
+    _point_at(cam, (cx, cy, eye_z - 0.3))
+    bpy.context.scene.collection.objects.link(cam)
+    return cam
+
+
 def add_cameras(model):
     plot_w, plot_d = model["plot_width_mm"] / 1000, model["plot_depth_mm"] / 1000
     total_height = sum(s["height_mm"] for s in model["storeys"]) / 1000
     centroid = (plot_w / 2, plot_d / 2, total_height / 2)
 
-    cams = []
-    ext_cam_data = bpy.data.cameras.new("cam_exterior")
-    ext_cam = bpy.data.objects.new("cam_exterior", ext_cam_data)
-    dist = max(plot_w, plot_d) * 1.6 + 5
-    ext_cam.location = (centroid[0] - dist * 0.7, centroid[1] - dist * 0.9, total_height * 0.9 + 2)
-    _point_at(ext_cam, centroid)
-    bpy.context.scene.collection.objects.link(ext_cam)
-    cams.append(ext_cam)
+    views = model.get("views") or []
+    if not views:
+        # Backward-compatible default: exterior + one auto-picked interior.
+        views = [{"name": "exterior", "kind": "exterior_front"}]
+        default_interior = _find_default_interior_room(model)
+        if default_interior:
+            views.append({"name": "interior", "kind": "room", "room_id": default_interior[1]["id"]})
 
-    interior_priority = ["living", "master", "bedroom", "kitchen"]
-    best = None
-    for level_target in interior_priority:
-        for storey in model["storeys"]:
-            for room in storey["rooms"]:
-                if room["id"] == level_target or room["type"] == level_target:
-                    best = (storey, room)
-                    break
-            if best:
-                break
-        if best:
-            break
-    if best:
-        storey, room = best
-        cx = room["rect"]["x"] / 1000 + room["rect"]["w"] / 2000
-        cy = room["rect"]["y"] / 1000 + room["rect"]["d"] / 2000
-        base_z = storey["base_z"] / 1000
-        int_cam_data = bpy.data.cameras.new("cam_interior")
-        int_cam = bpy.data.objects.new("cam_interior", int_cam_data)
-        room_w = room["rect"]["w"] / 1000
-        room_d = room["rect"]["d"] / 1000
-        cam_x = room["rect"]["x"] / 1000 + min(1.2, room_w * 0.25)
-        cam_y = room["rect"]["y"] / 1000 + min(1.2, room_d * 0.25)
-        eye_z = base_z + 1.5
-        int_cam.location = (cam_x, cam_y, eye_z)
-        _point_at(int_cam, (cx, cy, eye_z - 0.3))
-        bpy.context.scene.collection.objects.link(int_cam)
-        cams.append(int_cam)
+    cams = []
+    for view in views:
+        name = f"cam_{view['name']}"
+        if view["kind"] == "exterior_front":
+            cams.append(_build_exterior_front_camera(name, model, plot_w, plot_d, total_height, centroid))
+        elif view["kind"] == "exterior_aerial":
+            cams.append(_build_exterior_aerial_camera(name, model, plot_w, plot_d, total_height, centroid))
+        elif view["kind"] == "room":
+            found = _find_room(model, view["room_id"])
+            if found:
+                cams.append(_build_room_camera(name, *found))
 
     return cams
 

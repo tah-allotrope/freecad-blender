@@ -15,7 +15,7 @@ Resolution order per storey:
 from __future__ import annotations
 
 from .errors import SpecError, SpecValidationError
-from .model import CompiledModel, Opening, Rect, Room, Roof, Stairs, Storey, Tread, Wall
+from .model import CompiledModel, Opening, Rect, Room, Roof, Stairs, Storey, Tread, View, Wall
 
 EXT_THICKNESS = 200.0
 INT_THICKNESS = 100.0
@@ -58,6 +58,9 @@ def compile_spec(spec: dict) -> CompiledModel:
         )
         base_z += height
 
+    all_room_ids = {r.id for s in storeys for r in s.rooms}
+    views = _resolve_views(spec["meta"].get("views", []), all_room_ids, errors)
+
     if errors:
         raise SpecValidationError(errors)
 
@@ -67,7 +70,25 @@ def compile_spec(spec: dict) -> CompiledModel:
         plot_width_mm=plot_w,
         plot_depth_mm=plot_d,
         storeys=storeys,
+        views=views,
     )
+
+
+def _resolve_views(view_specs, room_ids: set[str], errors) -> list[View]:
+    views = []
+    for idx, v in enumerate(view_specs):
+        room_id = v.get("room_id")
+        if v["kind"] == "room" and room_id not in room_ids:
+            errors.append(
+                SpecError(
+                    code="view_room_not_found",
+                    path=f"meta.views[{idx}]",
+                    message=f"view '{v['name']}' references room_id '{room_id}' which does not exist",
+                )
+            )
+            continue
+        views.append(View(name=v["name"], kind=v["kind"], room_id=room_id))
+    return views
 
 
 def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:

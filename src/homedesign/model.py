@@ -92,6 +92,13 @@ class Roof:
 
 
 @dataclass
+class View:
+    name: str
+    kind: Literal["exterior_front", "exterior_aerial", "room"]
+    room_id: Optional[str] = None
+
+
+@dataclass
 class Storey:
     level: int
     name: str
@@ -111,6 +118,7 @@ class CompiledModel:
     plot_width_mm: float
     plot_depth_mm: float
     storeys: list[Storey] = field(default_factory=list)
+    views: list[View] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -149,10 +157,12 @@ class CompiledModel:
                     roof=roof,
                 )
             )
+        views = [View(**v) for v in data.get("views", [])]
         return CompiledModel(
             name=data["name"],
             style=data["style"],
             plot_width_mm=data["plot_width_mm"],
             plot_depth_mm=data["plot_depth_mm"],
             storeys=storeys,
+            views=views,
         )

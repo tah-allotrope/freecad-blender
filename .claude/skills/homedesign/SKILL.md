@@ -28,6 +28,11 @@ Cheat sheet:
   `{x,y,w,d}`, `type: flat` only) punches open-to-sky holes in the roof —
   the standard way to keep a mid-plan light well open at every level, since
   rooms simply aren't tiled over that footprint on any storey.
+- `meta.views` (optional) — a named camera gallery: each entry is
+  `{name, kind: exterior_front|exterior_aerial|room, room_id?}` (`room_id`
+  required when `kind: room`). Renders land at
+  `output/png/<slug>_<view name>.png`. Omit `views` entirely to get the old
+  2-shot default (one exterior + one auto-picked interior).
 - `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
   at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`
   placement solved against an already-placed room. Room `type` includes

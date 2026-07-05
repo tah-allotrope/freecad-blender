@@ -12,7 +12,22 @@
       "additionalProperties": false,
       "properties": {
         "name": {"type": "string", "minLength": 1},
-        "style": {"type": "string", "enum": ["modern-minimal"], "default": "modern-minimal"}
+        "style": {"type": "string", "enum": ["modern-minimal"], "default": "modern-minimal"},
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "kind": {"type": "string", "enum": ["exterior_front", "exterior_aerial", "room"]},
+              "room_id": {"type": "string"}
+            },
+            "if": {"properties": {"kind": {"const": "room"}}},
+            "then": {"required": ["name", "kind", "room_id"]}
+          }
+        }
       }
     },
     "site": {

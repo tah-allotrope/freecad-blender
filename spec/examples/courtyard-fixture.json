@@ -1,5 +1,10 @@
 {
-  "meta": {"name": "courtyard-fixture", "style": "modern-minimal"},
+  "meta": {"name": "courtyard-fixture", "style": "modern-minimal", "views": [
+    {"name": "exterior_front", "kind": "exterior_front"},
+    {"name": "exterior_aerial", "kind": "exterior_aerial"},
+    {"name": "living", "kind": "room", "room_id": "front"},
+    {"name": "kitchen", "kind": "room", "room_id": "rear"}
+  ]},
   "site": {"plot_width_mm": 4000, "plot_depth_mm": 10000},
   "storeys": [
     {

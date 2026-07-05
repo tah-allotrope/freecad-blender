@@ -242,6 +242,31 @@ def test_opening_side_hint_with_no_matching_wall_is_rejected():
     assert any(e.code == "opening_no_wall" for e in exc.value.errors)
 
 
+def test_views_resolve_and_default_to_empty():
+    model = compile_spec(load_example("tubehouse-mini.json"))
+    assert model.views == []
+
+
+def test_views_resolve_room_kind_against_actual_rooms():
+    spec = _lightwell_spec()
+    spec["meta"]["views"] = [
+        {"name": "street", "kind": "exterior_front"},
+        {"name": "aerial", "kind": "exterior_aerial"},
+        {"name": "kitchen_shot", "kind": "room", "room_id": "rear"},
+    ]
+    model = compile_spec(spec)
+    assert [v.name for v in model.views] == ["street", "aerial", "kitchen_shot"]
+    assert model.views[2].room_id == "rear"
+
+
+def test_views_reject_unknown_room_id():
+    spec = _lightwell_spec()
+    spec["meta"]["views"] = [{"name": "bad", "kind": "room", "room_id": "does_not_exist"}]
+    with pytest.raises(SpecValidationError) as exc:
+        compile_spec(spec)
+    assert any(e.code == "view_room_not_found" for e in exc.value.errors)
+
+
 def test_elevator_room_type_compiles_like_any_other_room():
     spec = _lightwell_spec()
     spec["storeys"][0]["rooms"].append(
