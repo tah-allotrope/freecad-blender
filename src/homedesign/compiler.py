@@ -223,7 +223,25 @@ def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int) -
     return walls
 
 
-def _walls_between(rooms_by_id: dict[str, Room], walls: list[Wall], a_id: str, b_id: str) -> list[Wall]:
+def _wall_side(wall: Wall, rect: Rect, eps: float = 1.0) -> str | None:
+    """Which cardinal face of `rect` this wall sits on: north=min-y, south=max-y,
+    west=min-x, east=max-x (matches the `relative` placement side convention)."""
+    if wall.orientation == "vertical":
+        coord = wall.x + wall.thickness / 2
+        if abs(coord - rect.x) < eps:
+            return "west"
+        if abs(coord - rect.x2) < eps:
+            return "east"
+    else:
+        coord = wall.y + wall.thickness / 2
+        if abs(coord - rect.y) < eps:
+            return "north"
+        if abs(coord - rect.y2) < eps:
+            return "south"
+    return None
+
+
+def _walls_between(rooms_by_id: dict[str, Room], walls: list[Wall], a_id: str, b_id: str, side: str | None = None) -> list[Wall]:
     """Find every wall segment separating room a_id from b_id (b_id may be 'exterior'),
     largest span first, so callers can pick the first one an opening actually fits."""
     a = rooms_by_id.get(a_id)
@@ -231,6 +249,8 @@ def _walls_between(rooms_by_id: dict[str, Room], walls: list[Wall], a_id: str, b
         return []
     if b_id == "exterior":
         candidates = [w for w in walls if w.kind == "exterior" and _wall_touches_room(w, a.rect)]
+        if side is not None:
+            candidates = [w for w in candidates if _wall_side(w, a.rect) == side]
     else:
         b = rooms_by_id.get(b_id)
         if b is None:
@@ -260,7 +280,8 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
     result = []
     for idx, o in enumerate(opening_specs):
         a_id, b_id = o["between"]
-        candidates = _walls_between(rooms_by_id, walls, a_id, b_id) or _walls_between(rooms_by_id, walls, b_id, a_id)
+        side = o.get("side")
+        candidates = _walls_between(rooms_by_id, walls, a_id, b_id, side) or _walls_between(rooms_by_id, walls, b_id, a_id, side)
         if not candidates:
             errors.append(
                 SpecError(
@@ -326,14 +347,17 @@ def _derive_roof(roof_spec, plot_w, plot_d, level, base_z) -> Roof | None:
     if not roof_spec:
         return None
     overhang = roof_spec.get("overhang_mm", 300.0)
+    base_rect = roof_spec.get("rect", {"x": 0, "y": 0, "w": plot_w, "d": plot_d})
+    voids = [Rect(**v) for v in roof_spec.get("voids", [])]
     return Roof(
         storey_level=level,
         type=roof_spec["type"],
         pitch_deg=roof_spec.get("pitch_deg", 20.0),
         overhang_mm=overhang,
-        x=-overhang,
-        y=-overhang,
-        w=plot_w + 2 * overhang,
-        d=plot_d + 2 * overhang,
+        x=base_rect["x"] - overhang,
+        y=base_rect["y"] - overhang,
+        w=base_rect["w"] + 2 * overhang,
+        d=base_rect["d"] + 2 * overhang,
         base_z=base_z,
+        voids=voids,
     )

@@ -22,17 +22,27 @@ Cheat sheet:
 - `site.plot_width_mm` / `plot_depth_mm` — the buildable footprint.
 - `storeys[]` — each has `level` (0-based), `height_mm`, `rooms[]`,
   `openings[]`, optional `stairs` (`{room, direction}`), optional `roof`
-  (`{type: flat|gable|shed, pitch_deg, overhang_mm}` — only put a roof on the
-  top storey).
+  (`{type: flat|gable|shed, pitch_deg, overhang_mm, rect?, voids?}` — only put
+  a roof on the top storey). `rect` overrides the default full-plot span (use
+  it for a partial roof, e.g. a rooftop terrace left open); `voids` (array of
+  `{x,y,w,d}`, `type: flat` only) punches open-to-sky holes in the roof —
+  the standard way to keep a mid-plan light well open at every level, since
+  rooms simply aren't tiled over that footprint on any storey.
 - `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
   at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`
-  placement solved against an already-placed room.
-- `openings[]` — `{type: door|window, between: [room_id, room_id_or_"exterior"], width_mm, sill_mm, head_mm}`.
+  placement solved against an already-placed room. Room `type` includes
+  `elevator` for a lift shaft (no furniture is placed in it).
+- `openings[]` — `{type: door|window, between: [room_id, room_id_or_"exterior"], width_mm, sill_mm, head_mm, side?}`.
   A door/window can only be placed where two rooms (or a room and
   `"exterior"`) actually share a wall — the compiler derives walls from room
   geometry, so **every room must be reachable via a chain of doors from an
   exterior door**, or the design will look right but not compile as a livable
-  home.
+  home. `side` (`north|south|east|west`; north=min-y, south=max-y, west=min-x,
+  east=max-x) disambiguates which exterior face gets the opening when a room
+  borders more than one exterior wall (e.g. the street facade on one side and
+  a light well on the other) — omit it only when the room has just one
+  exterior wall. `opening_no_wall` is raised if the requested side isn't
+  actually an exterior wall of that room (e.g. it's shared with another room).
 - **Design rule that avoids the #1 mistake**: lay each storey out as stacked
   rows tiling the full plot, with a full-width corridor row (a `hall` room
   spanning the whole plot width) between any row of more than ~2 rooms and
@@ -84,6 +94,9 @@ Cheat sheet:
 
 - Rectilinear geometry only: axis-aligned walls, flat/gable/shed roofs, no
   curved or diagonal walls, no split levels.
+- Roof `voids` (open-to-sky holes) are only implemented for `type: flat`;
+  requesting voids on a `gable`/`shed` roof raises `NotImplementedError` at
+  Blender-build time.
 - Furniture is procedural (parametric boxes), not photoreal asset models —
   there is no bundled CC0 asset library yet. Renders read as furnished but
   stylized, not catalog-photo realistic.

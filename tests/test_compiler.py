@@ -138,3 +138,117 @@ def test_model_round_trips_through_dict():
     assert restored.name == model.name
     assert len(restored.storeys) == len(model.storeys)
     assert restored.storeys[0].walls[0].id == model.storeys[0].walls[0].id
+
+
+def _lightwell_spec():
+    """A minimal 2-storey plot with an untiled void (light well) at mid-depth,
+    a room on each side of it, and a roof that only covers part of the plot
+    with the light well punched out as a void."""
+    return {
+        "meta": {"name": "lightwell-test", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 10000},
+        "storeys": [
+            {
+                "level": 0,
+                "name": "Ground",
+                "height_mm": 3400,
+                "rooms": [
+                    {"id": "front", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                    # y: 4000-6000 left as an untiled void (the light well)
+                    {"id": "rear", "type": "kitchen", "rect": {"x": 0, "y": 6000, "w": 4000, "d": 4000}},
+                ],
+                "openings": [
+                    {"type": "door", "between": ["front", "exterior"], "width_mm": 1000},
+                    {"type": "window", "between": ["rear", "exterior"], "width_mm": 1200, "side": "south"},
+                    {"type": "window", "between": ["rear", "exterior"], "width_mm": 900, "side": "north"},
+                ],
+            },
+            {
+                "level": 1,
+                "name": "Roof Storey",
+                "height_mm": 3400,
+                "rooms": [
+                    {"id": "front2", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                    {"id": "rear2", "type": "office", "rect": {"x": 0, "y": 6000, "w": 4000, "d": 4000}},
+                ],
+                "roof": {
+                    "type": "flat",
+                    "rect": {"x": 0, "y": 6000, "w": 4000, "d": 4000},
+                    "voids": [{"x": 500, "y": 6500, "w": 1000, "d": 1000}],
+                },
+            },
+        ],
+    }
+
+
+def test_roof_rect_overrides_plot_span():
+    model = compile_spec(_lightwell_spec())
+    roof = model.storeys[1].roof
+    assert roof is not None
+    # overhang (default 300mm) still expands outward from the given rect, not the plot
+    assert roof.x == -300
+    assert roof.y == 6000 - 300
+    assert roof.w == 4000 + 600
+    assert roof.d == 4000 + 600
+
+
+def test_roof_voids_are_recorded_and_excluded_from_footprint():
+    model = compile_spec(_lightwell_spec())
+    roof = model.storeys[1].roof
+    assert len(roof.voids) == 1
+    void = roof.voids[0]
+    assert (void.x, void.y, void.w, void.d) == (500, 6500, 1000, 1000)
+
+
+def test_opening_side_hint_selects_matching_exterior_wall():
+    model = compile_spec(_lightwell_spec())
+    ground = model.storeys[0]
+    rear = next(r for r in ground.rooms if r.id == "rear")
+    south_window = next(o for o in ground.openings if o.width_mm == 1200)
+    north_window = next(o for o in ground.openings if o.width_mm == 900)
+    south_wall = next(w for w in ground.walls if w.id == south_window.wall_id)
+    north_wall = next(w for w in ground.walls if w.id == north_window.wall_id)
+    # south = higher-y edge (rect.y2), north = lower-y edge (rect.y)
+    assert abs((south_wall.y + south_wall.thickness / 2) - rear.rect.y2) < 1
+    assert abs((north_wall.y + north_wall.thickness / 2) - rear.rect.y) < 1
+    assert south_wall.id != north_wall.id
+
+
+def test_opening_side_hint_with_no_matching_wall_is_rejected():
+    """front_a and front_b sit side by side sharing a partition wall on
+    front_a's east edge; there is no *exterior* wall on that side, so a
+    side='east' hint against 'exterior' must fail rather than silently
+    falling back to a different face."""
+    spec = {
+        "meta": {"name": "side-hint-reject-test", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 4000},
+        "storeys": [
+            {
+                "level": 0,
+                "name": "Ground",
+                "height_mm": 3000,
+                "rooms": [
+                    {"id": "front_a", "type": "living", "rect": {"x": 0, "y": 0, "w": 2000, "d": 4000}},
+                    {"id": "front_b", "type": "kitchen", "rect": {"x": 2000, "y": 0, "w": 2000, "d": 4000}},
+                ],
+                "openings": [
+                    {"type": "window", "between": ["front_a", "exterior"], "width_mm": 900, "side": "east"},
+                ],
+            }
+        ],
+    }
+    with pytest.raises(SpecValidationError) as exc:
+        compile_spec(spec)
+    assert any(e.code == "opening_no_wall" for e in exc.value.errors)
+
+
+def test_elevator_room_type_compiles_like_any_other_room():
+    spec = _lightwell_spec()
+    spec["storeys"][0]["rooms"].append(
+        {"id": "lift", "type": "elevator", "rect": {"x": 4000, "y": 0, "w": 0, "d": 0}}
+    )
+    # give it real, valid dimensions instead of the placeholder above
+    spec["storeys"][0]["rooms"][-1]["rect"] = {"x": 0, "y": 4200, "w": 1200, "d": 1500}
+    model = compile_spec(spec)
+    lift = next(r for r in model.storeys[0].rooms if r.id == "lift")
+    assert lift.type == "elevator"

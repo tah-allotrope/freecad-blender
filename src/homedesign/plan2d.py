@@ -19,7 +19,7 @@ ROOM_FILL = {
     "bedroom": "#e8d9c3", "bathroom": "#cfe3e8", "kitchen": "#e8cfc3",
     "living": "#e3e8cf", "dining": "#e3e8cf", "hall": "#eeeeee",
     "stairwell": "#d9d9d9", "garage": "#c9c9c9", "balcony": "#d9e8d0",
-    "office": "#e0e0d0", "storage": "#dcdcdc",
+    "office": "#e0e0d0", "storage": "#dcdcdc", "elevator": "#c9c9d9",
 }
 
 

@@ -41,7 +41,32 @@
             "properties": {
               "type": {"type": "string", "enum": ["flat", "gable", "shed"]},
               "pitch_deg": {"type": "number", "minimum": 0, "maximum": 60, "default": 20},
-              "overhang_mm": {"type": "number", "minimum": 0, "default": 300}
+              "overhang_mm": {"type": "number", "minimum": 0, "default": 300},
+              "rect": {
+                "type": "object",
+                "required": ["x", "y", "w", "d"],
+                "additionalProperties": false,
+                "properties": {
+                  "x": {"type": "number", "minimum": 0},
+                  "y": {"type": "number", "minimum": 0},
+                  "w": {"type": "number", "exclusiveMinimum": 0},
+                  "d": {"type": "number", "exclusiveMinimum": 0}
+                }
+              },
+              "voids": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["x", "y", "w", "d"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {"type": "number", "minimum": 0},
+                    "y": {"type": "number", "minimum": 0},
+                    "w": {"type": "number", "exclusiveMinimum": 0},
+                    "d": {"type": "number", "exclusiveMinimum": 0}
+                  }
+                }
+              }
             }
           },
           "stairs": {
@@ -64,7 +89,7 @@
                 "type": {
                   "type": "string",
                   "enum": ["bedroom", "bathroom", "kitchen", "living", "dining", "hall",
-                            "stairwell", "garage", "balcony", "office", "storage"]
+                            "stairwell", "garage", "balcony", "office", "storage", "elevator"]
                 },
                 "rect": {
                   "type": "object",
@@ -108,6 +133,11 @@
                   "minItems": 2,
                   "maxItems": 2,
                   "items": {"type": "string"}
+                },
+                "side": {
+                  "type": "string",
+                  "enum": ["north", "south", "east", "west"],
+                  "description": "Only meaningful when one 'between' endpoint is 'exterior'; north=min-y, south=max-y, west=min-x, east=max-x."
                 },
                 "width_mm": {"type": "number", "exclusiveMinimum": 0, "default": 900},
                 "sill_mm": {"type": "number", "minimum": 0, "default": 0},

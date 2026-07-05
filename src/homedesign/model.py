@@ -88,6 +88,7 @@ class Roof:
     w: float
     d: float
     base_z: float
+    voids: list[Rect] = field(default_factory=list)
 
 
 @dataclass
@@ -130,7 +131,11 @@ class CompiledModel:
                     direction=st["direction"],
                     treads=[Tread(**t) for t in st["treads"]],
                 )
-            roof = Roof(**s["roof"]) if s.get("roof") else None
+            roof = None
+            if s.get("roof"):
+                roof_data = dict(s["roof"])
+                roof_data["voids"] = [Rect(**v) for v in roof_data.get("voids", [])]
+                roof = Roof(**roof_data)
             storeys.append(
                 Storey(
                     level=s["level"],
