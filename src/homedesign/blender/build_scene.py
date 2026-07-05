@@ -128,8 +128,8 @@ def add_interior_lights(model, structure):
             cy = room["rect"]["y"] / 1000 + room["rect"]["d"] / 2000
             area_m2 = (room["rect"]["w"] / 1000) * (room["rect"]["d"] / 1000)
             light_data = bpy.data.lights.new(f"light_{room['id']}", type="POINT")
-            light_data.energy = max(60.0, area_m2 * 25.0)
-            light_data.shadow_soft_size = 0.0
+            light_data.energy = min(400.0, max(60.0, area_m2 * 12.0))
+            light_data.shadow_soft_size = 0.4
             light = bpy.data.objects.new(f"light_{room['id']}", light_data)
             light.location = (cx, cy, ceiling_z)
             structure.objects.link(light)
@@ -154,11 +154,14 @@ def _find_default_interior_room(model):
 
 
 def _build_exterior_front_camera(name, model, plot_w, plot_d, total_height, centroid):
+    # Framed off the street frontage (plot_w), not max(plot_w, plot_d) -- on a
+    # long narrow tube house the depth would otherwise push the camera far
+    # enough back that the blank party-wall side dominates the shot.
     cam_data = bpy.data.cameras.new(name)
     cam = bpy.data.objects.new(name, cam_data)
-    dist = max(plot_w, plot_d) * 1.6 + 5
-    cam.location = (centroid[0] - dist * 0.7, centroid[1] - dist * 0.9, total_height * 0.9 + 2)
-    _point_at(cam, centroid)
+    dist = plot_w * 3.0 + total_height * 1.2 + 6
+    cam.location = (centroid[0] - plot_w * 0.9, -dist * 0.55, total_height * 0.55 + 1.5)
+    _point_at(cam, (centroid[0], plot_d * 0.08, total_height * 0.45))
     bpy.context.scene.collection.objects.link(cam)
     return cam
 
@@ -167,25 +170,41 @@ def _build_exterior_aerial_camera(name, model, plot_w, plot_d, total_height, cen
     cam_data = bpy.data.cameras.new(name)
     cam = bpy.data.objects.new(name, cam_data)
     dist = max(plot_w, plot_d) * 1.4 + 5
-    cam.location = (centroid[0] + dist * 0.5, centroid[1] - dist * 0.5, total_height * 2.2 + 6)
+    cam.location = (centroid[0] + dist * 0.5, centroid[1] - dist * 0.5, total_height * 3.0 + 6)
     _point_at(cam, centroid)
     bpy.context.scene.collection.objects.link(cam)
     return cam
 
 
 def _build_room_camera(name, storey, room):
-    cx = room["rect"]["x"] / 1000 + room["rect"]["w"] / 2000
-    cy = room["rect"]["y"] / 1000 + room["rect"]["d"] / 2000
+    """Place the camera near one short-axis wall, centered on the short axis,
+    aimed down the long axis -- a corner-and-centroid heuristic breaks down
+    on this tool's elongated tube-house rooms (e.g. 4m x 9.5m), putting the
+    camera nearly against a wall."""
+    x = room["rect"]["x"] / 1000
+    y = room["rect"]["y"] / 1000
+    w = room["rect"]["w"] / 1000
+    d = room["rect"]["d"] / 1000
     base_z = storey["base_z"] / 1000
-    room_w = room["rect"]["w"] / 1000
-    room_d = room["rect"]["d"] / 1000
-    cam_data = bpy.data.cameras.new(name)
-    cam = bpy.data.objects.new(name, cam_data)
-    cam_x = room["rect"]["x"] / 1000 + min(1.2, room_w * 0.25)
-    cam_y = room["rect"]["y"] / 1000 + min(1.2, room_d * 0.25)
     eye_z = base_z + 1.5
+
+    long_is_depth = d >= w
+    long_dim = d if long_is_depth else w
+    short_dim = w if long_is_depth else d
+    clearance = max(0.5, min(short_dim * 0.4, long_dim * 0.15))
+
+    if long_is_depth:
+        cam_x, cam_y = x + w / 2, y + clearance
+        target = (x + w / 2, y + long_dim * 0.65, eye_z - 0.2)
+    else:
+        cam_x, cam_y = x + clearance, y + d / 2
+        target = (x + long_dim * 0.65, y + d / 2, eye_z - 0.2)
+
+    cam_data = bpy.data.cameras.new(name)
+    cam_data.lens = 20
+    cam = bpy.data.objects.new(name, cam_data)
     cam.location = (cam_x, cam_y, eye_z)
-    _point_at(cam, (cx, cy, eye_z - 0.3))
+    _point_at(cam, target)
     bpy.context.scene.collection.objects.link(cam)
     return cam
 

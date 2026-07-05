@@ -1,0 +1,977 @@
+{
+  "meta": {
+    "name": "tubehouse-dream",
+    "style": "modern-minimal",
+    "views": [
+      {
+        "name": "exterior_front",
+        "kind": "exterior_front"
+      },
+      {
+        "name": "exterior_aerial",
+        "kind": "exterior_aerial"
+      },
+      {
+        "name": "lightwell",
+        "kind": "room",
+        "room_id": "hall"
+      },
+      {
+        "name": "living",
+        "kind": "room",
+        "room_id": "living_f2"
+      },
+      {
+        "name": "kitchen_dining",
+        "kind": "room",
+        "room_id": "kitchen_f2"
+      },
+      {
+        "name": "master_suite",
+        "kind": "room",
+        "room_id": "master_f3"
+      },
+      {
+        "name": "kids_room",
+        "kind": "room",
+        "room_id": "kid_bed_f3"
+      },
+      {
+        "name": "office",
+        "kind": "room",
+        "room_id": "office_f4"
+      },
+      {
+        "name": "guest_room",
+        "kind": "room",
+        "room_id": "guestbed_f4"
+      }
+    ]
+  },
+  "site": {
+    "plot_width_mm": 4000,
+    "plot_depth_mm": 25000
+  },
+  "storeys": [
+    {
+      "level": 0,
+      "name": "Ground Floor - Garage & Lease",
+      "height_mm": 4000,
+      "stairs": {
+        "room": "stair",
+        "direction": "up"
+      },
+      "rooms": [
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "rect": {
+            "x": 0,
+            "y": 11000,
+            "w": 1100,
+            "d": 1200
+          }
+        },
+        {
+          "id": "stair",
+          "type": "stairwell",
+          "rect": {
+            "x": 0,
+            "y": 12200,
+            "w": 1100,
+            "d": 1300
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "rect": {
+            "x": 1100,
+            "y": 11000,
+            "w": 900,
+            "d": 2500
+          }
+        },
+        {
+          "id": "garage",
+          "type": "garage",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "d": 7000
+          }
+        },
+        {
+          "id": "entry_hall",
+          "type": "hall",
+          "rect": {
+            "x": 0,
+            "y": 7000,
+            "w": 4000,
+            "d": 4000
+          }
+        },
+        {
+          "id": "lease_gf",
+          "type": "office",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 4000,
+            "d": 11500
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "elevator"
+          ],
+          "width_mm": 1000
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stair"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "garage",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 3000
+        },
+        {
+          "type": "door",
+          "between": [
+            "garage",
+            "entry_hall"
+          ],
+          "width_mm": 1200
+        },
+        {
+          "type": "door",
+          "between": [
+            "entry_hall",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "lease_gf",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "entry_hall",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 1500,
+          "sill_mm": 1000
+        },
+        {
+          "type": "window",
+          "between": [
+            "lease_gf",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 1500,
+          "sill_mm": 1000
+        },
+        {
+          "type": "window",
+          "between": [
+            "garage",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 1000,
+          "sill_mm": 1800
+        }
+      ]
+    },
+    {
+      "level": 1,
+      "name": "Floor 1 - Lease Studio",
+      "height_mm": 3400,
+      "stairs": {
+        "room": "stair",
+        "direction": "up_and_down"
+      },
+      "rooms": [
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "rect": {
+            "x": 0,
+            "y": 11000,
+            "w": 1100,
+            "d": 1200
+          }
+        },
+        {
+          "id": "stair",
+          "type": "stairwell",
+          "rect": {
+            "x": 0,
+            "y": 12200,
+            "w": 1100,
+            "d": 1300
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "rect": {
+            "x": 1100,
+            "y": 11000,
+            "w": 900,
+            "d": 2500
+          }
+        },
+        {
+          "id": "lease_f1",
+          "type": "office",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "d": 11000
+          }
+        },
+        {
+          "id": "lease_f1_rear",
+          "type": "office",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 4000,
+            "d": 10000
+          }
+        },
+        {
+          "id": "wc_f1",
+          "type": "bathroom",
+          "rect": {
+            "x": 0,
+            "y": 23500,
+            "w": 2000,
+            "d": 1500
+          }
+        },
+        {
+          "id": "storage_f1",
+          "type": "storage",
+          "rect": {
+            "x": 2000,
+            "y": 23500,
+            "w": 2000,
+            "d": 1500
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "elevator"
+          ],
+          "width_mm": 1000
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stair"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "lease_f1",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "lease_f1_rear",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "lease_f1_rear",
+            "wc_f1"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "lease_f1_rear",
+            "storage_f1"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "lease_f1",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 1500,
+          "sill_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "lease_f1_rear",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 1500,
+          "sill_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "lease_f1",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 3000,
+          "sill_mm": 900
+        }
+      ]
+    },
+    {
+      "level": 2,
+      "name": "Floor 2 - Living, Kitchen & Dining",
+      "height_mm": 3400,
+      "stairs": {
+        "room": "stair",
+        "direction": "up_and_down"
+      },
+      "rooms": [
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "rect": {
+            "x": 0,
+            "y": 11000,
+            "w": 1100,
+            "d": 1200
+          }
+        },
+        {
+          "id": "stair",
+          "type": "stairwell",
+          "rect": {
+            "x": 0,
+            "y": 12200,
+            "w": 1100,
+            "d": 1300
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "rect": {
+            "x": 1100,
+            "y": 11000,
+            "w": 900,
+            "d": 2500
+          }
+        },
+        {
+          "id": "balcony_f2",
+          "type": "balcony",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "d": 1500
+          }
+        },
+        {
+          "id": "living_f2",
+          "type": "living",
+          "rect": {
+            "x": 0,
+            "y": 1500,
+            "w": 4000,
+            "d": 9500
+          }
+        },
+        {
+          "id": "kitchen_f2",
+          "type": "kitchen",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 4000,
+            "d": 4500
+          }
+        },
+        {
+          "id": "dining_f2",
+          "type": "dining",
+          "rect": {
+            "x": 0,
+            "y": 18000,
+            "w": 4000,
+            "d": 5000
+          }
+        },
+        {
+          "id": "wc_f2",
+          "type": "bathroom",
+          "rect": {
+            "x": 0,
+            "y": 23000,
+            "w": 2000,
+            "d": 2000
+          }
+        },
+        {
+          "id": "utility_f2",
+          "type": "storage",
+          "rect": {
+            "x": 2000,
+            "y": 23000,
+            "w": 2000,
+            "d": 2000
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "elevator"
+          ],
+          "width_mm": 1000
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stair"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "living_f2",
+            "balcony_f2"
+          ],
+          "width_mm": 2400
+        },
+        {
+          "type": "door",
+          "between": [
+            "living_f2",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "kitchen_f2",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "kitchen_f2",
+            "dining_f2"
+          ],
+          "width_mm": 1500
+        },
+        {
+          "type": "door",
+          "between": [
+            "dining_f2",
+            "wc_f2"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "dining_f2",
+            "utility_f2"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "balcony_f2",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 3400,
+          "sill_mm": 0
+        },
+        {
+          "type": "window",
+          "between": [
+            "living_f2",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 1500,
+          "sill_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "kitchen_f2",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 1500,
+          "sill_mm": 900
+        }
+      ]
+    },
+    {
+      "level": 3,
+      "name": "Floor 3 - Master Suite & Kid's Room",
+      "height_mm": 3400,
+      "stairs": {
+        "room": "stair",
+        "direction": "up_and_down"
+      },
+      "rooms": [
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "rect": {
+            "x": 0,
+            "y": 11000,
+            "w": 1100,
+            "d": 1200
+          }
+        },
+        {
+          "id": "stair",
+          "type": "stairwell",
+          "rect": {
+            "x": 0,
+            "y": 12200,
+            "w": 1100,
+            "d": 1300
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "rect": {
+            "x": 1100,
+            "y": 11000,
+            "w": 900,
+            "d": 2500
+          }
+        },
+        {
+          "id": "balcony_f3",
+          "type": "balcony",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "d": 1500
+          }
+        },
+        {
+          "id": "master_f3",
+          "type": "bedroom",
+          "rect": {
+            "x": 0,
+            "y": 1500,
+            "w": 2600,
+            "d": 9500
+          }
+        },
+        {
+          "id": "ensuite_f3",
+          "type": "bathroom",
+          "rect": {
+            "x": 2600,
+            "y": 1500,
+            "w": 1400,
+            "d": 4750
+          }
+        },
+        {
+          "id": "walkin_f3",
+          "type": "storage",
+          "rect": {
+            "x": 2600,
+            "y": 6250,
+            "w": 1400,
+            "d": 4750
+          }
+        },
+        {
+          "id": "kid_bed_f3",
+          "type": "bedroom",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 2800,
+            "d": 8000
+          }
+        },
+        {
+          "id": "bath_f3",
+          "type": "bathroom",
+          "rect": {
+            "x": 2800,
+            "y": 13500,
+            "w": 1200,
+            "d": 3000
+          }
+        },
+        {
+          "id": "laundry_f3",
+          "type": "storage",
+          "rect": {
+            "x": 2800,
+            "y": 16500,
+            "w": 1200,
+            "d": 5000
+          }
+        },
+        {
+          "id": "flex_lounge_f3",
+          "type": "living",
+          "rect": {
+            "x": 0,
+            "y": 21500,
+            "w": 4000,
+            "d": 3500
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "elevator"
+          ],
+          "width_mm": 1000
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stair"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "master_f3",
+            "balcony_f3"
+          ],
+          "width_mm": 2400
+        },
+        {
+          "type": "door",
+          "between": [
+            "master_f3",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "master_f3",
+            "ensuite_f3"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "master_f3",
+            "walkin_f3"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "kid_bed_f3",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "kid_bed_f3",
+            "bath_f3"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "kid_bed_f3",
+            "laundry_f3"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "kid_bed_f3",
+            "flex_lounge_f3"
+          ],
+          "width_mm": 1200
+        },
+        {
+          "type": "window",
+          "between": [
+            "balcony_f3",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 3400,
+          "sill_mm": 0
+        },
+        {
+          "type": "window",
+          "between": [
+            "walkin_f3",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 900,
+          "sill_mm": 1500
+        },
+        {
+          "type": "window",
+          "between": [
+            "kid_bed_f3",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 700,
+          "sill_mm": 900
+        }
+      ]
+    },
+    {
+      "level": 4,
+      "name": "Floor 4 - Office, Guest Room & Roof Terrace",
+      "height_mm": 3400,
+      "stairs": {
+        "room": "stair",
+        "direction": "down"
+      },
+      "roof": {
+        "type": "flat",
+        "overhang_mm": 300,
+        "rect": {
+          "x": 0,
+          "y": 11000,
+          "w": 4000,
+          "d": 14000
+        },
+        "voids": [
+          {
+            "x": 2000,
+            "y": 11000,
+            "w": 2000,
+            "d": 2500
+          }
+        ]
+      },
+      "rooms": [
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "rect": {
+            "x": 0,
+            "y": 11000,
+            "w": 1100,
+            "d": 1200
+          }
+        },
+        {
+          "id": "stair",
+          "type": "stairwell",
+          "rect": {
+            "x": 0,
+            "y": 12200,
+            "w": 1100,
+            "d": 1300
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "rect": {
+            "x": 1100,
+            "y": 11000,
+            "w": 900,
+            "d": 2500
+          }
+        },
+        {
+          "id": "terrace_f4",
+          "type": "balcony",
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 4000,
+            "d": 11000
+          }
+        },
+        {
+          "id": "office_f4",
+          "type": "office",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 4000,
+            "d": 5000
+          }
+        },
+        {
+          "id": "guestbed_f4",
+          "type": "bedroom",
+          "rect": {
+            "x": 0,
+            "y": 18500,
+            "w": 4000,
+            "d": 5000
+          }
+        },
+        {
+          "id": "guestbath_f4",
+          "type": "bathroom",
+          "rect": {
+            "x": 0,
+            "y": 23500,
+            "w": 2000,
+            "d": 1500
+          }
+        },
+        {
+          "id": "storage_f4",
+          "type": "storage",
+          "rect": {
+            "x": 2000,
+            "y": 23500,
+            "w": 2000,
+            "d": 1500
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "elevator"
+          ],
+          "width_mm": 1000
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stair"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "terrace_f4",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "office_f4",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "office_f4",
+            "guestbed_f4"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "guestbed_f4",
+            "guestbath_f4"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "guestbed_f4",
+            "storage_f4"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "office_f4",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ]
+    }
+  ]
+}
