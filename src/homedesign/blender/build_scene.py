@@ -106,16 +106,19 @@ def build_environment(model, structure):
     bg.inputs[1].default_value = 1.0
 
     sun_data = bpy.data.lights.new("Sun", type="SUN")
-    sun_data.energy = 3.5
+    sun_data.energy = 2.0
     sun = bpy.data.objects.new("Sun", sun_data)
     sun.rotation_euler = (math.radians(55), 0, math.radians(35))
     bpy.context.scene.collection.objects.link(sun)
 
+    # Kept weak and far off the front facade -- at higher energy this light
+    # bled straight through window/door openings and blew out interior
+    # renders (walls clip to white and read as invisible against the sky).
     fill_data = bpy.data.lights.new("Fill", type="AREA")
-    fill_data.energy = 200
+    fill_data.energy = 25
     fill_data.size = 5
     fill = bpy.data.objects.new("Fill", fill_data)
-    fill.location = (plot_w / 2, -plot_d * 0.5, plot_d)
+    fill.location = (plot_w / 2, -plot_d * 1.2, plot_d)
     bpy.context.scene.collection.objects.link(fill)
 
 
@@ -127,9 +130,13 @@ def add_interior_lights(model, structure):
             cx = room["rect"]["x"] / 1000 + room["rect"]["w"] / 2000
             cy = room["rect"]["y"] / 1000 + room["rect"]["d"] / 2000
             area_m2 = (room["rect"]["w"] / 1000) * (room["rect"]["d"] / 1000)
-            light_data = bpy.data.lights.new(f"light_{room['id']}", type="POINT")
-            light_data.energy = min(400.0, max(60.0, area_m2 * 12.0))
-            light_data.shadow_soft_size = 0.4
+            # Small enclosed rooms with high-albedo white walls amplify point-light
+            # energy via multi-bounce GI -- energies in the old 60-400W range blew
+            # every interior render out to solid white. Softer AREA light + lower
+            # cap keeps rooms lit without the runaway feedback.
+            light_data = bpy.data.lights.new(f"light_{room['id']}", type="AREA")
+            light_data.energy = min(90.0, max(20.0, area_m2 * 2.2))
+            light_data.size = 0.6
             light = bpy.data.objects.new(f"light_{room['id']}", light_data)
             light.location = (cx, cy, ceiling_z)
             structure.objects.link(light)
@@ -156,11 +163,15 @@ def _find_default_interior_room(model):
 def _build_exterior_front_camera(name, model, plot_w, plot_d, total_height, centroid):
     # Framed off the street frontage (plot_w), not max(plot_w, plot_d) -- on a
     # long narrow tube house the depth would otherwise push the camera far
-    # enough back that the blank party-wall side dominates the shot.
+    # enough back that the blank party-wall side dominates the shot. Lateral
+    # offset kept small (0.3x, not 0.9x) so the shot reads as a near-elevation
+    # of the street facade -- a wider offset put the light-well-facing side
+    # windows (which recess by a different amount on every floor) in frame at
+    # a steep grazing angle, where they read as disconnected floating shapes.
     cam_data = bpy.data.cameras.new(name)
     cam = bpy.data.objects.new(name, cam_data)
     dist = plot_w * 3.0 + total_height * 1.2 + 6
-    cam.location = (centroid[0] - plot_w * 0.9, -dist * 0.55, total_height * 0.55 + 1.5)
+    cam.location = (centroid[0] - plot_w * 0.3, -dist * 0.55, total_height * 0.55 + 1.5)
     _point_at(cam, (centroid[0], plot_d * 0.08, total_height * 0.45))
     bpy.context.scene.collection.objects.link(cam)
     return cam
@@ -250,8 +261,13 @@ def render(model_name, cams, out_dir, profile):
     scene.cycles.samples = profile_cfg["samples"]
     scene.render.resolution_x, scene.render.resolution_y = profile_cfg["res"]
     scene.cycles.use_denoising = True
-    scene.view_settings.view_transform = "Standard"
-    scene.view_settings.exposure = 0.2
+    # Filmic compresses highlights gracefully; "Standard" hard-clips to pure
+    # white, which is what made bright interior walls disappear into the sky.
+    try:
+        scene.view_settings.view_transform = "Filmic"
+    except TypeError:
+        scene.view_settings.view_transform = "Standard"
+    scene.view_settings.exposure = 0.0
     try:
         scene.cycles.device = "GPU"
     except Exception:

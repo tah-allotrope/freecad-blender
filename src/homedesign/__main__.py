@@ -91,6 +91,31 @@ def cmd_build(args) -> int:
     return 0
 
 
+def cmd_pdf(args) -> int:
+    from . import pdf as pdf_mod
+
+    spec_path = Path(args.spec)
+    model, errors = _validate_and_compile(spec_path)
+    if errors:
+        _print_errors(errors)
+        return 1
+    out_dir = REPO_ROOT / "output"
+
+    svg_dir = out_dir / "svg"
+    if not all((svg_dir / f"{model.name}_f{s.level}.svg").exists() for s in model.storeys):
+        plan2d.write_plans(model, out_dir)
+
+    brief_path = Path(args.brief) if args.brief else REPO_ROOT / "spec" / "briefs" / f"{model.name}.json"
+    if not brief_path.exists():
+        print(f"brief copy not found: {brief_path}", file=sys.stderr)
+        return 1
+    brief = json.loads(brief_path.read_text())
+
+    pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero)
+    print(str(pdf_path))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="homedesign")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -108,6 +133,12 @@ def main(argv=None) -> int:
     p_build.add_argument("--final", action="store_true", help="full-quality render instead of preview")
     p_build.add_argument("--floor", type=int, default=None)
     p_build.set_defaults(func=cmd_build)
+
+    p_pdf = sub.add_parser("pdf", help="assemble the architect-brief PDF")
+    p_pdf.add_argument("spec")
+    p_pdf.add_argument("--brief", default=None, help="path to brief copy JSON (default: spec/briefs/<name>.json)")
+    p_pdf.add_argument("--hero", default=None, help="view name to use as cover hero image")
+    p_pdf.set_defaults(func=cmd_pdf)
 
     args = parser.parse_args(argv)
     return args.func(args)

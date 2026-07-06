@@ -1,0 +1,21 @@
+{
+  "title": "Tubehouse Dream Home",
+  "subtitle": "A 4m x 25m, 5-storey mixed-use urban tube house with a full-height light well",
+  "narrative": [
+    "This brief sets out a 5-storey tube house on a narrow 4m x 25m urban plot, a typology built to bring daylight and cross-ventilation deep into a long, party-wall-bound footprint in a hot-humid climate.",
+    "A full-height light well runs through the middle of the tube beside the stair and elevator core, open to the sky from the ground floor to the roof terrace. It admits daylight to the deep mid-plan rooms on every level and drives stack-effect ventilation, drawing warm air up and out through the open roof void.",
+    "The ground and first floors are leased commercial space (garage-fronted retail/office bay and a lease studio), stacked below three private family floors: living/kitchen/dining, a master suite and kid's room, and a top-floor office and guest room opening onto a partial roof terrace.",
+    "Facade orientation is to be confirmed against the actual site; the glazed street elevation is designed for adjustable shading (louvres or deep overhangs) to be tuned once solar orientation is known.",
+    "The vertical circulation core (stair, elevator, light well) is shared and stacks identically on every storey, with a lockable family lobby at Floor 2 separating the private residence from the lease floors below."
+  ],
+  "requirements": [
+    "Passenger elevator, family-sized (~1.2m x 1.5m shaft), stopping at all 5 levels.",
+    "Light-well glazing (where rooms face the well) must be operable for ventilation and detailed for condensation control given the hot-humid climate.",
+    "Light well requires a drainage plan at its ground-floor base (roof rainwater falling through the open void) and waterproofing at every floor edge that abuts it.",
+    "Party walls (both long sides and rear) are structural masonry/concrete with no openings; all glazing is on the street facade or into the light well.",
+    "A vertical services riser (electrical, plumbing, data) should run alongside the stair/elevator core, accessible from each floor's core zone.",
+    "Facade orientation is not yet fixed to a real site; confirm solar orientation before finalizing shading design for the street-facing glazing.",
+    "Lease floors (ground + Floor 1) need access separation from the family residence above: a lockable lobby door at Floor 2 restricts the shared stair/elevator core to residents beyond that point.",
+    "No cost or budget content is included in this brief; it is a design-intent and requirements document only."
+  ]
+}

@@ -194,10 +194,11 @@ def print_html_to_pdf(html_path: Path, pdf_path: Path) -> None:
         raise RuntimeError(f"PDF print failed (exit {result.returncode}): {result.stderr}")
 
 
-def build_brief(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path) -> Path:
+def build_brief(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path,
+                 hero_view: str | None = None) -> Path:
     pdf_dir = out_dir / "pdf"
     pdf_dir.mkdir(parents=True, exist_ok=True)
-    html = render_brief_html(model, brief, out_dir, spec_path)
+    html = render_brief_html(model, brief, out_dir, spec_path, hero_view=hero_view)
     html_path = pdf_dir / f"{model.name}-brief.html"
     html_path.write_text(html, encoding="utf-8")
     pdf_path = pdf_dir / f"{model.name}-brief.pdf"

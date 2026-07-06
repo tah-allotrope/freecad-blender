@@ -95,6 +95,25 @@ Cheat sheet:
    shrank the office by the same amount") rather than re-describing the
    whole house.
 
+## Architect-brief PDF
+
+Once a spec has a final render gallery (`meta.views`, built with `--final`),
+assemble an A3-landscape architect brief:
+```
+PYTHONPATH=src python -m homedesign pdf output/specs/<slug>.json
+```
+This compiles the spec, regenerates SVG/DXF plans if missing, reads a brief
+copy file at `spec/briefs/<slug>.json` (`{title, subtitle, narrative: [...],
+requirements: [...]}` — write one per house, no budget content), and prints
+`output/pdf/<slug>-brief.html` to `output/pdf/<slug>-brief.pdf` via a headless
+Chromium browser (Edge or Chrome, auto-detected; override with
+`PDF_BROWSER_CMD`). The PDF has one page each for cover (hero render), design
+narrative, room schedule (per-room area + floor totals), one plan page per
+storey (inline vector SVG), a render gallery (2 images/page), requirements,
+and a handover appendix listing the DXF files and source spec. Pass
+`--hero <view name>` to pick the cover image (default: first `meta.views`
+entry) and `--brief <path>` to use a brief copy file at a different path.
+
 ## Known limitations (by design, not bugs)
 
 - Rectilinear geometry only: axis-aligned walls, flat/gable/shed roofs, no

@@ -1,7 +1,7 @@
 """Parametric door/window objects. Runs inside Blender."""
 import bpy
 
-from .geom import make_box
+from .geom import make_box, make_hinged_box
 from .materials import get_material
 
 FRAME_DEPTH = 0.06
@@ -49,12 +49,16 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
                       width - 2 * FRAME_WIDTH, GLASS_THICKNESS, height - 2 * FRAME_WIDTH, collection, glass_mat)
     else:
         leaf_mat = get_material(style, "door_leaf")
-        # Leaf hinged open ~20deg for a livelier render: place it just inside the frame,
-        # rotated about one jamb rather than filling the void flat.
+        # Leaf hinged open ~20deg for a livelier render: swing it about the
+        # near jamb rather than filling the void flat. Rotation is baked into
+        # the mesh about that hinge line (see make_hinged_box) -- rotating
+        # the object itself would pivot around the world origin instead.
         leaf_w = width - 2 * FRAME_WIDTH
         if span_axis == "y":
-            leaf = make_box(f"{name_base}_leaf", x0 + thickness / 2, y0 + FRAME_WIDTH, z, DOOR_LEAF_THICKNESS, leaf_w, height, collection, leaf_mat)
-            leaf.rotation_euler[2] = 0.35
+            hinge_x, hinge_y = x0 + thickness / 2, y0 + FRAME_WIDTH
+            make_hinged_box(f"{name_base}_leaf", x0 + thickness / 2, y0 + FRAME_WIDTH, z,
+                             DOOR_LEAF_THICKNESS, leaf_w, height, hinge_x, hinge_y, 0.35, collection, leaf_mat)
         else:
-            leaf = make_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, y0 + thickness / 2, z, leaf_w, DOOR_LEAF_THICKNESS, height, collection, leaf_mat)
-            leaf.rotation_euler[2] = -0.35
+            hinge_x, hinge_y = x0 + FRAME_WIDTH, y0 + thickness / 2
+            make_hinged_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, y0 + thickness / 2, z,
+                             leaf_w, DOOR_LEAF_THICKNESS, height, hinge_x, hinge_y, -0.35, collection, leaf_mat)
