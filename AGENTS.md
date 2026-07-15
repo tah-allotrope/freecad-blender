@@ -10,15 +10,12 @@
 - Use `plans/home-design-to-architect-workflow.md` for the end-to-end user workflow.
 
 ## Key Entry Points
-- `spec/floorplan-spec.json` is the source of truth for floors, rooms, doors, and elements.
-- `src/generate_floorplan.py` generates floor plans, the stacked massing model, the facade elevation, and export artifacts.
-- `src/floorplan_utils.py` and `src/facade_utils.py` hold pure logic that should be tested outside FreeCAD.
-- `src/blender_export_utils.py` exports OBJ/MTL from FreeCAD for Blender consumption.
-- `src/blender_materials.py` defines the material palette and room/zone-to-material mappings.
-- `src/setup_blender_scene.py` assembles a Blender scene (import OBJ, apply materials, add lights/camera).
-- `src/render_blender.py` runs headless Cycles render from the assembled scene.
-- `spec/blender_materials.json` is the data-driven material config sidecar (room/zone/obj group -> material assignments, lighting, camera, render).
-- `run.sh` is the FreeCAD batch runner; `run_blender.sh` is the Blender visualization runner.
+- `src/homedesign/` — Python package for the full spec-to-render pipeline (compiler, plan2d, Blender scene build, PDF export). Run via `python -m homedesign`.
+- `src/homedesign/blender/` — Blender Python API scripts (build_scene, materials, joinery, roof, etc.), executed headlessly via `blender --background --python ...`.
+- `spec/` — JSON source-of-truth specs for floor plans and material configs.
+- `output/png/` — Generated render gallery.
+- `.claude/mcp.json` — Claude Code MCP config for BlenderMCP interactive mode (see setup below).
+- `run.sh` executes the FreeCAD pipeline (legacy, being phased out).
 
 ## Working Rules
 - Prefer minimal, spec-driven changes; do not redesign floors unless the task explicitly asks for it.
@@ -34,3 +31,34 @@
 ## Progressive Docs
 - Workflow/status details: `plans/PROGRESS.md`, `plans/tubehouse-freecad-mcp-workflow.md`
 - Runtime/setup details: `freecad-mcp-guide.md`, `docs/HOW_TO_RUN.txt`
+
+## Blender MCP Setup
+
+[BlenderMCP](https://github.com/ahujasid/blender-mcp) connects Claude AI to Blender via the Model Context Protocol, enabling interactive 3D modelling and scene manipulation through natural language.
+
+### Components
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| **Blender Addon** | ✅ Installed | `C:\Users\tukum\Blender\blender-4.1.1-windows-x64\4.1\scripts\addons\blender_mcp_addon.py` |
+| **MCP Server** | ✅ Available | `uvx blender-mcp` (managed by uv) |
+| **Claude Code Config** | ✅ Active | `.claude/mcp.json` + global `~/.claude.json` |
+
+### Workflow
+
+1. **Start Blender** — open Blender GUI, the addon auto-starts the MCP socket server (port 9876)
+2. **Use Claude Code** — `claude` in this project directory auto-loads the Blender MCP tools
+3. **Interact** — ask Claude to create/modify objects, apply materials, set up lighting, render
+
+### Manual Addon Enable (one-time)
+
+If the addon isn't showing in Blender:
+1. Open Blender → Edit → Preferences → Add-ons
+2. Search "Blender MCP" or locate `blender_mcp_addon.py`
+3. Check the box to enable
+
+### Environment Variables
+
+- `BLENDER_HOST` — default `localhost`
+- `BLENDER_PORT` — default `9876`
+- `DISABLE_TELEMETRY=true` — set in config to opt out of anonymous usage data
