@@ -1,3 +1,7 @@
+---
+status: "superseded — replaced by plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md, which deleted the entire FreeCAD/MCP pipeline this guide depends on (8a8e206) in favour of the Python+Blender /homedesign tool; the architect handoff package it describes is now produced by `python -m homedesign pdf`"
+---
+
 # Home Design to Architect Workflow
 # FreeCAD + Claude MCP — End-to-End Plan
 

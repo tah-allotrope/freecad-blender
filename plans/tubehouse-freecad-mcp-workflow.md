@@ -1,3 +1,7 @@
+---
+status: "superseded — replaced by plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md; FreeCAD, run.sh, opencode.json and the freecad-mcp guide were all deleted in 8a8e206, so every command in this workflow no longer exists"
+---
+
 # Tubehouse FreeCAD + MCP Workflow Plan
 ### 4 m × 25 m — 5 storeys — Vietnamese nhà ống
 *Written for a complete FreeCAD beginner using Claude / opencode as the AI driver*

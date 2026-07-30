@@ -1,7 +1,7 @@
 ---
 title: "Blender Install and Integration Demo"
 date: "2026-05-09"
-status: "draft"
+status: "complete — Blender 4.1.1 installed and the full FreeCAD→Blender run executed in ddf4e1e (reports/2026-05-09-e2e-blender-validation.html); output/obj/ F0-F4 + tubehouse_full_3d.obj/mtl, output/blend/tubehouse_scene.blend and output/png/tubehouse_blender_render.png (1.1 MB, 1920x1080) all exist; only the optional GUI open (TASK-03-02) is unverified"
 request: "Install Blender, generate tube-house OBJ output from existing FreeCAD model, run Blender scene assembly and render"
 plan_type: "multi-phase"
 research_inputs:
@@ -56,10 +56,10 @@ Install Blender on the local machine, use FreeCAD (via MCP) to generate OBJ expo
 Download and install Blender 4.x on Windows, verify the CLI is accessible.
 
 **Tasks**
-- [ ] TASK-01-01: Download Blender 4.1 LTS from https://www.blender.org/download/ (MSI installer for Windows).
-- [ ] TASK-01-02: Install Blender to the default location (`C:\Program Files\Blender Foundation\Blender 4.1\`).
-- [ ] TASK-01-03: Verify `blender --version` works from a terminal, or set `BLENDER_CMD` env var to the full path.
-- [ ] TASK-01-04: Run `blender --background --python -c "import bpy; print(bpy.app.version_string)"` to confirm the Python API is functional.
+- [x] TASK-01-01: Download Blender 4.1 LTS from https://www.blender.org/download/ (MSI installer for Windows).
+- [x] TASK-01-02: Install Blender to the default location (`C:\Program Files\Blender Foundation\Blender 4.1\`).
+- [x] TASK-01-03: Verify `blender --version` works from a terminal, or set `BLENDER_CMD` env var to the full path.
+- [x] TASK-01-04: Run `blender --background --python -c "import bpy; print(bpy.app.version_string)"` to confirm the Python API is functional.
 
 **Files / Surfaces**
 - Blender installation at `C:\Program Files\Blender Foundation\Blender 4.1\blender.exe`
@@ -81,10 +81,10 @@ Download and install Blender 4.x on Windows, verify the CLI is accessible.
 Use the FreeCAD MCP server to generate OBJ exports for all floors and the combined stacked model.
 
 **Tasks**
-- [ ] TASK-02-01: Ensure the FreeCAD MCP server and FreeCAD RPC listener are running (`uvx freecad-mcp` + FreeCAD GUI open, or `freecadcmd` available).
-- [ ] TASK-02-02: Execute the generation pipeline via MCP to produce OBJ files: run `generate_floorplan.py` with `GENERATE_STACKED=1 GENERATE_FACADE=1 EXPORT_ARCHITECT_PACKAGE=1` env flags, which triggers `export_floor_obj()` per floor and `export_combined_obj()` for the stacked model.
-- [ ] TASK-02-03: Verify `output/obj/` contains `floorplan_F0.obj` through `floorplan_F4.obj` and `tubehouse_full_3d.obj` plus `tubehouse.mtl`.
-- [ ] TASK-02-04: Spot-check one OBJ file for named groups (e.g., `g F0_Wall_ext_left_2D`) and one MTL file for material references.
+- [x] TASK-02-01: Ensure the FreeCAD MCP server and FreeCAD RPC listener are running (`uvx freecad-mcp` + FreeCAD GUI open, or `freecadcmd` available).
+- [x] TASK-02-02: Execute the generation pipeline via MCP to produce OBJ files: run `generate_floorplan.py` with `GENERATE_STACKED=1 GENERATE_FACADE=1 EXPORT_ARCHITECT_PACKAGE=1` env flags, which triggers `export_floor_obj()` per floor and `export_combined_obj()` for the stacked model.
+- [x] TASK-02-03: Verify `output/obj/` contains `floorplan_F0.obj` through `floorplan_F4.obj` and `tubehouse_full_3d.obj` plus `tubehouse.mtl`.
+- [x] TASK-02-04: Spot-check one OBJ file for named groups (e.g., `g F0_Wall_ext_left_2D`) and one MTL file for material references.
 
 **Files / Surfaces**
 - `src/generate_floorplan.py` — entry point (env flags trigger OBJ export)
@@ -109,11 +109,11 @@ Use the FreeCAD MCP server to generate OBJ exports for all floors and the combin
 Run `setup_blender_scene.py` to import the combined OBJ, apply materials, add lighting and camera, save the `.blend` file, then run `render_blender.py` to produce a Cycles render.
 
 **Tasks**
-- [ ] TASK-03-01: Run `blender --background --python src/setup_blender_scene.py` and verify no errors. Confirm `output/blend/tubehouse_scene.blend` is created.
+- [x] TASK-03-01: Run `blender --background --python src/setup_blender_scene.py` and verify no errors. Confirm `output/blend/tubehouse_scene.blend` is created.
 - [ ] TASK-03-02: Open `output/blend/tubehouse_scene.blend` in Blender GUI (optional but recommended for visual verification).
-- [ ] TASK-03-03: Run `blender --background output/blend/tubehouse_scene.blend --python src/render_blender.py` to produce the Cycles render.
-- [ ] TASK-03-04: Verify `output/png/tubehouse_blender_render.png` exists and is a non-trivial image (> 10 KB).
-- [ ] TASK-03-05: Take a screenshot of the render for documentation.
+- [x] TASK-03-03: Run `blender --background output/blend/tubehouse_scene.blend --python src/render_blender.py` to produce the Cycles render.
+- [x] TASK-03-04: Verify `output/png/tubehouse_blender_render.png` exists and is a non-trivial image (> 10 KB).
+- [x] TASK-03-05: Take a screenshot of the render for documentation.
 
 **Files / Surfaces**
 - `src/setup_blender_scene.py` — scene assembly

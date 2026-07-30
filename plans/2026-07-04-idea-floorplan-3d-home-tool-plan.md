@@ -1,7 +1,7 @@
 ---
 title: "Idea → 2D Floorplan → 3D Home Model Tool"
 date: "2026-07-04"
-status: "draft"
+status: "complete — all six phases landed in 8a8e206 (src/homedesign package, schema, plan2d, Blender builder, /homedesign skill, FreeCAD fully deleted); two in-phase tasks were deliberately cut: CC0 asset curation (TASK-04-01, procedural furniture only) and tests/test_orchestrator.py (TASK-03-06)"
 request: "idea-floorplan-3d-home-tool (from /brainstorm 2026-07-04)"
 plan_type: "multi-phase"
 research_inputs:
@@ -54,12 +54,12 @@ Transform the repo from a bespoke FreeCAD→Blender pipeline for one hardcoded t
 Define the LLM-facing high-level spec format and the deterministic compiler that turns it into a fully-derived geometric model (walls with openings, stairs, roof, per-floor layout), with hard validation at both layers.
 
 **Tasks**
-- [ ] TASK-01-01: Design `spec/homespec.schema.json` (JSON Schema draft 2020-12). Top level: `meta` (name, units fixed to mm, style palette key), `site` (plot w×d, orientation), `storeys[]` (height, rooms), `rooms[]` per storey (id, type enum [bedroom, bathroom, kitchen, living, dining, hall, stairwell, garage, balcony], rect `{x,y,w,d}` OR relative placement `{adjacent_to, side, w, d}`), `openings[]` (door/window: `between` two room ids or room+exterior, wall side, width, sill/head heights), `stairs` (in stairwell room, direction), `roof` (`flat|gable|shed`, pitch, overhang). Consistent shapes per type — no pre-computed arcs, no per-type schema drift.
-- [ ] TASK-01-02: Write two hand-authored example specs: `spec/examples/demo-3br-2storey.json` (the DEC-013 acceptance home) and `spec/examples/tubehouse-mini.json` (narrow-lot 3-storey, exercises stair stacking). These are also the fixtures for tests.
-- [ ] TASK-01-03: Red/green: tests in `tests/test_compiler.py` for placement resolution (relative→absolute rects), wall derivation (shared walls deduped, exterior vs partition thickness 200/100mm — reuse constants pattern from the old spec), opening→wall assignment, stair run/riser computation (reuse/port `src/floorplan_utils.py` math), roof solid parameters.
-- [ ] TASK-01-04: Implement `src/homedesign/model.py` (dataclasses for the compiled model) and `src/homedesign/compiler.py` to green the tests. Compiled model serializes to `output/compiled/<name>.model.json` — the single artifact both 2D and Blender stages consume.
-- [ ] TASK-01-05: Red/green: `tests/test_validate.py` + `src/homedesign/validate.py` — schema validation (jsonschema) plus geometric sanity: room overlap within storey, rooms outside plot, door between non-adjacent rooms, opening wider than its wall, stairwell too small for the run, storeys with mismatched stairwell stacking. Errors must be specific and machine-readable (list of `{code, path, message}`) so the skill can feed them back to the LLM.
-- [ ] TASK-01-06: CLI entry: `src/homedesign/__main__.py` with `compile <spec.json>` subcommand (validate → compile → write model JSON; nonzero exit + error list on failure).
+- [x] TASK-01-01: Design `spec/homespec.schema.json` (JSON Schema draft 2020-12). Top level: `meta` (name, units fixed to mm, style palette key), `site` (plot w×d, orientation), `storeys[]` (height, rooms), `rooms[]` per storey (id, type enum [bedroom, bathroom, kitchen, living, dining, hall, stairwell, garage, balcony], rect `{x,y,w,d}` OR relative placement `{adjacent_to, side, w, d}`), `openings[]` (door/window: `between` two room ids or room+exterior, wall side, width, sill/head heights), `stairs` (in stairwell room, direction), `roof` (`flat|gable|shed`, pitch, overhang). Consistent shapes per type — no pre-computed arcs, no per-type schema drift.
+- [x] TASK-01-02: Write two hand-authored example specs: `spec/examples/demo-3br-2storey.json` (the DEC-013 acceptance home) and `spec/examples/tubehouse-mini.json` (narrow-lot 3-storey, exercises stair stacking). These are also the fixtures for tests.
+- [x] TASK-01-03: Red/green: tests in `tests/test_compiler.py` for placement resolution (relative→absolute rects), wall derivation (shared walls deduped, exterior vs partition thickness 200/100mm — reuse constants pattern from the old spec), opening→wall assignment, stair run/riser computation (reuse/port `src/floorplan_utils.py` math), roof solid parameters.
+- [x] TASK-01-04: Implement `src/homedesign/model.py` (dataclasses for the compiled model) and `src/homedesign/compiler.py` to green the tests. Compiled model serializes to `output/compiled/<name>.model.json` — the single artifact both 2D and Blender stages consume.
+- [x] TASK-01-05: Red/green: `tests/test_validate.py` + `src/homedesign/validate.py` — schema validation (jsonschema) plus geometric sanity: room overlap within storey, rooms outside plot, door between non-adjacent rooms, opening wider than its wall, stairwell too small for the run, storeys with mismatched stairwell stacking. Errors must be specific and machine-readable (list of `{code, path, message}`) so the skill can feed them back to the LLM.
+- [x] TASK-01-06: CLI entry: `src/homedesign/__main__.py` with `compile <spec.json>` subcommand (validate → compile → write model JSON; nonzero exit + error list on failure).
 
 **Files / Surfaces**
 - `spec/homespec.schema.json` — new schema, the LLM contract
@@ -83,10 +83,10 @@ Define the LLM-facing high-level spec format and the deterministic compiler that
 Generate dimensioned per-floor plan drawings (SVG for viewing, DXF for CAD) directly from the compiled model, replacing FreeCAD's 2D output.
 
 **Tasks**
-- [ ] TASK-02-01: Red/green: `tests/test_plan2d.py` for the geometry-to-primitive mapping (wall rects, door swing arcs computed here — not in the spec, window symbols, stair treads with direction arrow, room labels with area, dimension lines for plot and rooms).
-- [ ] TASK-02-02: Implement `src/homedesign/plan2d.py`: shared primitive layer → SVG writer (hand-rolled, styled: fills per room type reusing the old `FILL_COLORS` idea) and DXF writer via `ezdxf` (layers: WALLS, DOORS, WINDOWS, STAIRS, TEXT, DIMS).
-- [ ] TASK-02-03: Wire into CLI: `python -m homedesign plans <spec>` → `output/svg/<name>_f<N>.svg`, `output/dxf/<name>_f<N>.dxf`.
-- [ ] TASK-02-04: Visual check both example specs' SVGs in a browser; fix legibility (stroke widths, label collision at small rooms).
+- [x] TASK-02-01: Red/green: `tests/test_plan2d.py` for the geometry-to-primitive mapping (wall rects, door swing arcs computed here — not in the spec, window symbols, stair treads with direction arrow, room labels with area, dimension lines for plot and rooms).
+- [x] TASK-02-02: Implement `src/homedesign/plan2d.py`: shared primitive layer → SVG writer (hand-rolled, styled: fills per room type reusing the old `FILL_COLORS` idea) and DXF writer via `ezdxf` (layers: WALLS, DOORS, WINDOWS, STAIRS, TEXT, DIMS).
+- [x] TASK-02-03: Wire into CLI: `python -m homedesign plans <spec>` → `output/svg/<name>_f<N>.svg`, `output/dxf/<name>_f<N>.dxf`.
+- [x] TASK-02-04: Visual check both example specs' SVGs in a browser; fix legibility (stroke widths, label collision at small rooms).
 
 **Files / Surfaces**
 - `src/homedesign/plan2d.py`, `tests/test_plan2d.py` — new
@@ -107,11 +107,11 @@ Generate dimensioned per-floor plan drawings (SVG for viewing, DXF for CAD) dire
 Build the architectural 3D scene procedurally inside Blender from the compiled model — walls with real boolean openings, parametric doors/windows, floors/ceilings, stairs, roof, materials, lights, cameras — and render preview/final images from one CLI command.
 
 **Tasks**
-- [ ] TASK-03-01: Create `src/homedesign/blender/build_scene.py` (runs inside Blender): read model JSON path from `sys.argv` after `--`; build wall solids per storey, subtract opening voids (bmesh boolean or object boolean modifier applied), add floor/ceiling slabs, stair treads, roof solid (flat/gable/shed).
-- [ ] TASK-03-02: Parametric joinery in `src/homedesign/blender/joinery.py`: door = frame + leaf (hinged slightly open for renders), window = frame + glass pane; sized from opening spec.
-- [ ] TASK-03-03: Port the material system: adapt `src/blender_materials.py` Principled-BSDF creation and `spec/blender_materials.json` definitions into `src/homedesign/blender/materials.py` + `spec/materials.json`; assign by room type (floors) and element class (walls, roof, glass, frames). Add style palettes keyed by the spec's `meta.style`.
-- [ ] TASK-03-04: Port lighting/camera/render logic from `src/setup_blender_scene.py` and `src/render_blender.py`: sun + sky, ground plane, auto-framed exterior camera plus one interior camera per named key room; render profiles `preview` (Cycles ~64 samples, 960×540, denoise) and `final` (~512 samples, 1920×1080).
-- [ ] TASK-03-05: Orchestrator: `python -m homedesign build <spec> [--final] [--floor N]` = validate → compile → plans → locate Blender (`BLENDER_CMD` env, then the known 4.1.1 path) → run `build_scene.py` headless → save `output/blend/<name>.blend` + `output/png/<name>_{exterior,<room>}.png`. Print artifact paths as the last stdout lines so the skill can parse them.
+- [x] TASK-03-01: Create `src/homedesign/blender/build_scene.py` (runs inside Blender): read model JSON path from `sys.argv` after `--`; build wall solids per storey, subtract opening voids (bmesh boolean or object boolean modifier applied), add floor/ceiling slabs, stair treads, roof solid (flat/gable/shed).
+- [x] TASK-03-02: Parametric joinery in `src/homedesign/blender/joinery.py`: door = frame + leaf (hinged slightly open for renders), window = frame + glass pane; sized from opening spec.
+- [x] TASK-03-03: Port the material system: adapt `src/blender_materials.py` Principled-BSDF creation and `spec/blender_materials.json` definitions into `src/homedesign/blender/materials.py` + `spec/materials.json`; assign by room type (floors) and element class (walls, roof, glass, frames). Add style palettes keyed by the spec's `meta.style`.
+- [x] TASK-03-04: Port lighting/camera/render logic from `src/setup_blender_scene.py` and `src/render_blender.py`: sun + sky, ground plane, auto-framed exterior camera plus one interior camera per named key room; render profiles `preview` (Cycles ~64 samples, 960×540, denoise) and `final` (~512 samples, 1920×1080).
+- [x] TASK-03-05: Orchestrator: `python -m homedesign build <spec> [--final] [--floor N]` = validate → compile → plans → locate Blender (`BLENDER_CMD` env, then the known 4.1.1 path) → run `build_scene.py` headless → save `output/blend/<name>.blend` + `output/png/<name>_{exterior,<room>}.png`. Print artifact paths as the last stdout lines so the skill can parse them.
 - [ ] TASK-03-06: Add `tests/test_orchestrator.py` for CLI arg handling and Blender-path resolution (mock subprocess); verify the real Blender leg manually on both examples.
 
 **Files / Surfaces**
@@ -137,10 +137,10 @@ Make renders read as a home (DEC-010): furniture per room type from a fetched CC
 
 **Tasks**
 - [ ] TASK-04-01: Curate CC0 assets (Poly Haven models / Kenney / Quaternius): one .blend library per room-type set covering bed, wardrobe, sofa, coffee table, dining table+chairs, kitchen counter block, fridge, WC, basin, shower, desk. Write `scripts/fetch_assets.py` with pinned URLs + SHA-256 checksums downloading into `assets/furniture/` (gitignored); record licenses in `assets/LICENSES.md` (committed).
-- [ ] TASK-04-02: Implement `src/homedesign/blender/procedural_furniture.py`: stylized parametric fallbacks (bed = frame+mattress+pillows, sofa = beveled boxes, table+chairs, kitchen run, sanitary blocks) for every asset type.
-- [ ] TASK-04-03: Implement `src/homedesign/blender/furnish.py`: per-room-type placement rules (bed heads against longest windowless wall, wardrobe opposite, sofa faces largest wall/window, dining set centered, kitchen run along a wall with clearance, sanitary against plumbing wall) with door-swing and circulation clearance checks; prefer library asset (`bpy.data.libraries.load` append), fall back to procedural.
-- [ ] TASK-04-04: Red/green in system Python: `tests/test_placement.py` for the pure placement solver (extract placement math into `src/homedesign/placement.py`, importable outside Blender, so it is unit-testable; `furnish.py` only executes its output).
-- [ ] TASK-04-05: Render both examples furnished; iterate on scale/orientation glitches.
+- [x] TASK-04-02: Implement `src/homedesign/blender/procedural_furniture.py`: stylized parametric fallbacks (bed = frame+mattress+pillows, sofa = beveled boxes, table+chairs, kitchen run, sanitary blocks) for every asset type.
+- [x] TASK-04-03: Implement `src/homedesign/blender/furnish.py`: per-room-type placement rules (bed heads against longest windowless wall, wardrobe opposite, sofa faces largest wall/window, dining set centered, kitchen run along a wall with clearance, sanitary against plumbing wall) with door-swing and circulation clearance checks; prefer library asset (`bpy.data.libraries.load` append), fall back to procedural.
+- [x] TASK-04-04: Red/green in system Python: `tests/test_placement.py` for the pure placement solver (extract placement math into `src/homedesign/placement.py`, importable outside Blender, so it is unit-testable; `furnish.py` only executes its output).
+- [x] TASK-04-05: Render both examples furnished; iterate on scale/orientation glitches.
 
 **Files / Surfaces**
 - `scripts/fetch_assets.py`, `assets/LICENSES.md`, `.gitignore` (add `assets/furniture/`) — new
@@ -162,10 +162,10 @@ Make renders read as a home (DEC-010): furniture per room type from a fetched CC
 Package the workflow as the `/homedesign` Claude Code skill with the bounded visual self-correction loop, and prove the DEC-013 acceptance demo end-to-end.
 
 **Tasks**
-- [ ] TASK-05-01: Write `.claude/skills/homedesign/SKILL.md`: trigger (`/homedesign <idea>` or `/homedesign edit <change>`); procedure = author/patch spec at `output/specs/<slug>.json` per `spec/homespec.schema.json` (link + inline cheat-sheet + the two examples) → `python -m homedesign build` → Read the preview PNGs + floor SVGs → self-correct on structured validation errors or visual defects (overlaps, floating/misscaled elements, unusable proportions), max 3 passes → present renders + plans with a summary → offer `--final`.
-- [ ] TASK-05-02: Edit-loop contract in the skill: conversational changes are minimal JSON edits to the existing spec (never regenerate whole spec); re-run; diff-summarize what changed (DEC-003).
-- [ ] TASK-05-03: Run the acceptance demo: `/homedesign 3-bedroom 2-storey house, open kitchen, master with ensuite` → plans + furnished exterior/interior renders in one turn; then `/homedesign edit make the kitchen bigger` → round-trips with only kitchen-related diffs.
-- [ ] TASK-05-04: Record demo results (spec, renders, pass count) in `activeContext.md` review section.
+- [x] TASK-05-01: Write `.claude/skills/homedesign/SKILL.md`: trigger (`/homedesign <idea>` or `/homedesign edit <change>`); procedure = author/patch spec at `output/specs/<slug>.json` per `spec/homespec.schema.json` (link + inline cheat-sheet + the two examples) → `python -m homedesign build` → Read the preview PNGs + floor SVGs → self-correct on structured validation errors or visual defects (overlaps, floating/misscaled elements, unusable proportions), max 3 passes → present renders + plans with a summary → offer `--final`.
+- [x] TASK-05-02: Edit-loop contract in the skill: conversational changes are minimal JSON edits to the existing spec (never regenerate whole spec); re-run; diff-summarize what changed (DEC-003).
+- [x] TASK-05-03: Run the acceptance demo: `/homedesign 3-bedroom 2-storey house, open kitchen, master with ensuite` → plans + furnished exterior/interior renders in one turn; then `/homedesign edit make the kitchen bigger` → round-trips with only kitchen-related diffs.
+- [x] TASK-05-04: Record demo results (spec, renders, pass count) in `activeContext.md` review section.
 
 **Files / Surfaces**
 - `.claude/skills/homedesign/SKILL.md` — new
@@ -186,9 +186,9 @@ Package the workflow as the `/homedesign` Claude Code skill with the bounded vis
 Remove the FreeCAD path aggressively (DEC-012) now that the new pipeline passes acceptance, leaving one coherent tool.
 
 **Tasks**
-- [ ] TASK-06-01: Delete `src/generate_floorplan.py`, `src/blender_export_utils.py`, `src/facade_utils.py`, `src/blender_materials.py`, `src/setup_blender_scene.py`, `src/render_blender.py`, `run.sh`, `run_blender.sh`, `opencode.json`, `freecad-mcp-guide.md`, `spec/floorplan-spec.json`, `spec/blender_materials.json` (contents ported in PHASE-03), stale FreeCAD test artifacts (`*.FCStd`, `freecad_std*.log` at root), and FreeCAD-era tests; keep `src/ifc_export_utils.py` parked with a header note that it targets the retired spec format (plan DEC-002).
-- [ ] TASK-06-02: Port any still-referenced helpers out of `src/floorplan_utils.py` then delete it; confirm `python -m pytest tests/` green after deletions.
-- [ ] TASK-06-03: Update `README`/`CLAUDE.md`-equivalent docs, `activeContext.md`, and mark `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` superseded (PHASE-07/Arch migration obsoleted); add relevant entries to `docs/lessons-learned.md`.
+- [x] TASK-06-01: Delete `src/generate_floorplan.py`, `src/blender_export_utils.py`, `src/facade_utils.py`, `src/blender_materials.py`, `src/setup_blender_scene.py`, `src/render_blender.py`, `run.sh`, `run_blender.sh`, `opencode.json`, `freecad-mcp-guide.md`, `spec/floorplan-spec.json`, `spec/blender_materials.json` (contents ported in PHASE-03), stale FreeCAD test artifacts (`*.FCStd`, `freecad_std*.log` at root), and FreeCAD-era tests; keep `src/ifc_export_utils.py` parked with a header note that it targets the retired spec format (plan DEC-002).
+- [x] TASK-06-02: Port any still-referenced helpers out of `src/floorplan_utils.py` then delete it; confirm `python -m pytest tests/` green after deletions.
+- [x] TASK-06-03: Update `README`/`CLAUDE.md`-equivalent docs, `activeContext.md`, and mark `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` superseded (PHASE-07/Arch migration obsoleted); add relevant entries to `docs/lessons-learned.md`.
 - [ ] TASK-06-04: Fresh-clone sanity: from a clean checkout (plus one `fetch_assets.py` run or skipping it), `python -m homedesign build spec/examples/demo-3br-2storey.json` works.
 
 **Files / Surfaces**

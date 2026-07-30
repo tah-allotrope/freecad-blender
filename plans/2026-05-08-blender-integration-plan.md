@@ -1,7 +1,7 @@
 ---
 title: "Blender Integration for Tubehouse Visualization"
 date: "2026-05-08"
-status: "draft"
+status: "complete — all three phases implemented and committed (33ffba0 PHASE-01 OBJ export, 4c1dda9 PHASE-02 scene setup, 20cdf3d PHASE-03 runner integration) with reports/2026-05-08-final-blender-integration.html; the code was later deleted by the 2026-07-04 homedesign rewrite (8a8e206)"
 request: "Integrate Blender as a downstream visualization and rendering tool for the FreeCAD tubehouse model, based on the research brief in research/2026-04-30_adding-blender-freecad-workflow.md"
 plan_type: "multi-phase"
 research_inputs:
@@ -55,11 +55,11 @@ Establish an automated export pipeline from the FreeCAD tubehouse model to Blend
 Add a pure-Python + FreeCAD OBJ export function that produce per-floor and combined OBJ files, preserving object names and grouping for Blender import.
 
 **Tasks**
-- [ ] TASK-01-01: Create `src/blender_export_utils.py` with a `export_floor_obj(floor_doc, level, output_dir)` function that exports each named object group (WALLS, ROOMS, STAIRS, SYMBOLS) as a named OBJ group using FreeCAD's `Mesh` module.
-- [ ] TASK-01-02: Add `export_combined_obj(stacked_doc, output_path)` that exports the full stacked model as a single OBJ file with per-floor object groups (e.g., `g Floor_0_Walls`, `g Floor_1_Walls`).
-- [ ] TASK-01-03: Add unit tests in `tests/test_blender_export_utils.py` for the pure helper logic (group name generation, path construction) — no FreeCAD dependency.
-- [ ] TASK-01-04: Integrate the OBJ export call into `generate_floorplan.py` alongside existing DXF/STL exports, gated behind the `EXPORT_ARCHITECT_PACKAGE` env flag.
-- [ ] TASK-01-05: Add an `OUT_OBJ` output directory constant and `ensure_output_dirs()` entry for `output/obj/`.
+- [x] TASK-01-01: Create `src/blender_export_utils.py` with a `export_floor_obj(floor_doc, level, output_dir)` function that exports each named object group (WALLS, ROOMS, STAIRS, SYMBOLS) as a named OBJ group using FreeCAD's `Mesh` module.
+- [x] TASK-01-02: Add `export_combined_obj(stacked_doc, output_path)` that exports the full stacked model as a single OBJ file with per-floor object groups (e.g., `g Floor_0_Walls`, `g Floor_1_Walls`).
+- [x] TASK-01-03: Add unit tests in `tests/test_blender_export_utils.py` for the pure helper logic (group name generation, path construction) — no FreeCAD dependency.
+- [x] TASK-01-04: Integrate the OBJ export call into `generate_floorplan.py` alongside existing DXF/STL exports, gated behind the `EXPORT_ARCHITECT_PACKAGE` env flag.
+- [x] TASK-01-05: Add an `OUT_OBJ` output directory constant and `ensure_output_dirs()` entry for `output/obj/`.
 
 **Files / Surfaces**
 - `src/blender_export_utils.py` — New file: OBJ export logic
@@ -84,17 +84,17 @@ Add a pure-Python + FreeCAD OBJ export function that produce per-floor and combi
 Create a Python script that runs inside Blender headless mode, imports the combined OBJ, applies sensible default materials keyed by object group naming convention, adds architectural lighting and a camera, and saves a `.blend` file.
 
 **Tasks**
-- [ ] TASK-02-01: Create `src/setup_blender_scene.py` with a `main()` function that:
+- [x] TASK-02-01: Create `src/setup_blender_scene.py` with a `main()` function that:
   1. Clears the default scene
   2. Imports the combined OBJ from `output/obj/tubehouse_full_3d.obj`
   3. Assigns materials by group name convention (walls → concrete gray, rooms → translucent fill, stairs → dark gray, slabs → medium gray)
   4. Adds a sun lamp (architectural, 45° elevation) and fill light
   5. Adds a camera targeted at the building center, framed for isometric or perspective view
   6. Saves to `output/blend/tubehouse_scene.blend`
-- [ ] TASK-02-02: Create `src/blender_materials.py` with a material palette function that returns Blender material objects for the tubehouse (concrete, glass, steel, wood) using principled BSDF nodes.
-- [ ] TASK-02-03: Add `material_assignments` to the floorplan spec or a sidecar config (`spec/blender_materials.json`) that maps room IDs/zone IDs to material names, so material assignment is data-driven rather than hardcoded.
-- [ ] TASK-02-04: Add fallback import path: if Blender cannot find the OBJ, attempt STL import as a fallback.
-- [ ] TASK-02-05: Ensure the script logs clear progress messages and gracefully handles missing Blender modules (so it can be syntax-checked without a Blender environment).
+- [x] TASK-02-02: Create `src/blender_materials.py` with a material palette function that returns Blender material objects for the tubehouse (concrete, glass, steel, wood) using principled BSDF nodes.
+- [x] TASK-02-03: Add `material_assignments` to the floorplan spec or a sidecar config (`spec/blender_materials.json`) that maps room IDs/zone IDs to material names, so material assignment is data-driven rather than hardcoded.
+- [x] TASK-02-04: Add fallback import path: if Blender cannot find the OBJ, attempt STL import as a fallback.
+- [x] TASK-02-05: Ensure the script logs clear progress messages and gracefully handles missing Blender modules (so it can be syntax-checked without a Blender environment).
 
 **Files / Surfaces**
 - `src/setup_blender_scene.py` — New file: Blender scene assembly script
@@ -121,14 +121,14 @@ Create a Python script that runs inside Blender headless mode, imports the combi
 Wire the Blender pipeline into `run.sh` (or a `run_blender.sh` companion) so that after FreeCAD generation, the OBJ export and Blender scene setup happen automatically, culminating in a headless Cycles render.
 
 **Tasks**
-- [ ] TASK-03-01: Add Blender availability check to `run.sh` (mirroring the FreeCAD/uv checks) or create a separate `run_blender.sh`.
-- [ ] TASK-03-02: Add an `EXPORT_OBJ=1` and `BLENDER_RENDER=1` env flag section to the runner that:
+- [x] TASK-03-01: Add Blender availability check to `run.sh` (mirroring the FreeCAD/uv checks) or create a separate `run_blender.sh`.
+- [x] TASK-03-02: Add an `EXPORT_OBJ=1` and `BLENDER_RENDER=1` env flag section to the runner that:
   1. Runs FreeCAD generation with `EXPORT_ARCHITECT_PACKAGE=1` (triggers OBJ export)
   2. Runs `blender --background --python src/setup_blender_scene.py`
   3. Runs `blender --background --python src/render_blender.py` to produce a Cycles render
-- [ ] TASK-03-03: Create `src/render_blender.py` — a minimal headless render script that opens the `.blend` file, renders Cycles at 1920×1080, and saves to `output/png/tubehouse_blender_render.png`.
-- [ ] TASK-03-04: Update `AGENTS.md` with Blender pipeline entry points and the new env flags.
-- [ ] TASK-03-05: Update `activeContext.md` with completed work and next-steps.
+- [x] TASK-03-03: Create `src/render_blender.py` — a minimal headless render script that opens the `.blend` file, renders Cycles at 1920×1080, and saves to `output/png/tubehouse_blender_render.png`.
+- [x] TASK-03-04: Update `AGENTS.md` with Blender pipeline entry points and the new env flags.
+- [x] TASK-03-05: Update `activeContext.md` with completed work and next-steps.
 
 **Files / Surfaces**
 - `run.sh` or `run_blender.sh` — Add Blender steps

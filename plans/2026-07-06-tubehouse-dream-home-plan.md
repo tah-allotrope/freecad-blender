@@ -1,7 +1,7 @@
 ---
 title: "Tubehouse Dream Home: 5-Storey Spec, Light Well, Render Gallery, Architect-Brief PDF"
 date: "2026-07-06"
-status: "draft"
+status: "complete — all five phases delivered (bfdac9d, c9c947f, 05b796e, b29c47f, 0682897): spec/tubehouse-dream.json compiles, 5 SVG/DXF plan pairs, 9 final 1920x1080 renders in output/png/, and output/pdf/tubehouse-dream-brief.pdf via the new `pdf` CLI stage"
 request: "tubehouse-dream-home"
 plan_type: "multi-phase"
 research_inputs:
@@ -95,29 +95,29 @@ Make the light well, roof terrace, elevator, and window-side control representab
 red/green TDD against the existing test suite.
 
 **Tasks**
-- [ ] TASK-01-01: Write failing tests in `tests/test_compiler.py` for: (a) a roof with an
+- [x] TASK-01-01: Write failing tests in `tests/test_compiler.py` for: (a) a roof with an
   explicit sub-rect covering only part of the plot; (b) a roof with a `voids` list whose
   rects are excluded from the roof footprint; (c) an opening
   `between: [room, "exterior"]` carrying a `side: north|south|east|west` hint landing on
   that specific wall; (d) an `elevator` room type compiling like `storage`.
-- [ ] TASK-01-02: Extend `spec/homespec.schema.json`: add `"elevator"` to the room type
+- [x] TASK-01-02: Extend `spec/homespec.schema.json`: add `"elevator"` to the room type
   enum; add optional `rect {x,y,w,d}` and `voids: [rect]` to `roof`; add optional
   `side` enum to openings (valid only when one endpoint is `"exterior"`).
-- [ ] TASK-01-03: Implement in `src/homedesign/compiler.py`: `_derive_roof` uses
+- [x] TASK-01-03: Implement in `src/homedesign/compiler.py`: `_derive_roof` uses
   `roof.rect` when given (else plot span, current behavior) and records `voids` on the
   `Roof` model object; `_walls_between` filters exterior-wall candidates by the `side`
   hint (vertical wall at rect.x=west / rect.x2=east; horizontal at rect.y=front(south) /
   rect.y2=north) before the largest-first sort. Add `voids: list[Rect]` to `Roof` in
   `model.py` (serialize in `to_dict`).
-- [ ] TASK-01-04: Update `src/homedesign/blender/roof.py` to build the roof from the
+- [x] TASK-01-04: Update `src/homedesign/blender/roof.py` to build the roof from the
   roof rect and boolean-subtract each void (flat roof is sufficient; gable/shed +
   voids may raise a clear NotImplementedError since this design uses flat).
-- [ ] TASK-01-05: Update `src/homedesign/plan2d.py` and
+- [x] TASK-01-05: Update `src/homedesign/plan2d.py` and
   `src/homedesign/blender/materials.py` + `furnish.py` so `elevator` rooms get a label,
   fill color, floor material, and no furniture. Draw the top-storey roof outline/voids
   on the top-floor SVG only if trivially cheap; otherwise skip (plans are per-storey
   footprints, roof legibility is optional).
-- [ ] TASK-01-06: Run `python -m pytest tests/` — all tests green; update
+- [x] TASK-01-06: Run `python -m pytest tests/` — all tests green; update
   `.claude/skills/homedesign/SKILL.md` "Known limitations" and spec-format notes for the
   three new spec fields.
 
@@ -152,19 +152,19 @@ Replace the hardcoded 2-camera setup with a named-view gallery: exterior street,
 aerial, light-well shot, and one interior per listed room.
 
 **Tasks**
-- [ ] TASK-02-01: Design a `views` block (either top-level in the spec under `meta` or a
+- [x] TASK-02-01: Design a `views` block (either top-level in the spec under `meta` or a
   `--views` JSON sidecar; prefer spec `meta.views` so it round-trips): list of
   `{name, kind: exterior_front|exterior_aerial|room, room_id?, level?}`. Default when
   absent = current two views (backward compatible).
-- [ ] TASK-02-02: Extend `add_cameras` in `src/homedesign/blender/build_scene.py` to
+- [x] TASK-02-02: Extend `add_cameras` in `src/homedesign/blender/build_scene.py` to
   build one camera per view: `exterior_front` = current exterior framing;
   `exterior_aerial` = high three-quarter view showing the roof terrace and light-well
   opening; `room` = camera inside the named room aimed at its far corner (reuse the
   existing interior-camera placement logic, parameterized by room id + storey level).
-- [ ] TASK-02-03: Name outputs `output/png/<name>_<view>.png`; pass views through
+- [x] TASK-02-03: Name outputs `output/png/<name>_<view>.png`; pass views through
   `orchestrator.build_scene` and `model.to_dict()` (compiler copies `meta.views`
   verbatim onto `CompiledModel`).
-- [ ] TASK-02-04: Preview-quality smoke run against `spec/examples/tubehouse-mini.json`
+- [x] TASK-02-04: Preview-quality smoke run against `spec/examples/tubehouse-mini.json`
   with a 4-view block; confirm one PNG per view and sane framing by inspecting outputs.
 
 **Files / Surfaces**
@@ -192,27 +192,27 @@ Encode the brainstormed house (DEC-001 program) as `spec/tubehouse-dream.json` a
 iterate until compiler + validator emit zero errors and the 2D plans read correctly.
 
 **Tasks**
-- [ ] TASK-03-01: Lay out the shared vertical core, identical on every storey: light
+- [x] TASK-03-01: Lay out the shared vertical core, identical on every storey: light
   well (~2000×2000 void, front edge ≈ y=11,500), stairwell (≥900mm-wide straight run
   beside it), elevator shaft (~1200×1500), and hall segments linking front/rear zones
   (CON-002/CON-003). Use absolute `rect` placement for the core; `relative` for infill.
-- [ ] TASK-03-02: Author all five storeys per DEC-001, heights 4000/3400/3400/3400/3400,
+- [x] TASK-03-02: Author all five storeys per DEC-001, heights 4000/3400/3400/3400/3400,
   with balcony rooms at the front of F2 and F3, terrace as balcony-type room on the
   front of F4, roof `{type: flat, rect: <enclosed F4 portion>, voids: [<light well>]}`,
   and stairs `up`/`up_and_down`/`down` continuity across levels.
-- [ ] TASK-03-03: Place openings: exterior door front at GF garage/hall (`side: "south"`
+- [x] TASK-03-03: Place openings: exterior door front at GF garage/hall (`side: "south"`
   or the front-facing value verified in PHASE-01); light-well windows for kitchen/dining
   (F2), kid's room or bath (F3), office (F4) using the `side` hint; front glazing on
   balcony-adjacent rooms; interior doors satisfying the door-chain rule; window head
   heights per floor-to-floor of 3.4m.
-- [ ] TASK-03-04: Add `meta.views` with 8+ views: exterior_front, exterior_aerial,
+- [x] TASK-03-04: Add `meta.views` with 8+ views: exterior_front, exterior_aerial,
   light-well room shot, and interiors for living (F2), kitchen/dining (F2), master (F3),
   kid's room (F3), office (F4), guest room (F4).
-- [ ] TASK-03-05: Loop `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json`
+- [x] TASK-03-05: Loop `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json`
   until zero `[code]` errors, then `plans` and visually review all five SVGs in
   `output/svg/tubehouse-dream_f{0..4}.svg` against the brainstorm program (room
   positions, areas, door swings, stair placement, light well visible as void).
-- [ ] TASK-03-06: Preview build (`build`, no `--final`) and review the gallery for
+- [x] TASK-03-06: Preview build (`build`, no `--final`) and review the gallery for
   framing, light-well openness (sky visible down the well in the aerial), and terrace
   exposure.
 
@@ -241,12 +241,12 @@ iterate until compiler + validator emit zero errors and the 2D plans read correc
 Produce the publication-quality image set for the PDF.
 
 **Tasks**
-- [ ] TASK-04-01: Run `PYTHONPATH=src python -m homedesign build spec/tubehouse-dream.json --final`
+- [x] TASK-04-01: Run `PYTHONPATH=src python -m homedesign build spec/tubehouse-dream.json --final`
   in the background (512 samples, 1920×1080 per view; expect a long unattended run).
-- [ ] TASK-04-02: Review every PNG; fix any framing/material issue by editing
+- [x] TASK-04-02: Review every PNG; fix any framing/material issue by editing
   `meta.views` or the spec and re-render only what changed (re-running `--final` is
   acceptable if per-view rendering isn't separable — note actual runtime).
-- [ ] TASK-04-03: Pick the hero image for the PDF cover (expected: exterior_front or
+- [x] TASK-04-03: Pick the hero image for the PDF cover (expected: exterior_front or
   exterior_aerial).
 
 **Files / Surfaces**
@@ -268,32 +268,32 @@ Produce the publication-quality image set for the PDF.
 Net-new `pdf` pipeline stage assembling the DEC-002 document via HTML → headless Edge.
 
 **Tasks**
-- [ ] TASK-05-01: Red/green: add `tests/test_pdf.py` covering the HTML assembly pure
+- [x] TASK-05-01: Red/green: add `tests/test_pdf.py` covering the HTML assembly pure
   parts — room-schedule table generation from a `CompiledModel` (per-floor room name,
   type, area m², floor totals), page sequencing, and inline-SVG embedding (read SVG text,
   strip XML prolog, embed). No Edge invocation in unit tests.
-- [ ] TASK-05-02: Implement `src/homedesign/pdf.py`: `build_brief(model, out_dir, meta)`
+- [x] TASK-05-02: Implement `src/homedesign/pdf.py`: `build_brief(model, out_dir, meta)`
   renders a single HTML document with CSS `@page { size: A3 landscape; margin: 12mm }`
   and one `<section class="page">` per: cover (hero PNG full-bleed + title), narrative,
   room schedule, plan page per storey (inline SVG scaled to fit, storey name + area
   total), gallery pages (2 images/page), requirements, handover appendix (lists
   `output/dxf/*.dxf` per floor + `spec/tubehouse-dream.json`). Images referenced via
   relative `file://` paths or base64-embedded (prefer base64 for a self-contained HTML).
-- [ ] TASK-05-03: Write the brief copy as a data file `spec/briefs/tubehouse-dream.md`
+- [x] TASK-05-03: Write the brief copy as a data file `spec/briefs/tubehouse-dream.md`
   (or JSON) consumed by `pdf.py`: design-intent narrative (Vietnam urban context,
   hot-humid climate, cross-ventilation via light well), requirements page (family
   elevator spec, light-well glazing/drainage, party-wall structure, services riser at
   the core, tenant/family access separation per Grill-Me answer, orientation note per
   Grill-Me answer), no budget content (brainstorm DEC-018).
-- [ ] TASK-05-04: Add `pdf` subcommand to `src/homedesign/__main__.py`:
+- [x] TASK-05-04: Add `pdf` subcommand to `src/homedesign/__main__.py`:
   `python -m homedesign pdf <spec.json>` → compiles, regenerates plans if missing,
   writes `output/pdf/<name>-brief.html`, then invokes Edge:
   `msedge --headless --disable-gpu --print-to-pdf="output/pdf/<name>-brief.pdf" <file-url>`
   (resolve msedge from PATH, then the Program Files candidates; fall back to Chrome;
   clear error if neither found).
-- [ ] TASK-05-05: Run end-to-end for tubehouse-dream; inspect the PDF page-by-page
+- [x] TASK-05-05: Run end-to-end for tubehouse-dream; inspect the PDF page-by-page
   (plan legibility at A3, image quality, no clipped tables); deliver the PDF to the user.
-- [ ] TASK-05-06: Document the `pdf` stage in `.claude/skills/homedesign/SKILL.md`.
+- [x] TASK-05-06: Document the `pdf` stage in `.claude/skills/homedesign/SKILL.md`.
 
 **Files / Surfaces**
 - `src/homedesign/pdf.py` — new module.
