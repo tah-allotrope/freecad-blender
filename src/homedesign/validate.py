@@ -28,7 +28,14 @@ def validate_schema(spec: dict) -> list[SpecError]:
 
 def validate_compiled(model: CompiledModel) -> list[SpecError]:
     """Geometric sanity checks beyond what the compiler itself already enforces
-    (room overlap / out-of-plot / dangling openings raise during compile)."""
+    (room overlap / out-of-plot / dangling openings raise during compile).
+
+    Runs the rule registry from `checks`; adding a rule there enforces it
+    everywhere. The two legacy checks (stairwell width, room size) are kept
+    as registry entries so their behaviour is unchanged.
+    """
+    from .checks import RULES
+
     errors: list[SpecError] = []
     for storey in model.storeys:
         if storey.stairs:
@@ -52,17 +59,6 @@ def validate_compiled(model: CompiledModel) -> list[SpecError]:
                         message=f"room '{room.id}' is {room.rect.w}x{room.rect.d}mm, implausibly small",
                     )
                 )
-    # Stairwell stacking: every non-ground storey with rooms should have a way
-    # up if a lower storey declared stairs (best-effort continuity check).
-    stair_levels = {s.level for s in model.storeys if s.stairs}
-    if stair_levels and len(model.storeys) > 1:
-        missing = [s.level for s in model.storeys[:-1] if s.level not in stair_levels]
-        for lvl in missing:
-            errors.append(
-                SpecError(
-                    code="missing_stair_continuity",
-                    path=f"storeys[{lvl}]",
-                    message=f"storey {lvl} has no stairs but is not the top storey",
-                )
-            )
+    for _code, rule in RULES:
+        errors.extend(rule(model))
     return errors

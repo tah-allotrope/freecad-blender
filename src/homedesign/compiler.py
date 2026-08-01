@@ -30,6 +30,25 @@ def compile_spec(spec: dict) -> CompiledModel:
     plot_w = spec["site"]["plot_width_mm"]
     plot_d = spec["site"]["plot_depth_mm"]
 
+    # Sort storeys by level so base_z accumulation does not silently depend
+    # on list order; warn (later, via the registry) if the authored order
+    # differed from the sorted order.
+    authored_levels = [s["level"] for s in spec["storeys"]]
+    spec["storeys"] = sorted(spec["storeys"], key=lambda s: s["level"])
+    sorted_levels = [s["level"] for s in spec["storeys"]]
+    if authored_levels != sorted_levels:
+        errors.append(
+            SpecError(
+                code="storeys_out_of_order",
+                path="storeys",
+                message=(
+                    f"storeys authored as levels {authored_levels}, sorted to {sorted_levels}; "
+                    "base_z accumulation follows the sorted order"
+                ),
+                severity="warning",
+            )
+        )
+
     storeys: list[Storey] = []
     base_z = 0.0
     for s_idx, s in enumerate(spec["storeys"]):
@@ -328,7 +347,24 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
                 )
             )
             continue
-        offset = (span - width) / 2
+        offset = resolve_opening_offset(
+            span,
+            width,
+            o.get("align", "center"),
+            o.get("offset_mm"),
+        )
+        if offset < 0 or offset + width > span + 1:
+            errors.append(
+                SpecError(
+                    code="opening_out_of_wall",
+                    path=f"{path}.openings[{idx}]",
+                    message=(
+                        f"opening offset {offset}mm + width {width}mm exceeds wall span {span}mm "
+                        f"on wall '{wall.id}'"
+                    ),
+                )
+            )
+            continue
         default_head = 2100.0 if o["type"] == "door" else 2100.0
         result.append(
             Opening(
@@ -342,7 +378,55 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
                 head_mm=o.get("head_mm", default_head),
             )
         )
+    _check_opening_overlaps(result, path, errors)
     return result
+
+
+def resolve_opening_offset(
+    span_mm: float, width_mm: float, align: str, offset_mm: float | None
+) -> float:
+    """S3: distance of the opening from the wall segment's start.
+
+    `offset_mm` overrides `align` entirely. `align` defaults to "center"
+    (callers always pass it).
+    """
+    if offset_mm is not None:
+        return float(offset_mm)
+    if align == "start":
+        return 0.0
+    if align == "end":
+        return span_mm - width_mm
+    return (span_mm - width_mm) / 2
+
+
+def _check_opening_overlaps(openings: list[Opening], path: str, errors: list[SpecError]) -> None:
+    """S3: two openings on the same wall overlap when they overlap in both
+    plan (offset/width) and elevation (sill/head). 1mm slack permits
+    edge-to-edge placement."""
+    by_wall: dict[str, list[Opening]] = {}
+    for o in openings:
+        by_wall.setdefault(o.wall_id, []).append(o)
+    for wall_id, ops in by_wall.items():
+        for i, a in enumerate(ops):
+            for b in ops[i + 1 :]:
+                plan_overlap = (
+                    min(a.offset_mm + a.width_mm, b.offset_mm + b.width_mm)
+                    - max(a.offset_mm, b.offset_mm)
+                ) > 1
+                elev_overlap = (
+                    min(a.head_mm, b.head_mm) - max(a.sill_mm, b.sill_mm)
+                ) > 1
+                if plan_overlap and elev_overlap:
+                    errors.append(
+                        SpecError(
+                            code="opening_overlap",
+                            path=f"{path}.openings",
+                            message=(
+                                f"openings '{a.id}' and '{b.id}' overlap on wall '{wall_id}' "
+                                f"(plan {plan_overlap:.0f}mm, elevation {elev_overlap:.0f}mm)"
+                            ),
+                        )
+                    )
 
 
 def _derive_floor_voids(storeys: list[Storey]) -> None:

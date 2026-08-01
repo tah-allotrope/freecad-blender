@@ -13,11 +13,15 @@
       "height_mm": 3400,
       "rooms": [
         {"id": "front", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+        {"id": "elevator", "type": "elevator", "rect": {"x": 3000, "y": 4000, "w": 1000, "d": 2000}},
         {"id": "rear", "type": "kitchen", "rect": {"x": 0, "y": 6000, "w": 4000, "d": 4000}}
       ],
       "openings": [
         {"type": "door", "between": ["front", "exterior"], "width_mm": 1000, "side": "north"},
-        {"type": "window", "between": ["rear", "exterior"], "width_mm": 1200, "side": "north"}
+        {"type": "door", "between": ["front", "elevator"], "width_mm": 900},
+        {"type": "door", "between": ["elevator", "rear"], "width_mm": 900},
+        {"type": "window", "between": ["front", "exterior"], "width_mm": 1200, "sill_mm": 900, "side": "west"},
+        {"type": "window", "between": ["rear", "exterior"], "width_mm": 1200, "sill_mm": 900, "side": "south"}
       ]
     },
     {
@@ -26,7 +30,14 @@
       "height_mm": 3400,
       "rooms": [
         {"id": "front2", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+        {"id": "elevator", "type": "elevator", "rect": {"x": 3000, "y": 4000, "w": 1000, "d": 2000}},
         {"id": "rear2", "type": "office", "rect": {"x": 0, "y": 6000, "w": 4000, "d": 4000}}
+      ],
+      "openings": [
+        {"type": "door", "between": ["front2", "elevator"], "width_mm": 900},
+        {"type": "door", "between": ["elevator", "rear2"], "width_mm": 900},
+        {"type": "window", "between": ["front2", "exterior"], "width_mm": 1200, "sill_mm": 900, "side": "west"},
+        {"type": "window", "between": ["rear2", "exterior"], "width_mm": 1200, "sill_mm": 900, "side": "south"}
       ],
       "roof": {
         "type": "flat",

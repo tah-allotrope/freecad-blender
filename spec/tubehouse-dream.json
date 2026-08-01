@@ -147,7 +147,8 @@
             "exterior"
           ],
           "side": "north",
-          "width_mm": 3000
+          "width_mm": 3000,
+          "offset_mm": 500
         },
         {
           "type": "door",
@@ -189,9 +190,10 @@
             "garage",
             "exterior"
           ],
-          "side": "north",
+          "side": "west",
           "width_mm": 1000,
-          "sill_mm": 1800
+          "sill_mm": 1800,
+          "offset_mm": 3000
         }
       ]
     },
@@ -530,6 +532,28 @@
           "side": "north",
           "width_mm": 900,
           "sill_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "living_f2",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 2000
+        },
+        {
+          "type": "window",
+          "between": [
+            "dining_f2",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 1400
         }
       ]
     },
@@ -743,6 +767,39 @@
           "side": "north",
           "width_mm": 3400,
           "sill_mm": 0
+        },
+        {
+          "type": "window",
+          "between": [
+            "master_f3",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 2000
+        },
+        {
+          "type": "window",
+          "between": [
+            "kid_bed_f3",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 1500
+        },
+        {
+          "type": "window",
+          "between": [
+            "flex_lounge_f3",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 1200
         }
       ]
     },
@@ -920,6 +977,17 @@
           "side": "north",
           "width_mm": 900,
           "sill_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "guestbed_f4",
+            "exterior"
+          ],
+          "side": "west",
+          "width_mm": 1200,
+          "sill_mm": 900,
+          "offset_mm": 1500
         }
       ]
     }

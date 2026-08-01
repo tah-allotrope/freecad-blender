@@ -25,7 +25,9 @@ def test_example_specs_pass_geometric_validation():
     for name in ("demo-3br-2storey.json", "tubehouse-mini.json"):
         model = compile_spec(load_example(name))
         errors = validate_compiled(model)
-        assert errors == [], f"{name}: {errors}"
+        # Only warnings are expected: exterior walls are centred on the room
+        # edge and poke 100mm past the plot (ASM-004).
+        assert all(e.severity == "warning" for e in errors), f"{name}: {errors}"
 
 
 def test_schema_rejects_missing_meta():
@@ -61,7 +63,13 @@ def test_geometric_validation_flags_narrow_stairwell():
 
 def test_geometric_validation_flags_missing_stair_continuity():
     spec = load_example("demo-3br-2storey.json")
-    del spec["storeys"][0]["stairs"]
+    # Remove the stairwell shaft from level 1: level 0 generates stairs but
+    # the storey above no longer has a shaft for them to continue into.
+    for room in spec["storeys"][1]["rooms"]:
+        if room["id"] == "stairwell":
+            room["type"] = "storage"
     model = compile_spec(spec)
     errors = validate_compiled(model)
-    assert any(e.code == "missing_stair_continuity" for e in errors)
+    # The legacy missing_stair_continuity check was replaced by the registry's
+    # shaft_stacking rule, which emits shaft_discontinuous in this situation.
+    assert any(e.code == "shaft_discontinuous" for e in errors)

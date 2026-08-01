@@ -43,11 +43,20 @@ def plan_room(room_type: str, w_m: float, d_m: float) -> list[FurnitureItem]:
 def _plan_bedroom(w: float, d: float) -> list[FurnitureItem]:
     items = []
     bed_w, bed_d, bed_h = min(1.6, w * 0.6), 2.0, 0.55
+    rot = 0
     if bed_d > d - CLEARANCE_M:
-        bed_d, bed_w = bed_w, bed_d  # rotate if the room is shallow
-    bed_x = (w - bed_w) / 2
-    items.append(FurnitureItem("bed", bed_x, 0.1, 0, 0, bed_w, bed_d, bed_h))
-    if w - bed_w > 0.7:
+        # Room is shallow: rotate the bed 90deg instead of swapping its
+        # dimensions, so w/d stay semantic (w = headboard width, d = length)
+        # and the rotation carries the orientation. The fit check must use
+        # the rotated footprint.
+        if bed_w <= d - CLEARANCE_M and bed_d <= w:
+            rot = 90
+        else:
+            bed_d, bed_w = bed_w, bed_d  # legacy fallback: swap dimensions
+    fit_w, fit_d = (bed_d, bed_w) if rot else (bed_w, bed_d)
+    bed_x = (w - fit_w) / 2
+    items.append(FurnitureItem("bed", bed_x, 0.1, 0, rot, bed_w, bed_d, bed_h))
+    if w - fit_w > 0.7:
         items.append(FurnitureItem("wardrobe", w - 0.6, 0.0, 0, 0, 0.6, min(1.8, d * 0.4), 2.0))
     return items
 

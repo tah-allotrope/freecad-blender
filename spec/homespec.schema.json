@@ -157,7 +157,18 @@
                 },
                 "width_mm": {"type": "number", "exclusiveMinimum": 0, "default": 900},
                 "sill_mm": {"type": "number", "minimum": 0, "default": 0},
-                "head_mm": {"type": "number", "exclusiveMinimum": 0, "default": 2100}
+                "head_mm": {"type": "number", "exclusiveMinimum": 0, "default": 2100},
+                "align": {
+                  "type": "string",
+                  "enum": ["center", "start", "end"],
+                  "default": "center",
+                  "description": "Where along the wall the opening sits: center, start (wall segment start), or end."
+                },
+                "offset_mm": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Explicit distance from the wall segment start; overrides align entirely."
+                }
               }
             }
           }

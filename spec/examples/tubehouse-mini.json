@@ -89,7 +89,8 @@
             "living",
             "exterior"
           ],
-          "width_mm": 1000
+          "width_mm": 1000,
+          "offset_mm": 400
         },
         {
           "type": "window",
@@ -98,7 +99,8 @@
             "exterior"
           ],
           "width_mm": 1500,
-          "sill_mm": 900
+          "sill_mm": 900,
+          "offset_mm": 3400
         },
         {
           "type": "window",
@@ -107,7 +109,8 @@
             "exterior"
           ],
           "width_mm": 1500,
-          "sill_mm": 900
+          "sill_mm": 900,
+          "offset_mm": 1300
         }
       ]
     },

@@ -9,9 +9,15 @@ class SpecError:
     code: str
     path: str
     message: str
+    severity: str = "error"
 
     def to_dict(self) -> dict:
-        return {"code": self.code, "path": self.path, "message": self.message}
+        return {
+            "code": self.code,
+            "path": self.path,
+            "message": self.message,
+            "severity": self.severity,
+        }
 
 
 class SpecValidationError(Exception):

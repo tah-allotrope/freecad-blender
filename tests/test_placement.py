@@ -48,3 +48,16 @@ def test_all_items_stay_within_room_bounds():
             assert item.x + item.w <= w + 0.01
             assert -0.01 <= item.y
             assert item.y + item.d <= d + 0.01
+
+
+def test_shallow_bedroom_rotates_bed_90_degrees():
+    """A bed too long for a shallow room rotates 90deg: w/d stay semantic and
+    the rotation carries the orientation (TASK-03-09)."""
+    items = plan_room("bedroom", 4.0, 2.2)
+    bed = next(i for i in items if i.kind == "bed")
+    assert bed.rot_deg == 90
+    assert bed.w == 1.6
+    assert bed.d == 2.0
+    # Rotated footprint fits the room: d becomes the width direction.
+    assert bed.x >= 0 and bed.x + bed.d <= 4.0
+    assert bed.y >= 0 and bed.y + bed.w <= 2.2

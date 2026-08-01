@@ -29,39 +29,65 @@ def _validate_and_compile(spec_path: Path):
     except SpecValidationError as e:
         return None, e.errors
     geo_errors = validate_compiled(model)
-    if geo_errors:
+    if any(e.severity != "warning" for e in geo_errors):
         return None, geo_errors
-    return model, []
+    return model, geo_errors
 
 
-def _print_errors(errors) -> None:
-    for e in errors:
-        print(f"[{e.code}] {e.path}: {e.message}", file=sys.stderr)
+def _split_errors(errors):
+    errors_out = [e for e in errors if e.severity != "warning"]
+    warnings = [e for e in errors if e.severity == "warning"]
+    return errors_out, warnings
+
+
+def _print_errors(errors, json_out: bool = False) -> int:
+    errors_out, warnings = _split_errors(errors)
+    if json_out:
+        print(json.dumps({"errors": [e.to_dict() for e in errors_out],
+                          "warnings": [e.to_dict() for e in warnings]}))
+    else:
+        for e in errors_out:
+            print(f"[{e.code}] {e.path}: {e.message}", file=sys.stderr)
+        for e in warnings:
+            print(f"warning: [{e.code}] {e.path}: {e.message}", file=sys.stderr)
+    return 1 if errors_out else 0
+
+
+def _handle_errors(errors, args) -> int | None:
+    """Print errors/warnings and return the exit code, or None when no
+    error-severity item exists (warnings alone must not block the build)."""
+    errors_out, _ = _split_errors(errors)
+    if not errors:
+        return None
+    _print_errors(errors, json_out=args.json)
+    return 1 if errors_out else None
 
 
 def cmd_compile(args) -> int:
     spec_path = Path(args.spec)
     model, errors = _validate_and_compile(spec_path)
-    if errors:
-        _print_errors(errors)
-        return 1
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
     out_dir = REPO_ROOT / "output" / "compiled"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{model.name}.model.json"
     out_path.write_text(json.dumps(model.to_dict(), indent=2))
-    print(str(out_path))
+    if not args.json:
+        print(str(out_path))
     return 0
 
 
 def cmd_plans(args) -> int:
     spec_path = Path(args.spec)
     model, errors = _validate_and_compile(spec_path)
-    if errors:
-        _print_errors(errors)
-        return 1
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
     paths = plan2d.write_plans(model, REPO_ROOT / "output")
-    for p in paths:
-        print(str(p))
+    if not args.json:
+        for p in paths:
+            print(str(p))
     return 0
 
 
@@ -70,13 +96,14 @@ def cmd_build(args) -> int:
 
     spec_path = Path(args.spec)
     model, errors = _validate_and_compile(spec_path)
-    if errors:
-        _print_errors(errors)
-        return 1
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
     out_dir = REPO_ROOT / "output"
     plan_paths = plan2d.write_plans(model, out_dir)
-    for p in plan_paths:
-        print(str(p))
+    if not args.json:
+        for p in plan_paths:
+            print(str(p))
 
     model_path = out_dir / "compiled" / f"{model.name}.model.json"
     model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -96,9 +123,9 @@ def cmd_pdf(args) -> int:
 
     spec_path = Path(args.spec)
     model, errors = _validate_and_compile(spec_path)
-    if errors:
-        _print_errors(errors)
-        return 1
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
     out_dir = REPO_ROOT / "output"
 
     svg_dir = out_dir / "svg"
@@ -112,7 +139,8 @@ def cmd_pdf(args) -> int:
     brief = json.loads(brief_path.read_text())
 
     pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero)
-    print(str(pdf_path))
+    if not args.json:
+        print(str(pdf_path))
     return 0
 
 
@@ -120,21 +148,27 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="homedesign")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_compile = sub.add_parser("compile", help="validate + compile a spec to a model JSON")
+    json_parent = argparse.ArgumentParser(add_help=False)
+    json_parent.add_argument(
+        "--json", action="store_true",
+        help="emit errors/warnings as JSON on stdout instead of human text",
+    )
+
+    p_compile = sub.add_parser("compile", parents=[json_parent], help="validate + compile a spec to a model JSON")
     p_compile.add_argument("spec")
     p_compile.set_defaults(func=cmd_compile)
 
-    p_plans = sub.add_parser("plans", help="generate 2D SVG/DXF plans")
+    p_plans = sub.add_parser("plans", parents=[json_parent], help="generate 2D SVG/DXF plans")
     p_plans.add_argument("spec")
     p_plans.set_defaults(func=cmd_plans)
 
-    p_build = sub.add_parser("build", help="full build: plans + Blender scene + render")
+    p_build = sub.add_parser("build", parents=[json_parent], help="full build: plans + Blender scene + render")
     p_build.add_argument("spec")
     p_build.add_argument("--final", action="store_true", help="full-quality render instead of preview")
     p_build.add_argument("--floor", type=int, default=None)
     p_build.set_defaults(func=cmd_build)
 
-    p_pdf = sub.add_parser("pdf", help="assemble the architect-brief PDF")
+    p_pdf = sub.add_parser("pdf", parents=[json_parent], help="assemble the architect-brief PDF")
     p_pdf.add_argument("spec")
     p_pdf.add_argument("--brief", default=None, help="path to brief copy JSON (default: spec/briefs/<name>.json)")
     p_pdf.add_argument("--hero", default=None, help="view name to use as cover hero image")
