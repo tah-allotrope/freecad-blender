@@ -144,6 +144,37 @@ def cmd_pdf(args) -> int:
     return 0
 
 
+def cmd_render(args) -> int:
+    from . import orchestrator
+
+    spec_path = Path(args.spec)
+    model, errors = _validate_and_compile(spec_path)
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
+    out_dir = REPO_ROOT / "output"
+
+    model_path = out_dir / "compiled" / f"{model.name}.model.json"
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    model_path.write_text(json.dumps(model.to_dict(), indent=2))
+
+    views = args.views or None
+    if args.detach:
+        pid = orchestrator.render_only(
+            model_path, out_dir, profile=args.profile, views=views,
+            skip_existing=args.skip_existing, detach=True,
+        )
+        print(f"render launched (pid {pid})")
+        return 0
+    pngs = orchestrator.render_only(
+        model_path, out_dir, profile=args.profile, views=views,
+        skip_existing=args.skip_existing, detach=False,
+    )
+    for p in pngs:
+        print(str(p))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="homedesign")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -167,6 +198,15 @@ def main(argv=None) -> int:
     p_build.add_argument("--final", action="store_true", help="full-quality render instead of preview")
     p_build.add_argument("--floor", type=int, default=None)
     p_build.set_defaults(func=cmd_build)
+
+    p_render = sub.add_parser("render", parents=[json_parent], help="render views of an already-built model (reuses the .blend)")
+    p_render.add_argument("spec")
+    p_render.add_argument("--view", dest="views", action="append", default=None,
+                          help="view name to render (repeatable; default all)")
+    p_render.add_argument("--profile", default="preview", choices=["preview", "final"])
+    p_render.add_argument("--skip-existing", action="store_true", help="skip views whose PNG exists")
+    p_render.add_argument("--detach", action="store_true", help="launch detached and return immediately")
+    p_render.set_defaults(func=cmd_render)
 
     p_pdf = sub.add_parser("pdf", parents=[json_parent], help="assemble the architect-brief PDF")
     p_pdf.add_argument("spec")

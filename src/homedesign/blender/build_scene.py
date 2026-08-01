@@ -25,8 +25,8 @@ from homedesign.blender.materials import floor_material_key, get_material  # noq
 from homedesign.rects import subtract_rects  # noqa: E402
 
 FLOOR_SLAB_THICKNESS = 0.05
-PREVIEW = {"samples": 24, "res": (640, 360)}
-FINAL = {"samples": 512, "res": (1920, 1080)}
+PREVIEW = {"engine": "EEVEE", "samples": 32, "res": (960, 540)}
+FINAL = {"engine": "CYCLES", "samples": 512, "res": (1920, 1080)}
 
 
 def parse_args():
@@ -35,6 +35,9 @@ def parse_args():
     p.add_argument("--model", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--profile", default="preview", choices=["preview", "final"])
+    p.add_argument("--views", default=None, help="comma-separated view names; default all")
+    p.add_argument("--skip-existing", action="store_true", help="skip views whose PNG already exists")
+    p.add_argument("--reuse-blend", action="store_true", help="reopen existing .blend and skip geometry construction")
     return p.parse_args(argv)
 
 
@@ -264,11 +267,76 @@ def _point_at(obj, target):
     obj.rotation_euler = mathutils.Vector(direction).to_track_quat("-Z", "Y").to_euler()
 
 
-def render(model_name, cams, out_dir, profile):
+def _set_engine(scene, family: str) -> str:
+    """Set and return the accepted render-engine identifier for a family.
+
+    Blender 4.1's EEVEE is `BLENDER_EEVEE`; 4.2+ renamed it to
+    `BLENDER_EEVEE_NEXT`. Trying both identifiers in order (and raising with
+    the full list) keeps this working across versions (CON-001).
+    """
+    if family == "EEVEE":
+        identifiers = ["BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"]
+    elif family == "CYCLES":
+        identifiers = ["CYCLES"]
+    else:
+        raise ValueError(f"unknown engine family {family!r}")
+    for ident in identifiers:
+        try:
+            scene.render.engine = ident
+            return ident
+        except TypeError:
+            continue
+    raise RuntimeError(
+        f"no render engine accepted for family {family!r}; tried {identifiers}"
+    )
+
+
+def _configure_cycles_device() -> str:
+    """Enable the best available Cycles compute device and describe it.
+
+    Setting `scene.cycles.device = "GPU"` alone does nothing -- the compute
+    device type lives in the Cycles addon preferences and each device must be
+    enabled individually. This tries the GPU backends in order and falls back
+    to CPU, printing the outcome so the render path is never silently wrong.
+    """
+    prefs = bpy.context.preferences.addons["cycles"].preferences
+    enabled = []
+    for backend in ("OPTIX", "CUDA", "HIP", "ONEAPI", "METAL"):
+        try:
+            prefs.compute_device_type = backend
+        except TypeError:
+            continue
+        devices = [d for d in prefs.devices if d.type == backend]
+        for d in devices:
+            d.use = True
+        if devices:
+            enabled.append((backend, len(devices)))
+        if enabled:
+            break
     scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
+    if enabled:
+        scene.cycles.device = "GPU"
+        backend, count = enabled[0]
+        return f"GPU via {backend} ({count} device{'s' if count > 1 else ''})"
+    scene.cycles.device = "CPU"
+    return "CPU (no GPU backend available)"
+
+
+def render(model_name, cams, out_dir, profile, views=None, skip_existing=False):
+    scene = bpy.context.scene
     profile_cfg = FINAL if profile == "final" else PREVIEW
-    scene.cycles.samples = profile_cfg["samples"]
+    _set_engine(scene, profile_cfg["engine"])
+    if profile_cfg["engine"] == "CYCLES":
+        scene.cycles.samples = profile_cfg["samples"]
+        scene.cycles.use_adaptive_sampling = True
+        scene.cycles.adaptive_threshold = 0.01
+        scene.render.use_persistent_data = True
+        device_desc = _configure_cycles_device()
+        print(f"cycles device: {device_desc}")
+        sys.stdout.flush()
+    else:
+        scene.eevee.taa_render_samples = profile_cfg["samples"]
+        scene.eevee.use_soft_shadows = True
     scene.render.resolution_x, scene.render.resolution_y = profile_cfg["res"]
     scene.cycles.use_denoising = True
     # Filmic compresses highlights gracefully; "Standard" hard-clips to pure
@@ -278,18 +346,25 @@ def render(model_name, cams, out_dir, profile):
     except TypeError:
         scene.view_settings.view_transform = "Standard"
     scene.view_settings.exposure = 0.0
-    try:
-        scene.cycles.device = "GPU"
-    except Exception:
-        pass
 
+    want = set(views) if views else None
     png_dir = Path(out_dir) / "png"
     png_dir.mkdir(parents=True, exist_ok=True)
+    rendered: list[Path] = []
     for cam in cams:
-        scene.camera = cam
         tag = cam.name.replace("cam_", "")
-        scene.render.filepath = str(png_dir / f"{model_name}_{tag}.png")
+        if want is not None and tag not in want:
+            continue
+        target = png_dir / f"{model_name}_{tag}.png"
+        if skip_existing and target.exists():
+            print(f"skip: {target.name} exists")
+            sys.stdout.flush()
+            continue
+        scene.camera = cam
+        scene.render.filepath = str(target)
         bpy.ops.render.render(write_still=True)
+        rendered.append(target)
+    return rendered
 
 
 def main():
@@ -297,26 +372,34 @@ def main():
     model = json.loads(Path(args.model).read_text())
     style = model["style"]
 
-    clear_scene()
-    structure = new_collection("Structure")
-    furniture = new_collection("Furniture")
-
-    for storey in model["storeys"]:
-        build_walls(storey, style, structure)
-        build_floors_and_stairs(storey, style, structure)
-        if storey.get("roof"):
-            roof_mod.build_roof(storey["roof"], style, structure)
-        furnish.furnish_storey(storey, style, furniture)
-
-    build_environment(model, structure)
-    add_interior_lights(model, structure)
-    cams = add_cameras(model)
-
     out_dir = Path(args.out)
+    blend_path = out_dir / "blend" / f"{model['name']}.blend"
     (out_dir / "blend").mkdir(parents=True, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=str(out_dir / "blend" / f"{model['name']}.blend"))
 
-    render(model["name"], cams, out_dir, args.profile)
+    if args.reuse_blend and blend_path.exists():
+        # Reopen the saved scene and go straight to rendering (TASK-04-06).
+        bpy.ops.wm.open_mainfile(filepath=str(blend_path))
+        cams = [o for o in bpy.context.scene.objects if o.type == "CAMERA"]
+    else:
+        clear_scene()
+        structure = new_collection("Structure")
+        furniture = new_collection("Furniture")
+
+        for storey in model["storeys"]:
+            build_walls(storey, style, structure)
+            build_floors_and_stairs(storey, style, structure)
+            if storey.get("roof"):
+                roof_mod.build_roof(storey["roof"], style, structure)
+            furnish.furnish_storey(storey, style, furniture)
+
+        build_environment(model, structure)
+        add_interior_lights(model, structure)
+        cams = add_cameras(model)
+
+        bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
+
+    views = args.views.split(",") if args.views else None
+    render(model["name"], cams, out_dir, args.profile, views=views, skip_existing=args.skip_existing)
 
 
 if __name__ == "__main__":

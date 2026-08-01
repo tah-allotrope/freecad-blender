@@ -78,8 +78,30 @@ Cheat sheet:
    PYTHONPATH=src python -m homedesign build output/specs/<slug>.json
    ```
    This validates the spec (schema + geometric sanity), compiles it,
-   generates SVG/DXF plans, and drives a headless Blender build + preview
-   render. It prints every artifact path, ending with `blender build: <N>s`.
+   generates SVG/DXF plans, and drives a headless Blender build + EEVEE
+   preview render (960x540, a few seconds — previews check layout, not
+   lighting; the two engines differ on glass and window openings, so never
+   chase EEVEE artifacts). It prints every artifact path, ending with
+   `blender build: <N>s`.
+2b. **Re-render without rebuilding.** Once a `.blend` exists, iterate on
+   views without redoing geometry:
+   ```
+   PYTHONPATH=src python -m homedesign render output/specs/<slug>.json \
+       --view exterior --view interior [--profile final] [--skip-existing]
+   ```
+   `render` reuses the saved `.blend` (`--reuse-blend` is implicit). Add
+   `--skip-existing` to skip views whose PNG already exists.
+2c. **Detached long renders.** A full-quality gallery is an overnight job on
+   this hardware (~11 h). Launch it detached so a closed terminal cannot
+   kill it, then poll the log:
+   ```
+   PYTHONPATH=src python -m homedesign render output/specs/<slug>.json \
+       --profile final --detach
+   # prints: detached render pid, log path under output/logs/, kill command
+   tail -f output/logs/render-<ts>.log
+   ```
+   The Cycles device selection prints an explicit line (`cycles device: CPU
+   (no GPU backend available)` on this machine) — GPU is never assumed.
 3. **If the command exits nonzero**, its stderr is a list of
    `[code] path: message` errors (schema errors, room overlap, opening on a
    nonexistent wall, opening too wide for its wall, stairwell too narrow,
