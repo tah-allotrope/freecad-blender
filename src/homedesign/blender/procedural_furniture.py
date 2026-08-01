@@ -2,7 +2,6 @@
 furniture source. No external assets are required for a furnished render.
 Runs inside Blender.
 """
-import bpy
 
 from .geom import make_box
 from .materials import get_material

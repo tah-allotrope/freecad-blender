@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from src.homedesign.compiler import compile_spec
-from src.homedesign.errors import SpecValidationError
+from homedesign.compiler import compile_spec
+from homedesign.errors import SpecValidationError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"
@@ -130,7 +130,7 @@ def test_roof_only_on_declared_storey():
 
 
 def test_model_round_trips_through_dict():
-    from src.homedesign.model import CompiledModel
+    from homedesign.model import CompiledModel
 
     model = compile_spec(load_example("tubehouse-mini.json"))
     data = model.to_dict()

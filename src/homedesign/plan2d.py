@@ -5,7 +5,6 @@ FreeCAD/Draft dependency anywhere in this module.
 """
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import ezdxf

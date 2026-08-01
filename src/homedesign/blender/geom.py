@@ -58,7 +58,6 @@ def boolean_difference(target, cutter, collection):
     mod.operation = "DIFFERENCE"
     mod.object = cutter
     mod.solver = "EXACT"
-    dg = bpy.context.evaluated_depsgraph_get()
     bpy.context.view_layer.objects.active = target
     bpy.ops.object.modifier_apply(modifier=mod.name)
     collection.objects.unlink(cutter) if cutter.name in collection.objects else None

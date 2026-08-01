@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from src.homedesign.compiler import compile_spec
-from src.homedesign import pdf
+from homedesign.compiler import compile_spec
+from homedesign import pdf
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"

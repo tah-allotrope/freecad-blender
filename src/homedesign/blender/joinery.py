@@ -1,5 +1,4 @@
 """Parametric door/window objects. Runs inside Blender."""
-import bpy
 
 from .geom import make_box, make_hinged_box
 from .materials import get_material

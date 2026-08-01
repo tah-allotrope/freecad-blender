@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from src.homedesign.compiler import compile_spec
-from src.homedesign.validate import validate_compiled, validate_schema
+from homedesign.compiler import compile_spec
+from homedesign.validate import validate_compiled, validate_schema
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"

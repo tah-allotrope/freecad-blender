@@ -10,7 +10,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from homedesign.placement import plan_room  # noqa: E402
-from . import procedural_furniture as pf
+from . import procedural_furniture as pf  # noqa: E402
 
 
 def furnish_storey(storey_mm, style, collection):

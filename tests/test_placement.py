@@ -1,4 +1,4 @@
-from src.homedesign.placement import plan_room
+from homedesign.placement import plan_room
 
 
 def test_bedroom_gets_a_bed_that_fits():

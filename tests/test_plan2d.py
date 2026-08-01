@@ -3,8 +3,8 @@ from pathlib import Path
 
 import ezdxf
 
-from src.homedesign.compiler import compile_spec
-from src.homedesign import plan2d
+from homedesign.compiler import compile_spec
+from homedesign import plan2d
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"
