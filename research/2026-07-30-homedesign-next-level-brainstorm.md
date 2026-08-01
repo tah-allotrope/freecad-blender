@@ -240,7 +240,7 @@ and it's a publishable Artifact.
     cheat-sheet is a correctness hazard for whichever agent reads the wrong one.
   - **SKILL.md:57-64 sends user designs to `output/specs/<slug>.json`** — a directory that
     doesn't exist, under a tree that is **gitignored**. Every design a user authors would
-    be untracked and disposable; the one real design lives at `spec/tubehouse-dream.json`
+    be untracked and disposable; the one real design lives at `designs/tubehouse-dream.json`
     instead. This is a live data-loss path.
   - `output/` still carries ~50 FreeCAD-era artifacts (`fcstd/`, `obj/`, `ifc/`, `stl/`,
     `test.ifc`, `architect_package_manifest.json`).

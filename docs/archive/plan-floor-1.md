@@ -100,3 +100,5 @@ User runs the script -- it will now process both floors and output:
 2. Validate JSON with `python -c "import json; ..."`
 3. Run script in FreeCAD -- should produce F0 + F1 outputs
 4. Compare F1 SVG with preview to confirm match
+
+> **ARCHIVED (2026-08-01):** This file describes the retired FreeCAD pipeline and is kept for reference only. The current pipeline is pure Python + headless Blender; see AGENTS.md.

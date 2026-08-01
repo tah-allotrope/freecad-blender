@@ -127,3 +127,5 @@ A few things worth thinking about before the design is locked:
 ---
 
 *The project is in good shape — all floors are designed, the tooling is in place, and the next session just needs FreeCAD up and running to bring the full building to life.*
+
+> **ARCHIVED (2026-08-01):** This file describes the retired FreeCAD pipeline and is kept for reference only. The current pipeline is pure Python + headless Blender; see AGENTS.md.

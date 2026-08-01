@@ -77,3 +77,5 @@ A: Open the .FCStd file in FreeCAD GUI, select all objects (Ctrl+A),
 
 Q: FreeCAD shows nothing / blank document
 A: Run doc.recompute() in the Python console, then press V+F (fit all).
+
+> **ARCHIVED (2026-08-01):** This file describes the retired FreeCAD pipeline and is kept for reference only. The current pipeline is pure Python + headless Blender; see AGENTS.md.

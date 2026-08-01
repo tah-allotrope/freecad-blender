@@ -68,14 +68,14 @@ Cheat sheet:
 ## Workflow
 
 1. **Author or patch the spec.** For a new idea, write
-   `output/specs/<slug>.json` from scratch following the schema and the
+   `designs/<slug>.json` from scratch following the schema and the
    corridor pattern above. For an edit request ("make the kitchen bigger",
-   "add a bedroom"), load the existing `output/specs/<slug>.json` and make
+   "add a bedroom"), load the existing `designs/<slug>.json` and make
    the smallest JSON edit that satisfies the request — do not regenerate the
    whole spec. This keeps edits diffable and round-trippable.
 2. **Build.** Run:
    ```
-   PYTHONPATH=src python -m homedesign build output/specs/<slug>.json
+   PYTHONPATH=src python -m homedesign build designs/<slug>.json
    ```
    This validates the spec (schema + geometric sanity), compiles it,
    generates SVG/DXF plans, and drives a headless Blender build + EEVEE
@@ -86,7 +86,7 @@ Cheat sheet:
 2b. **Re-render without rebuilding.** Once a `.blend` exists, iterate on
    views without redoing geometry:
    ```
-   PYTHONPATH=src python -m homedesign render output/specs/<slug>.json \
+   PYTHONPATH=src python -m homedesign render designs/<slug>.json \
        --view exterior --view interior [--profile final] [--skip-existing]
    ```
    `render` reuses the saved `.blend` (`--reuse-blend` is implicit). Add
@@ -95,7 +95,7 @@ Cheat sheet:
    this hardware (~11 h). Launch it detached so a closed terminal cannot
    kill it, then poll the log:
    ```
-   PYTHONPATH=src python -m homedesign render output/specs/<slug>.json \
+   PYTHONPATH=src python -m homedesign render designs/<slug>.json \
        --profile final --detach
    # prints: detached render pid, log path under output/logs/, kill command
    tail -f output/logs/render-<ts>.log
@@ -133,7 +133,7 @@ Cheat sheet:
 Once a spec has a final render gallery (`meta.views`, built with `--final`),
 assemble an A3-landscape architect brief:
 ```
-PYTHONPATH=src python -m homedesign pdf output/specs/<slug>.json
+PYTHONPATH=src python -m homedesign pdf designs/<slug>.json
 ```
 This compiles the spec, regenerates SVG/DXF plans if missing, reads a brief
 copy file at `spec/briefs/<slug>.json` (`{title, subtitle, narrative: [...],

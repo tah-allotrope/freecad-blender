@@ -10,29 +10,42 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from .model import CompiledModel
 
 PAGE_CSS = """
-@page { size: A3 landscape; margin: 14mm; }
+@page { size: A3 landscape; margin: 14mm;
+        @bottom-right { content: counter(page) " / " counter(pages); font-size: 9pt; color: #666; }
+        @bottom-left { content: "homedesign"; font-size: 9pt; color: #666; } }
 * { box-sizing: border-box; }
 body { font-family: "Segoe UI", Arial, sans-serif; color: #1a1a1a; margin: 0; }
-.page { page-break-after: always; padding: 10mm; min-height: calc(297mm - 28mm); }
+/* Fixed height (not min-height) + overflow:hidden + flex column so every
+   section is hard-capped to exactly one physical page: a flex:1 child
+   (an svg or a table wrapper) absorbs whatever space is left after the
+   heading instead of pushing content onto a second page. */
+.page { page-break-after: always; padding: 10mm; height: calc(297mm - 28mm);
+        overflow: hidden; display: flex; flex-direction: column; }
 .page:last-child { page-break-after: auto; }
-h1 { font-size: 32pt; margin: 0 0 4mm; }
-h2 { font-size: 20pt; border-bottom: 2px solid #222; padding-bottom: 2mm; }
-.cover { display: flex; flex-direction: column; justify-content: flex-end;
-         height: calc(297mm - 28mm); background-size: cover; background-position: center;
+h1 { font-size: 32pt; margin: 0 0 4mm; flex: 0 0 auto; }
+h2 { font-size: 20pt; border-bottom: 2px solid #222; padding-bottom: 2mm; margin: 0 0 3mm; flex: 0 0 auto; }
+.cover { justify-content: flex-end; background-size: cover; background-position: center;
          color: white; text-shadow: 0 1px 6px rgba(0,0,0,.7); }
 .cover h1 { font-size: 44pt; }
 table { border-collapse: collapse; width: 100%; font-size: 11pt; }
 th, td { border: 1px solid #ccc; padding: 2mm 3mm; text-align: left; }
 th { background: #f0f0f0; }
-.plan-page svg { max-width: 100%; max-height: 230mm; }
-.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-.gallery img { width: 100%; height: auto; border: 1px solid #ddd; }
+.plan-page svg { width: 100%; height: 100%; flex: 1 1 auto; min-height: 0; }
+.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; flex: 1 1 auto; min-height: 0; }
+.gallery img { width: 100%; height: auto; max-height: 100%; object-fit: contain; border: 1px solid #ddd; }
 ul.requirements li { margin-bottom: 2mm; }
+/* Compact two-column layout for schedules with many rows (room / opening
+   counts scale with storey count and would otherwise spill onto extra
+   pages). */
+.two-col { display: flex; gap: 6mm; flex: 1 1 auto; min-height: 0; }
+.two-col > div { flex: 1; overflow: hidden; }
+.compact-table th, .compact-table td { padding: 0.6mm 2mm; font-size: 8pt; }
 """
 
 
@@ -59,6 +72,93 @@ def _img_data_uri(path: Path) -> str:
     return f"data:image/png;base64,{data}"
 
 
+def downscale_png(src: Path, dst: Path, max_width_px: int = 1400) -> Path:
+    """Write a copy of `src` scaled to at most `max_width_px` wide (ASM-007).
+
+    Returns `src` unchanged (and warns on stderr) when Pillow is unavailable.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        print(f"warning: Pillow unavailable; {src.name} not downscaled", file=sys.stderr)
+        return src
+    img = Image.open(src).convert("RGB")
+    if img.width > max_width_px:
+        ratio = max_width_px / img.width
+        new_h = max(int(img.height * ratio), 1)
+        img = img.resize((max_width_px, new_h))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    img.save(dst, "PNG")
+    return dst
+
+
+def build_opening_schedule(model: CompiledModel) -> list[dict]:
+    """One row per opening: id, storey, type, width, sill, head, rooms."""
+    rows = []
+    for storey in model.storeys:
+        rooms_by_id = {r.id: (r.name or r.id) for r in storey.rooms}
+        for o in storey.openings:
+            wall = next((w for w in storey.walls if w.id == o.wall_id), None)
+            rooms = []
+            if wall is not None:
+                # The wall's two side room ids are not directly stored on the
+                # opening in the compiled model; recover them from the wall
+                # neighbourhood: the rooms whose rects share that wall edge.
+                for r in storey.rooms:
+                    rect = r.rect
+                    if wall.orientation == "vertical":
+                        if abs(rect.x2 - wall.x) < 1 or abs(rect.x - (wall.x + wall.w)) < 1:
+                            if rect.y < wall.y + wall.h and rect.y2 > wall.y:
+                                rooms.append(r)
+                    else:
+                        if abs(rect.y2 - wall.y) < 1 or abs(rect.y - (wall.y + wall.h)) < 1:
+                            if rect.x < wall.x + wall.w and rect.x2 > wall.x:
+                                rooms.append(r)
+            room_labels = [rooms_by_id.get(r.id, r.id) for r in rooms[:2]]
+            if not room_labels:
+                room_labels = ["exterior", "?"]
+            rows.append({
+                "id": o.id,
+                "storey": storey.level,
+                "type": o.type,
+                "width_mm": o.width_mm,
+                "sill_mm": o.sill_mm,
+                "head_mm": o.head_mm,
+                "rooms": room_labels,
+            })
+    return rows
+
+
+def build_takeoff(model: CompiledModel) -> list[dict]:
+    """Per-storey quantities: GFA, wall lengths, opening counts, + totals."""
+    rows = []
+    total_gfa = total_ext = total_part = total_doors = total_windows = 0.0
+    for storey in model.storeys:
+        gfa = sum((r.rect.w / 1000) * (r.rect.d / 1000) for r in storey.rooms)
+        ext = sum(w.h / 1000 for w in storey.walls if w.kind == "exterior")
+        part = sum(w.h / 1000 for w in storey.walls if w.kind == "partition")
+        doors = sum(1 for o in storey.openings if o.type == "door")
+        windows = sum(1 for o in storey.openings if o.type == "window")
+        rows.append({
+            "level": storey.level, "name": storey.name,
+            "gfa_m2": round(gfa, 1), "exterior_wall_m": round(ext, 1),
+            "partition_wall_m": round(part, 1),
+            "door_count": doors, "window_count": windows,
+        })
+        total_gfa += gfa
+        total_ext += ext
+        total_part += part
+        total_doors += doors
+        total_windows += windows
+    rows.append({
+        "level": None, "name": "Total",
+        "gfa_m2": round(total_gfa, 1), "exterior_wall_m": round(total_ext, 1),
+        "partition_wall_m": round(total_part, 1),
+        "door_count": int(total_doors), "window_count": int(total_windows),
+    })
+    return rows
+
+
 def _svg_inline(path: Path) -> str:
     text = path.read_text()
     if text.startswith("<?xml"):
@@ -80,20 +180,36 @@ def _narrative_page(brief: dict) -> str:
     return f'<section class="page"><h2>Design Intent</h2>{paragraphs}</section>'
 
 
+def _split_rows(rows: list, n: int) -> list[list]:
+    """`rows` split into `n` near-equal chunks, earlier chunks taking any remainder."""
+    per = -(-len(rows) // n)  # ceil division
+    return [rows[i:i + per] for i in range(0, len(rows), per)] or [[]]
+
+
 def _schedule_page(schedule: list[dict]) -> str:
-    rows = "".join(
-        f"<tr><td>{s['name']}</td><td>{r['id']}</td><td>{r['type']}</td><td>{r['area_m2']:.1f}</td></tr>"
-        for s in schedule for r in s["rooms"]
-    )
+    all_rooms = [(s["name"], r) for s in schedule for r in s["rooms"]]
+    columns = _split_rows(all_rooms, 2)
+
+    def render_col(items):
+        rows = "".join(
+            f"<tr><td>{name}</td><td>{r['id']}</td><td>{r['type']}</td><td>{r['area_m2']:.1f}</td></tr>"
+            for name, r in items
+        )
+        return (
+            "<table class='compact-table'><thead><tr><th>Floor</th><th>Room</th><th>Type</th>"
+            f"<th>Area (m&#178;)</th></tr></thead><tbody>{rows}</tbody></table>"
+        )
+
+    cols_html = "".join(f"<div>{render_col(c)}</div>" for c in columns)
     totals = "".join(
-        f"<tr><td colspan='3'><b>{s['name']} total</b></td><td><b>{s['total_m2']:.1f}</b></td></tr>"
+        f"<tr><td>{s['name']}</td><td><b>{s['total_m2']:.1f} m&#178;</b></td></tr>"
         for s in schedule
     )
     return (
         '<section class="page"><h2>Room Schedule</h2>'
-        "<table><thead><tr><th>Floor</th><th>Room</th><th>Type</th>"
-        f"<th>Area (m&#178;)</th></tr></thead><tbody>{rows}</tbody></table>"
-        f'<h2>Floor Totals</h2><table><tbody>{totals}</tbody></table></section>'
+        f'<div class="two-col">{cols_html}</div>'
+        '<h2>Floor Totals</h2>'
+        f'<table class="compact-table"><tbody>{totals}</tbody></table></section>'
     )
 
 
@@ -106,14 +222,58 @@ def _plan_pages(model: CompiledModel, svg_dir: Path) -> str:
     return "".join(pages)
 
 
-def _gallery_pages(image_paths: list[Path], per_page: int = 2) -> str:
+def _gallery_pages(image_paths: list[Path], embed_images: bool, img_dir: Path) -> str:
     existing = [p for p in image_paths if p.exists()]
     pages = []
-    for i in range(0, len(existing), per_page):
-        chunk = existing[i:i + per_page]
-        imgs = "".join(f'<img src="{_img_data_uri(p)}">' for p in chunk)
-        pages.append(f'<section class="page"><h2>Renders</h2><div class="gallery">{imgs}</div></section>')
+    for i in range(0, len(existing), 2):
+        chunk = existing[i:i + 2]
+        imgs = []
+        for p in chunk:
+            if embed_images:
+                imgs.append(f'<img src="{_img_data_uri(p)}">')
+            else:
+                # Reference the downscaled copy by relative path so the HTML
+                # stays small (ASM-007); cover hero stays a data URI.
+                downscale_png(p, img_dir / p.name)
+                imgs.append(f'<img src="../pdf/img/{p.name}">')
+        pages.append(f'<section class="page"><h2>Renders</h2><div class="gallery">{"".join(imgs)}</div></section>')
     return "".join(pages)
+
+
+def _opening_schedule_page(rows: list[dict]) -> str:
+    def render_col(items):
+        body = "".join(
+            f"<tr><td>{r['id']}</td><td>{r['storey']}</td><td>{r['type']}</td>"
+            f"<td>{r['width_mm']:.0f}</td><td>{r['sill_mm']:.0f}</td><td>{r['head_mm']:.0f}</td>"
+            f"<td>{r['rooms'][0]} / {r['rooms'][1]}</td></tr>"
+            for r in items
+        )
+        return (
+            "<table class='compact-table'><thead><tr><th>ID</th><th>Floor</th><th>Type</th>"
+            "<th>Width</th><th>Sill</th><th>Head</th><th>Between</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>"
+        )
+
+    columns = _split_rows(rows, 2)
+    cols_html = "".join(f"<div>{render_col(c)}</div>" for c in columns)
+    return (
+        '<section class="page"><h2>Door &amp; Window Schedule</h2>'
+        f'<div class="two-col">{cols_html}</div></section>'
+    )
+
+
+def _takeoff_page(rows: list[dict]) -> str:
+    body = "".join(
+        f"<tr><td>{r['name']}</td><td>{r['gfa_m2']:.1f}</td><td>{r['exterior_wall_m']:.1f}</td>"
+        f"<td>{r['partition_wall_m']:.1f}</td><td>{r['door_count']}</td><td>{r['window_count']}</td></tr>"
+        for r in rows
+    )
+    return (
+        '<section class="page"><h2>Quantity Take-Off</h2>'
+        "<table><thead><tr><th>Storey</th><th>GFA (m&#178;)</th><th>Ext. wall (m)</th>"
+        "<th>Partition wall (m)</th><th>Doors</th><th>Windows</th></tr></thead>"
+        f"<tbody>{body}</tbody></table></section>"
+    )
 
 
 def _requirements_page(brief: dict) -> str:
@@ -133,25 +293,37 @@ def _appendix_page(model: CompiledModel, spec_path: Path) -> str:
 
 
 def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path,
-                       hero_view: str | None = None) -> str:
+                       hero_view: str | None = None, embed_images: bool = False) -> str:
     svg_dir = out_dir / "svg"
     png_dir = out_dir / "png"
+    img_dir = out_dir / "pdf" / "img"
+    img_dir.mkdir(parents=True, exist_ok=True)
 
     schedule = build_room_schedule(model)
+    openings = build_opening_schedule(model)
+    takeoff = build_takeoff(model)
     view_names = [v.name for v in model.views] or ["exterior", "interior"]
     image_paths = [png_dir / f"{model.name}_{name}.png" for name in view_names]
     hero_name = hero_view or (view_names[0] if view_names else None)
     hero_path = png_dir / f"{model.name}_{hero_name}.png" if hero_name else None
     if hero_path is not None and not hero_path.exists():
         hero_path = None
+    # The cover hero is embedded as a data URI, so downscale it hard -- a
+    # full-res 1920px render would otherwise add ~2.7MB of base64 to the
+    # HTML, blowing the <200KB budget (ASM-007).
+    hero_embedded = None
+    if hero_path is not None:
+        hero_embedded = downscale_png(hero_path, img_dir / f"hero_{hero_path.name}", max_width_px=640)
 
     body = "".join([
-        _cover_page(brief, hero_path),
+        _cover_page(brief, hero_embedded),
         _narrative_page(brief),
         _schedule_page(schedule),
         _plan_pages(model, svg_dir),
-        _gallery_pages(image_paths),
+        _gallery_pages(image_paths, embed_images, img_dir),
         _requirements_page(brief),
+        _opening_schedule_page(openings),
+        _takeoff_page(takeoff),
         _appendix_page(model, spec_path),
     ])
 
@@ -195,10 +367,11 @@ def print_html_to_pdf(html_path: Path, pdf_path: Path) -> None:
 
 
 def build_brief(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path,
-                 hero_view: str | None = None) -> Path:
+                 hero_view: str | None = None, embed_images: bool = False) -> Path:
     pdf_dir = out_dir / "pdf"
     pdf_dir.mkdir(parents=True, exist_ok=True)
-    html = render_brief_html(model, brief, out_dir, spec_path, hero_view=hero_view)
+    html = render_brief_html(model, brief, out_dir, spec_path, hero_view=hero_view,
+                             embed_images=embed_images)
     html_path = pdf_dir / f"{model.name}-brief.html"
     html_path.write_text(html, encoding="utf-8")
     pdf_path = pdf_dir / f"{model.name}-brief.pdf"

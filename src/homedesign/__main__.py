@@ -138,7 +138,8 @@ def cmd_pdf(args) -> int:
         return 1
     brief = json.loads(brief_path.read_text())
 
-    pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero)
+    pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero,
+                                   embed_images=args.embed_images)
     if not args.json:
         print(str(pdf_path))
     return 0
@@ -212,6 +213,8 @@ def main(argv=None) -> int:
     p_pdf.add_argument("spec")
     p_pdf.add_argument("--brief", default=None, help="path to brief copy JSON (default: spec/briefs/<name>.json)")
     p_pdf.add_argument("--hero", default=None, help="view name to use as cover hero image")
+    p_pdf.add_argument("--embed-images", action="store_true",
+                       help="embed gallery images as base64 data URIs (self-contained HTML; large)")
     p_pdf.set_defaults(func=cmd_pdf)
 
     args = parser.parse_args(argv)

@@ -7,7 +7,7 @@
 ## Current Task Plan (plans/2026-07-06-tubehouse-dream-home-plan.md)
 - [x] PHASE-01: Pipeline geometry extensions (partial roof, roof voids, opening `side` hint, `elevator` room type)
 - [x] PHASE-02: Configurable render gallery via `meta.views` (named camera list, backward-compatible default)
-- [x] PHASE-03: Authored + validated `spec/tubehouse-dream.json` (5-storey, light well, elevator, roof terrace)
+- [x] PHASE-03: Authored + validated `designs/tubehouse-dream.json` (5-storey, light well, elevator, roof terrace)
 - [x] PHASE-04: Final render gallery (9 views, 512 samples / 1920x1080)
 - [x] PHASE-05: Architect-brief PDF builder (`src/homedesign/pdf.py`, `pdf` CLI subcommand, `spec/briefs/tubehouse-dream.json`)
 
@@ -16,7 +16,7 @@
 ### What was built
 - **Geometry (PHASE-01):** `roof.rect`/`roof.voids` for partial roofs and open-to-sky light wells; opening `side` hint (`north|south|east|west`) to disambiguate which exterior wall gets a window when a room borders two exterior faces (street + light well); `elevator` room type.
 - **Render gallery (PHASE-02):** `meta.views` spec block replaces the hardcoded 2-camera setup — named views of kind `exterior_front|exterior_aerial|room`, each landing at `output/png/<name>_<view>.png`; omitting `views` reproduces the old 2-shot default.
-- **The house (PHASE-03):** `spec/tubehouse-dream.json` — 4m x 25m x 5-storey tube house, full-height light well beside the stair/elevator core, GF garage+lease, F1 lease studio, F2 living/kitchen/dining, F3 master+kid's room, F4 office/guest+roof terrace. Compiles clean, 5 SVG/DXF plan pairs generated.
+- **The house (PHASE-03):** `designs/tubehouse-dream.json` — 4m x 25m x 5-storey tube house, full-height light well beside the stair/elevator core, GF garage+lease, F1 lease studio, F2 living/kitchen/dining, F3 master+kid's room, F4 office/guest+roof terrace. Compiles clean, 5 SVG/DXF plan pairs generated.
 - **Final render gallery (PHASE-04):** 9 views at 512 samples/1920x1080 — exterior_front, exterior_aerial, lightwell, living, kitchen_dining, master_suite, kids_room, office, guest_room.
 - **PDF brief (PHASE-05):** `src/homedesign/pdf.py` assembles an HTML document (room-schedule table, per-floor inline-SVG plan pages, 2-per-page render gallery, requirements, handover appendix) and prints it to A3-landscape PDF via headless Edge/Chrome. `python -m homedesign pdf <spec.json>` CLI subcommand; brief copy lives in `spec/briefs/<name>.json`. Produced `output/pdf/tubehouse-dream-brief.pdf` (21 pages, verified A3 landscape page size, all sections present).
 

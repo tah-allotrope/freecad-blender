@@ -33,6 +33,7 @@ class Room:
     id: str
     type: str
     rect: Rect
+    name: Optional[str] = None
 
 
 @dataclass
@@ -128,7 +129,8 @@ class CompiledModel:
     def from_dict(data: dict) -> "CompiledModel":
         storeys = []
         for s in data["storeys"]:
-            rooms = [Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"])) for r in s["rooms"]]
+            rooms = [Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]),
+                          name=r.get("name")) for r in s["rooms"]]
             walls = [Wall(**w) for w in s["walls"]]
             openings = [Opening(**o) for o in s["openings"]]
             stairs = None

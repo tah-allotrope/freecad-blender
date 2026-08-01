@@ -37,7 +37,7 @@ caveats.
   `placement.py`, `plan2d.py`, `pdf.py`, `orchestrator.py`, `__main__.py`;
   `src/homedesign/blender/build_scene.py`, `geom.py`, `roof.py`, `joinery.py`,
   `procedural_furniture.py`, `furnish.py`, `materials.py`; `spec/homespec.schema.json`,
-  `spec/tubehouse-dream.json`, `spec/examples/*.json`; `tests/*.py`;
+  `designs/tubehouse-dream.json`, `spec/examples/*.json`; `tests/*.py`;
   `.claude/skills/homedesign/SKILL.md`; `AGENTS.md`.
 - **Out of scope:** IFC/BIM export (`src/ifc_export_utils.py` stays parked); glTF export and a web 3D
   viewer; PBR textures, HDRI lighting and external asset libraries; neighbour/street context massing;
@@ -55,10 +55,10 @@ caveats.
 - **Setup:** There is **no** `pyproject.toml` today — PHASE-01 creates it. Until then:
   `python -m pip install -r requirements.txt`. After PHASE-01: `python -m pip install -e ".[dev]"`.
 - **Build / Run:** No compile step. The pipeline is invoked as:
-  - `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json`
-  - `PYTHONPATH=src python -m homedesign plans spec/tubehouse-dream.json`
-  - `PYTHONPATH=src python -m homedesign build spec/tubehouse-dream.json [--final]`
-  - `PYTHONPATH=src python -m homedesign pdf spec/tubehouse-dream.json`
+  - `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json`
+  - `PYTHONPATH=src python -m homedesign plans designs/tubehouse-dream.json`
+  - `PYTHONPATH=src python -m homedesign build designs/tubehouse-dream.json [--final]`
+  - `PYTHONPATH=src python -m homedesign pdf designs/tubehouse-dream.json`
   After PHASE-01's editable install the `PYTHONPATH=src` prefix becomes unnecessary, but it must keep
   working — the Blender-side scripts rely on the same layout.
 - **Test:** Full suite: `python -m pytest tests -q` run from the repo root. Single test:
@@ -89,7 +89,7 @@ caveats.
                              materials, furnish, procedural_furniture
   src/ifc_export_utils.py    PARKED dead code, targets a retired spec format — do not touch
   spec/homespec.schema.json  JSON Schema (draft 2020-12) for the input spec
-  spec/tubehouse-dream.json  the flagship 5-storey 4m x 25m design
+  designs/tubehouse-dream.json  the flagship 5-storey 4m x 25m design
   spec/examples/*.json       demo-3br-2storey, tubehouse-mini, courtyard-fixture (test fixtures)
   spec/briefs/*.json         PDF cover/narrative/requirements copy, keyed by meta.name
   tests/                     pytest suite, pure Python only
@@ -506,7 +506,7 @@ compile against the new rules.
   Leave `build_walls`, `build_environment`, `add_interior_lights` and the camera functions untouched in
   this phase.
 - `spec/homespec.schema.json` (modify): add `mode` to the `stairs` object only.
-- `spec/tubehouse-dream.json` (modify): core rectangles per TASK-02-07, rear-room shifts per TASK-02-08,
+- `designs/tubehouse-dream.json` (modify): core rectangles per TASK-02-07, rear-room shifts per TASK-02-08,
   roof void per TASK-02-07.
 - `spec/examples/demo-3br-2storey.json`, `spec/examples/tubehouse-mini.json` (modify): stair shaft
   resize per TASK-02-09.
@@ -555,7 +555,7 @@ compile against the new rules.
 - `subtract_rects(0, 0, 4000, 4000, [])` → exactly `[(0, 0, 4000, 4000)]`.
 - `subtract_rects(0, 0, 1000, 1000, [(5000, 5000, 100, 100)])` → exactly `[(0, 0, 1000, 1000)]`
   (non-intersecting hole leaves the box whole).
-- `compile_spec(spec/tubehouse-dream.json)` → `storeys[1].floor_voids` contains the level-0 `stair`
+- `compile_spec(designs/tubehouse-dream.json)` → `storeys[1].floor_voids` contains the level-0 `stair`
   rectangle `{x: 0, y: 11000, w: 1900, d: 3700}` and an `elevator` rectangle; `storeys[0].floor_voids`
   contains the level-0 `elevator` rectangle only (per S2 rule 3) and **not** the stair.
 - `compile_spec` on every file in `spec/` and `spec/examples/` → no `SpecValidationError`.
@@ -564,7 +564,7 @@ compile against the new rules.
 - PHASE-01 (packaged imports and a green baseline).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json` exits 0.
+- [ ] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0.
 - [ ] `python - <<'EOF'` script reading `output/compiled/tubehouse-dream.model.json` reports a minimum
       tread depth of `>= 250` mm on every storey (today: 57–68 mm).
 - [ ] Every spec in `spec/` and `spec/examples/` compiles without error.
@@ -682,13 +682,13 @@ promises.
 - A spec whose level-1 room sits entirely over an untiled void on level 0 → `room_unsupported`.
 - A spec whose `stair` room is `{x:0,y:0,w:1900,d:3200}` on level 0 and `{x:100,y:0,w:1900,d:3200}` on
   level 1 → `shaft_misaligned`.
-- `check_walls_within_plot` on `spec/tubehouse-dream.json` → a non-empty list where **every** entry has
+- `check_walls_within_plot` on `designs/tubehouse-dream.json` → a non-empty list where **every** entry has
   `severity == "warning"`.
 - A spec with `storeys` authored as levels `[1, 0]` → compiles successfully with `base_z` of `0` for
   level 0 and the level-0 height for level 1, plus one `storeys_out_of_order` warning.
 - `placement.plan_room("bedroom", 4.0, 2.2)` → the returned bed item has `rot_deg == 90` and
   `w == 1.6`, `d == 2.0` (dimensions kept semantic; orientation carried by the angle).
-- `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json --json` → valid JSON on stdout
+- `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json --json` → valid JSON on stdout
   with `errors` and `warnings` keys.
 
 **Dependencies**
@@ -696,7 +696,7 @@ promises.
   be expected to pass).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json` exits 0 with only
+- [ ] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0 with only
       `wall_outside_plot` warnings.
 - [ ] The `tubehouse-dream` level-0 garage door and transom window no longer share a wall footprint —
       verified by a script asserting no two openings on one wall satisfy S3's overlap predicate.
@@ -899,7 +899,7 @@ render contains the whole building and every room render contains the furniture 
 - PHASE-04 (so the verification renders are fast enough to iterate on).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign render spec/tubehouse-dream.json --view exterior_front`
+- [ ] `PYTHONPATH=src python -m homedesign render designs/tubehouse-dream.json --view exterior_front`
       produces an image in which the building is fully within frame (the Pillow check above passes).
 - [ ] The same for `--view exterior_aerial`.
 - [ ] A room view of `tubehouse-dream`'s `living_f2` shows the dining table and chairs that
@@ -957,7 +957,7 @@ schedules an architect expects, and bring the repo's documentation back in line 
       `@page { @bottom-right { content: counter(page) } }`, falling back gracefully if the headless
       browser ignores it.
 - [ ] TASK-06-10: Create a git-tracked `designs/` directory with a `README.md` explaining that
-      user-authored specs live there (ASM-006), and move `spec/tubehouse-dream.json` to
+      user-authored specs live there (ASM-006), and move `designs/tubehouse-dream.json` to
       `designs/tubehouse-dream.json`. Update `.claude/skills/homedesign/SKILL.md` to reference
       `designs/<slug>.json` everywhere it currently says `output/specs/<slug>.json`. Leave
       `spec/examples/` and `spec/homespec.schema.json` where they are.
@@ -987,7 +987,7 @@ schedules an architect expects, and bring the repo's documentation back in line 
   behaviour intact and add the new builders alongside it.
 - `src/homedesign/__main__.py` (modify): add `--embed-images` to the `pdf` subcommand.
 - `designs/README.md` (create), `designs/tubehouse-dream.json` (create — moved from `spec/`),
-  `spec/tubehouse-dream.json` (delete).
+  `designs/tubehouse-dream.json` (delete).
 - `scripts/sync_skill.py` (create): copy-or-verify the skill file.
 - `.github/workflows/ci.yml` (modify): add a `python scripts/sync_skill.py --check` step.
 - `AGENTS.md` (modify): full rewrite per TASK-06-11.
@@ -1053,9 +1053,9 @@ schedules an architect expects, and bring the repo's documentation back in line 
   version and sandboxing. Mitigation: verify immediately after TASK-06-07; if images are missing from
   the PDF, fall back to data URIs for the gallery but keep the Pillow downscaling, which still cuts the
   HTML by roughly an order of magnitude.
-- **RISK-06-03:** Moving `spec/tubehouse-dream.json` to `designs/` breaks any path a person has
+- **RISK-06-03:** Moving `designs/tubehouse-dream.json` to `designs/` breaks any path a person has
   memorised. Mitigation: the move is a single commit; update every in-repo reference in the same commit
-  (`grep -rn "spec/tubehouse-dream.json" --include='*.md' --include='*.py' .`).
+  (`grep -rn "designs/tubehouse-dream.json" --include='*.md' --include='*.py' .`).
 
 ## Gotchas
 

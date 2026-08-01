@@ -1,7 +1,7 @@
 ---
 title: "Tubehouse Dream Home: 5-Storey Spec, Light Well, Render Gallery, Architect-Brief PDF"
 date: "2026-07-06"
-status: "complete — all five phases delivered (bfdac9d, c9c947f, 05b796e, b29c47f, 0682897): spec/tubehouse-dream.json compiles, 5 SVG/DXF plan pairs, 9 final 1920x1080 renders in output/png/, and output/pdf/tubehouse-dream-brief.pdf via the new `pdf` CLI stage"
+status: "complete — all five phases delivered (bfdac9d, c9c947f, 05b796e, b29c47f, 0682897): designs/tubehouse-dream.json compiles, 5 SVG/DXF plan pairs, 9 final 1920x1080 renders in output/png/, and output/pdf/tubehouse-dream-brief.pdf via the new `pdf` CLI stage"
 request: "tubehouse-dream-home"
 plan_type: "multi-phase"
 research_inputs:
@@ -29,7 +29,7 @@ design narrative, room schedule, requirements) into one A3-landscape architect-b
   `between: [room, "exterior"]` openings, so a room facing both the street and the light
   well cannot say which face gets the window; no `elevator` room type; `add_cameras`
   (build_scene.py:138) is hardcoded to 2 views; no PDF stage exists.
-- **Desired state:** `spec/tubehouse-dream.json` compiles cleanly to 5 storeys with light
+- **Desired state:** `designs/tubehouse-dream.json` compiles cleanly to 5 storeys with light
   well, elevator shaft, balconies, and partial roof; `python -m homedesign build ... --final`
   emits 5 floor-plan SVG/DXF pairs and an 8+-image render gallery; a new `pdf` CLI stage
   produces `output/pdf/tubehouse-dream-brief.pdf` (A3 landscape, via HTML → headless Edge).
@@ -83,7 +83,7 @@ design narrative, room schedule, requirements) into one A3-landscape architect-b
 |---|---|---|---|
 | PHASE-01 | Pipeline geometry extensions: partial roof, opening side hint, elevator type | None | Schema + compiler + tests green |
 | PHASE-02 | Configurable render gallery (8+ named views) | PHASE-01 | `build_scene.py` camera system + preview renders |
-| PHASE-03 | Author + validate the 5-storey tubehouse spec | PHASE-01 | `spec/tubehouse-dream.json`, 5 SVG/DXF plan pairs |
+| PHASE-03 | Author + validate the 5-storey tubehouse spec | PHASE-01 | `designs/tubehouse-dream.json`, 5 SVG/DXF plan pairs |
 | PHASE-04 | Final-quality render gallery | PHASE-02, PHASE-03 | 8+ PNGs in `output/png/` |
 | PHASE-05 | Architect-brief PDF builder + assembly | PHASE-03, PHASE-04 | `src/homedesign/pdf.py`, `output/pdf/tubehouse-dream-brief.pdf` |
 
@@ -188,7 +188,7 @@ aerial, light-well shot, and one interior per listed room.
 
 ### PHASE-03 - Author and Validate the 5-Storey Spec
 **Goal**
-Encode the brainstormed house (DEC-001 program) as `spec/tubehouse-dream.json` and
+Encode the brainstormed house (DEC-001 program) as `designs/tubehouse-dream.json` and
 iterate until compiler + validator emit zero errors and the 2D plans read correctly.
 
 **Tasks**
@@ -208,7 +208,7 @@ iterate until compiler + validator emit zero errors and the 2D plans read correc
 - [x] TASK-03-04: Add `meta.views` with 8+ views: exterior_front, exterior_aerial,
   light-well room shot, and interiors for living (F2), kitchen/dining (F2), master (F3),
   kid's room (F3), office (F4), guest room (F4).
-- [x] TASK-03-05: Loop `PYTHONPATH=src python -m homedesign compile spec/tubehouse-dream.json`
+- [x] TASK-03-05: Loop `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json`
   until zero `[code]` errors, then `plans` and visually review all five SVGs in
   `output/svg/tubehouse-dream_f{0..4}.svg` against the brainstorm program (room
   positions, areas, door swings, stair placement, light well visible as void).
@@ -217,7 +217,7 @@ iterate until compiler + validator emit zero errors and the 2D plans read correc
   exposure.
 
 **Files / Surfaces**
-- `spec/tubehouse-dream.json` — new; the house itself.
+- `designs/tubehouse-dream.json` — new; the house itself.
 - `output/svg/`, `output/dxf/`, `output/compiled/`, `output/png/` — generated artifacts.
 
 **Dependencies**
@@ -241,7 +241,7 @@ iterate until compiler + validator emit zero errors and the 2D plans read correc
 Produce the publication-quality image set for the PDF.
 
 **Tasks**
-- [x] TASK-04-01: Run `PYTHONPATH=src python -m homedesign build spec/tubehouse-dream.json --final`
+- [x] TASK-04-01: Run `PYTHONPATH=src python -m homedesign build designs/tubehouse-dream.json --final`
   in the background (512 samples, 1920×1080 per view; expect a long unattended run).
 - [x] TASK-04-02: Review every PNG; fix any framing/material issue by editing
   `meta.views` or the spec and re-render only what changed (re-running `--final` is
@@ -277,7 +277,7 @@ Net-new `pdf` pipeline stage assembling the DEC-002 document via HTML → headle
   and one `<section class="page">` per: cover (hero PNG full-bleed + title), narrative,
   room schedule, plan page per storey (inline SVG scaled to fit, storey name + area
   total), gallery pages (2 images/page), requirements, handover appendix (lists
-  `output/dxf/*.dxf` per floor + `spec/tubehouse-dream.json`). Images referenced via
+  `output/dxf/*.dxf` per floor + `designs/tubehouse-dream.json`). Images referenced via
   relative `file://` paths or base64-embedded (prefer base64 for a self-contained HTML).
 - [x] TASK-05-03: Write the brief copy as a data file `spec/briefs/tubehouse-dream.md`
   (or JSON) consumed by `pdf.py`: design-intent narrative (Vietnam urban context,
@@ -307,7 +307,7 @@ Net-new `pdf` pipeline stage assembling the DEC-002 document via HTML → headle
   against tubehouse-mini artifacts.
 
 **Exit Criteria**
-- [ ] `python -m homedesign pdf spec/tubehouse-dream.json` produces the PDF with all
+- [ ] `python -m homedesign pdf designs/tubehouse-dream.json` produces the PDF with all
   DEC-002 sections, verified by opening it.
 - [ ] `python -m pytest tests/` green including `test_pdf.py`.
 
