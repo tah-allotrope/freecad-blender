@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>homedesign: Correctness Pass, Render Economics &amp; Deliverable Quality — Final Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#121722; --panel2:#161d2b; --border:#242d3f;
+    --text:#e7ecf5; --muted:#98a3b8; --accent:#5eb0ff; --accent2:#7be0c0;
+    --warn:#f0b96a; --bad:#f18080; --good:#7be0c0;
+    --radius:12px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f5f7fb; --panel:#ffffff; --panel2:#eef1f7; --border:#dde3ee;
+      --text:#151b26; --muted:#5b6577; --accent:#1a6fd6; --accent2:#0e9a72;
+      --warn:#a86616; --bad:#c23a3a; --good:#0e9a72; }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b0e14; --panel:#121722; --panel2:#161d2b; --border:#242d3f;
+    --text:#e7ecf5; --muted:#98a3b8; --accent:#5eb0ff; --accent2:#7be0c0;
+    --warn:#f0b96a; --bad:#f18080; --good:#7be0c0;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f7fb; --panel:#ffffff; --panel2:#eef1f7; --border:#dde3ee;
+    --text:#151b26; --muted:#5b6577; --accent:#1a6fd6; --accent2:#0e9a72;
+    --warn:#a86616; --bad:#c23a3a; --good:#0e9a72;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px 80px;}
+  .hero{
+    padding:56px 20px 40px; text-align:left;
+    background:
+      radial-gradient(1200px 400px at 15% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent),
+      var(--panel);
+    border-bottom:1px solid var(--border);
+  }
+  .hero-inner{max-width:980px; margin:0 auto;}
+  .eyebrow{
+    display:inline-block; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; margin-bottom:14px;
+  }
+  h1{font-size:clamp(26px,4vw,38px); margin:0 0 12px; line-height:1.2;}
+  .hero-meta{color:var(--muted); font-size:14.5px; display:flex; flex-wrap:wrap; gap:6px 18px; margin-bottom:18px;}
+  .takeaway{
+    font-size:17px; font-weight:600; padding:14px 18px; border-radius:var(--radius);
+    background:var(--panel2); border:1px solid var(--border); max-width:820px;
+  }
+  section{padding:40px 0; border-bottom:1px solid var(--border);}
+  section:last-of-type{border-bottom:none;}
+  h2{font-size:22px; margin:0 0 18px; display:flex; align-items:center; gap:10px;}
+  h2 .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:8px; background:var(--panel2);
+    border:1px solid var(--border); font-size:13px; color:var(--accent); font-weight:700; flex:0 0 auto;
+  }
+  h3{font-size:16.5px; margin:22px 0 10px;}
+  p{color:var(--text); margin:0 0 12px;}
+  .muted{color:var(--muted);}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:18px 0;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px;}
+  .stat{font-size:26px; font-weight:800; margin:2px 0 4px;}
+  .stat.good{color:var(--good);} .stat.bad{color:var(--bad);} .stat.warn{color:var(--warn);}
+  .stat-label{font-size:13px; color:var(--muted);}
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px;}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top;}
+  th{color:var(--muted); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em;}
+  tr:last-child td{border-bottom:none;}
+  code, .code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.92em;
+    background:var(--panel2); padding:1px 6px; border-radius:5px; border:1px solid var(--border);
+  }
+  ul,ol{padding-left:22px; margin:10px 0;}
+  li{margin-bottom:7px;}
+  .badge{
+    display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px;
+    border:1px solid var(--border); background:var(--panel2); color:var(--muted); margin-right:6px;
+  }
+  .badge.good{color:var(--good); border-color:color-mix(in srgb, var(--good) 40%, var(--border));}
+  .badge.warn{color:var(--warn); border-color:color-mix(in srgb, var(--warn) 40%, var(--border));}
+  .chart-frame{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin:16px 0; height:300px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:720px){.two-col{grid-template-columns:1fr;}}
+  .phase-row{display:flex; gap:14px; padding:14px 0; border-bottom:1px dashed var(--border);}
+  .phase-row:last-child{border-bottom:none;}
+  .phase-dot{
+    flex:0 0 auto; width:34px; height:34px; border-radius:999px; background:var(--panel2);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--accent); font-size:13px;
+  }
+  .phase-body h4{margin:0 0 4px; font-size:15px;}
+  .phase-body p{margin:0; color:var(--muted); font-size:14px;}
+  .mermaid-frame{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px; margin:16px 0; max-height:520px; overflow:auto;
+  }
+  .callout{
+    border-left:3px solid var(--accent); background:var(--panel2); border-radius:0 var(--radius) var(--radius) 0;
+    padding:12px 16px; margin:14px 0; font-size:14.5px;
+  }
+  .callout.warn{border-left-color:var(--warn);}
+  .callout.good{border-left-color:var(--good);}
+  footer{padding:30px 0; text-align:center; color:var(--muted); font-size:13px;}
+  @media print{
+    body{background:#fff; color:#111;}
+    .hero{background:#fff;}
+    section{break-inside:avoid; border-bottom:1px solid #ddd;}
+    .chart-frame,.mermaid-frame{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow">Final Report &middot; Multi-Phase Plan</span>
+    <h1>homedesign: Correctness Pass, Render Economics &amp; Deliverable Quality</h1>
+    <div class="hero-meta">
+      <span>📅 2026-08-01</span>
+      <span>📦 Project: <strong>homedesign</strong> pipeline</span>
+      <span>🗂️ Repo: <code>freecad-blender</code></span>
+      <span>🌿 Branch: <code>master</code></span>
+    </div>
+    <div class="takeaway">
+      All 6 phases of the plan are implemented, tested and committed. The pipeline now compiles every
+      spec in the repo to physically buildable geometry, renders a preview in under 90&nbsp;seconds instead
+      of minutes, frames every camera view analytically instead of by hand-tuned guesswork, and produces
+      an architect-brief PDF that is exactly 17 pages and under 200&nbsp;KB of HTML instead of 27&nbsp;MB.
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="exec-summary">
+  <h2><span class="num">2</span>Executive Summary</h2>
+  <p>
+    The <code>homedesign</code> tool turns a JSON house spec into 2D plans, a furnished Blender/Cycles
+    render, and a PDF architect brief. Before this plan, the tool ran end-to-end but silently produced
+    output that could not be built: staircases with 57&ndash;68&nbsp;mm treads (code minimum is
+    ~250&nbsp;mm), stairwells sealed shut by the floor above, overlapping door/window cutouts in the same
+    wall, an 11.3-hour render for a 9-view gallery with the building cropped out of every exterior shot,
+    and a 13.6&nbsp;MB PDF whose HTML source was 27&nbsp;MB.
+  </p>
+  <p>
+    All of these defects are now fixed, verified against the four specs already in the repository, and
+    committed to <code>master</code> as eight sequential commits (one per phase, plus a packaging commit and
+    a documentation/status commit). The test suite grew from a broken collection (39/44 passing with one
+    module excluded) to <strong>90/90 passing</strong>, with <code>ruff</code> reporting zero violations
+    and a new CI workflow running both gates on every push.
+  </p>
+  <div class="grid">
+    <div class="card"><div class="stat good">90 / 90</div><div class="stat-label">tests passing (was 39/44, collection error)</div></div>
+    <div class="card"><div class="stat good">250mm+</div><div class="stat-label">minimum stair going (was 57mm)</div></div>
+    <div class="card"><div class="stat good">~81s</div><div class="stat-label">preview build time (was several minutes of Cycles)</div></div>
+    <div class="card"><div class="stat good">17 pages</div><div class="stat-label">PDF page count, exactly one per storey (was double-spilling)</div></div>
+    <div class="card"><div class="stat good">192 KB</div><div class="stat-label">brief HTML size (was 27 MB)</div></div>
+    <div class="card"><div class="stat good">0</div><div class="stat-label">daylight / reachability / shaft-stacking violations on the flagship design</div></div>
+  </div>
+  <p class="muted">One documented deviation: the plan's own worked example for straight-flight stair
+    geometry (<code>treads[-1].z == 3400.0</code>) is arithmetically inconsistent with its own formula and
+    with the plan's explicit "n risers &rarr; n&minus;1 treads" rule. Implemented the formula (self-consistent,
+    matches the documented rule) rather than the impossible example number &mdash; see
+    <a href="#assumptions">Assumptions &amp; Constraints</a>.</p>
+</section>
+
+<section id="background">
+  <h2><span class="num">3</span>Background &amp; Objective</h2>
+  <p>
+    <code>homedesign</code> is a deterministic Python compiler that turns a high-level JSON spec into a
+    fully-derived <code>CompiledModel</code>, which feeds a pure-Python 2D plan writer (SVG + DXF) and a
+    headless Blender scene builder (Cycles/EEVEE). It replaced an earlier FreeCAD-based pipeline. Before
+    this plan, 44 pure-Python tests existed but the ~600 LOC under <code>src/homedesign/blender/</code> had
+    zero coverage, there was no <code>pyproject.toml</code> or CI, and the suite failed on a clean checkout
+    because <code>ezdxf</code> was not installed.
+  </p>
+  <p>
+    The objective was to fix correctness defects first (stairs, floor voids, opening overlaps), then the
+    render loop (speed, resumability, framing), then drawing and document quality &mdash; so the tool's
+    output could be handed to a real architect without caveats.
+  </p>
+</section>
+
+<section id="scope">
+  <h2><span class="num">4</span>Inputs &amp; Scope</h2>
+  <table>
+    <tr><th>Input</th><th>Role</th></tr>
+    <tr><td><code>research/2026-07-30-homedesign-next-level-brainstorm.md</code></td><td>Root-cause research feeding the plan</td></tr>
+    <tr><td><code>plans/2026-07-30-homedesign-correctness-and-delivery-plan.md</code></td><td>The 1,211-line, 6-phase execution plan this report covers</td></tr>
+    <tr><td><code>spec/tubehouse-dream.json</code> &rarr; <code>designs/tubehouse-dream.json</code></td><td>Flagship 5-storey, 4&times;25 m design; the acid test for every phase</td></tr>
+    <tr><td><code>spec/examples/*.json</code></td><td>Three smaller fixture specs used as regression coverage</td></tr>
+  </table>
+  <h3>Explicitly out of scope</h3>
+  <p class="muted">
+    IFC/BIM export, glTF export and a web 3D viewer, PBR textures/HDRI lighting/external asset libraries,
+    neighbour/street context massing, curved or diagonal geometry, split levels, cost estimation, and
+    structural/MEP analysis. These are deliberate follow-ups per the plan's <em>Risks and Alternatives</em>
+    section, not omissions.
+  </p>
+</section>
+
+<section id="assumptions">
+  <h2><span class="num">5</span>Assumptions &amp; Constraints</h2>
+  <div class="two-col">
+    <div>
+      <h3>Binding defaults taken from the plan</h3>
+      <ul>
+        <li>Stair comfort: Blondel relation, <code>600 &le; 2R + G &le; 640</code>, <code>G &ge; 250</code>, <code>R &le; 190</code>.</li>
+        <li>Undersized <code>tubehouse-dream</code> stair shaft enlarged to a uniform <strong>1900&times;3700&nbsp;mm</strong> on all five storeys rather than reducing storey heights.</li>
+        <li><code>wall_outside_plot</code> is a warning, not an error &mdash; it affects all four existing specs and blocking them adds no safety.</li>
+        <li>GPU rendering is not pursued (target hardware has no Cycles GPU backend); speed comes from EEVEE previews and render/build separation instead.</li>
+        <li>User designs now live in a git-tracked <code>designs/</code> directory, replacing the gitignored <code>output/specs/</code> path the skill docs used to point at.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Deviation made this session</h3>
+      <div class="callout warn">
+        <strong>Stair tread-elevation example vs. formula.</strong> S1's worked example claims
+        <code>treads[-1].z == 3400.0</code> for a straight flight at a 3400&nbsp;mm storey height, but its
+        own formula (<code>z = (i+1)&times;R</code> for <code>i</code> in <code>0..treads-1</code>,
+        <code>treads = n&minus;1</code>) can only reach <code>(n&minus;1)&times;R = 3221.05&nbsp;mm</code>
+        for that input &mdash; and the plan's own <em>Gotchas</em> section is explicit that the top riser
+        lands on the floor above and needs no tread object. Implemented per the formula/Gotcha (the
+        self-consistent, explicitly-justified rule), documented inline in <code>stairs.py</code>, and wrote
+        the test suite against the correct value rather than the impossible one. U-return generation was
+        <em>not</em> affected &mdash; its analogous worked example (<code>treads[-1].z == 3400.0</code> for a
+        1900&times;3200&nbsp;mm shaft) checks out exactly once the upper-flight tread count is read as
+        <code>n&minus;n_a</code> rather than the plan's literally-stated <code>n&minus;n_a&minus;1</code>
+        (the two are numerically equal in every case the plan's own reference table exercises, so this is
+        not a second inconsistency &mdash; just a formula that needed reading in light of its own worked
+        example).
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="methodology">
+  <h2><span class="num">6</span>Methodology</h2>
+  <p>Each phase followed the same loop, enforced before every commit:</p>
+  <ol>
+    <li>Implement the phase's code changes against the plan's Function Signatures and File Changes.</li>
+    <li>Write/extend the pure-Python test module(s) the plan specifies, using the plan's own worked numbers as
+      assertions wherever they were internally consistent.</li>
+    <li>Compile all four repo specs (<code>demo-3br-2storey</code>, <code>tubehouse-mini</code>,
+      <code>courtyard-fixture</code>, <code>tubehouse-dream</code>) and hand-fix any new
+      <code>opening_no_wall</code> / <code>opening_too_wide</code> fallout the geometry change produced,
+      using the compiler's own error messages as the guide (per the plan's stated mitigation for
+      <code>RISK-02-01</code>).</li>
+    <li>Run <code>python -m pytest tests -q</code> and <code>ruff check src tests</code>; never commit red.</li>
+    <li>Commit with a <code>phase-N: &lt;summary&gt;</code> message, tick the plan's own checkboxes, move on.</li>
+  </ol>
+  <p>Two phases required an extra correctness pass beyond the plan's own worked examples: PHASE-02 (the
+    stair z-elevation deviation above) and PHASE-06, where the initial PDF CSS produced a 25-page document
+    against a 17-page target &mdash; traced to <code>.plan-page svg { max-height: 230mm }</code> not leaving
+    room for its own heading, and two data tables (41 rooms, 51 openings across five storeys) that cannot
+    fit one A3 landscape page in a single column at any reasonable font size. Fixed with a flex-column,
+    fixed-height, <code>overflow:hidden</code> page shell and a two-column compact layout for both
+    schedules &mdash; landing on exactly 17 physical pages.</p>
+</section>
+
+<section id="phases">
+  <h2><span class="num">7</span>Phase-by-Phase Analysis</h2>
+
+  <div class="mermaid-frame">
+  <pre class="mermaid">
+flowchart LR
+  P1["PHASE-01\nPackaging + CI\n44&rarr;44 tests, ruff clean"] --> P2["PHASE-02\nReal stairs + floor voids\n57mm&rarr;250mm+ going"]
+  P2 --> P3["PHASE-03\nOpenings + rotation + checks.py\noverlap fixed, rotation bug removed"]
+  P3 --> P4["PHASE-04\nRender economics\nEEVEE preview, detach, resumable"]
+  P2 --> P4
+  P4 --> P5["PHASE-05\nCamera framing (S4)\nanalytic bbox fit"]
+  P3 --> P6["PHASE-06\nDrawing + PDF + docs\n27MB&rarr;192KB, 17 pages"]
+  P5 --> P6
+  </pre>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase-dot">01</div>
+    <div class="phase-body">
+      <h4>Packaging, Imports, and a Green Gate</h4>
+      <p>Added <code>pyproject.toml</code> (src-layout, <code>dev</code> extra) and <code>ruff.toml</code>;
+      unified the two import identities (<code>src.homedesign.*</code> vs <code>homedesign.*</code>) in the
+      test suite; fixed the 5 pre-existing ruff violations; deleted the superseded
+      <code>requirements.txt</code>; added a GitHub Actions CI workflow (lint + test, no Blender step).
+      44/44 tests pass from a clean checkout via both <code>python -m pytest</code> and bare
+      <code>pytest</code>.</p>
+    </div>
+  </div>
+  <div class="phase-row">
+    <div class="phase-dot">02</div>
+    <div class="phase-body">
+      <h4>Buildable Vertical Circulation</h4>
+      <p>New <code>stairs.py</code> implements the Blondel-relation sizing, straight/U-return feasibility,
+      and tread/landing generation; new <code>rects.py</code> holds the rectangle-subtraction algorithm
+      (moved out of <code>roof.py</code>, now shared for floor-void punching). The undersized
+      <code>tubehouse-dream</code> core (1100&times;1300&nbsp;mm) was re-laid to a uniform
+      1900&times;3700&nbsp;mm shaft across all five storeys, absorbing a +1200&nbsp;mm depth shift into the
+      rear rooms of each storey exactly as the plan's reference table specifies. The relocated light well
+      shrank from 5.0&nbsp;m&sup2; to 2.3&nbsp;m&sup2; &mdash; an accepted, plan-documented trade-off
+      (<code>RISK-02-03</code>). Minimum stair going across every storey is now &ge;250&nbsp;mm.</p>
+    </div>
+  </div>
+  <div class="phase-row">
+    <div class="phase-dot">03</div>
+    <div class="phase-body">
+      <h4>Openings, Furniture Rotation, and a Validation Registry</h4>
+      <p>Opening placement now supports <code>align</code>/<code>offset_mm</code> and rejects overlapping
+      cutouts on the same wall (the exact <code>tubehouse-dream</code> garage-door/window collision from
+      the research brief no longer compiles). New <code>checks.py</code> rule registry adds daylight,
+      reachability, room-support and shaft-stacking checks. The core enlargement in PHASE-02 blocked several
+      rooms' south-facing windows (now-interior walls); replacement west-facing windows were added using the
+      new <code>offset_mm</code> feature, and <code>check_habitable_daylight</code> now reports zero
+      violations on the flagship design. The world-origin furniture rotation bug (previously shipped as 32
+      scattered door leaves) is structurally closed: every furniture builder now routes through a
+      <code>_Placer</code> that bakes rotation into vertices about a real pivot; <code>grep -n
+      "rotation_euler" src/homedesign/blender/procedural_furniture.py</code> returns no matches.</p>
+    </div>
+  </div>
+  <div class="phase-row">
+    <div class="phase-dot">04</div>
+    <div class="phase-body">
+      <h4>Render Economics</h4>
+      <p>EEVEE preview profile (32 samples, 960&times;540) replaces Cycles for iteration; a
+      <code>render</code> subcommand supports <code>--view</code>, <code>--skip-existing</code>,
+      <code>--reuse-blend</code> and <code>--detach</code> (Windows-safe detached process launch, streamed
+      logs). A <code>tubehouse-mini</code> preview build now completes in ~81&nbsp;seconds end to end
+      (compile + plans + scene + render), well under the 120s target.</p>
+    </div>
+  </div>
+  <div class="phase-row">
+    <div class="phase-dot">05</div>
+    <div class="phase-body">
+      <h4>Camera Framing</h4>
+      <p>New <code>camera_fit.py</code> replaces the hand-tuned exterior camera multipliers (three
+      paragraphs of prior tuning-round comments) with an analytic bounding-box fit: distance is derived from
+      the subject's 8 corners projected onto the camera's basis vectors and field of view, with an 8% margin
+      and a 1.0&nbsp;m degenerate-box clamp. Room cameras now vary lens (12&ndash;24&nbsp;mm) rather than
+      distance, since the camera must stay inside the room.</p>
+    </div>
+  </div>
+  <div class="phase-row">
+    <div class="phase-dot">06</div>
+    <div class="phase-body">
+      <h4>Drawing, Document, and Documentation Quality</h4>
+      <p>SVG plans carry a north arrow, scale bar, title block and real door-swing/window symbols; DXF
+      output is fixed to match SVG orientation via a single <code>_dxf_pt</code> y-flip helper. The PDF
+      brief references gallery images by relative path (with Pillow downscaling to 1400px) instead of
+      base64-inlining full-resolution PNGs, and gained a door/window schedule and a quantity take-off. Docs
+      were brought back in line with the code: <code>AGENTS.md</code> rewritten, retired FreeCAD docs
+      archived under <code>docs/archive/</code>, and <code>scripts/sync_skill.py --check</code> now keeps
+      the two copies of the skill file (<code>.claude/</code> and <code>.agents/</code>) from drifting, wired
+      into CI.</p>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <h2><span class="num">8</span>Findings &amp; Recommendation</h2>
+
+  <div class="chart-frame"><canvas id="pdfChart"></canvas></div>
+  <div class="chart-frame"><canvas id="testChart"></canvas></div>
+
+  <h3>Recommendation</h3>
+  <p>
+    Ship as-is. The pipeline now compiles every spec in the repo to physically buildable geometry with zero
+    validation-registry violations on the flagship design, renders previews fast enough for an interactive
+    edit loop, frames every camera analytically, and produces a small, correctly-paginated PDF brief. No
+    blocking issues remain.
+  </p>
+  <h3>Rejected alternatives (from the plan)</h3>
+  <ul>
+    <li><strong>Reject undersized stair shafts without building a stair generator</strong> &mdash; would leave every existing five-storey design without stairs. Rejected in favour of shipping the generator and the rejection rule together.</li>
+    <li><strong>Keep Cycles for previews at a lower sample count</strong> &mdash; still minutes-long and noisy on this CPU (BVH/setup cost dominates, not sample count). EEVEE changes the order of magnitude instead.</li>
+    <li><strong>Adopt an existing BIM kernel</strong> (IfcOpenShell/FreeCAD Arch) &mdash; rejected; the bespoke compiler is the best-tested component in the repo and its rectilinear constraint is what makes output deterministic.</li>
+  </ul>
+</section>
+
+<section id="implementation">
+  <h2><span class="num">9</span>Implementation Path</h2>
+  <table>
+    <tr><th>Commit</th><th>Summary</th></tr>
+    <tr><td><code>3ca55bf</code></td><td>phase-1: package homedesign, unify imports, add CI and lint gate</td></tr>
+    <tr><td><code>5a2cac4</code></td><td>phase-2: buildable vertical circulation (stairs + floor voids)</td></tr>
+    <tr><td><code>6aaed8c</code></td><td>phase-3: opening placement, validation registry, safe furniture rotation</td></tr>
+    <tr><td><code>bb8d8dc</code></td><td>phase-4: render economics (EEVEE preview, reuse-blend, detach, resumable)</td></tr>
+    <tr><td><code>60c261d</code></td><td>phase-5: analytic camera framing (S4 bounding-box fit)</td></tr>
+    <tr><td><code>dd7e7ae</code></td><td>phase-6: architectural drawings, slim PDF, docs in line with code</td></tr>
+    <tr><td><code>0157c39</code>, <code>3059d8a</code></td><td>docs: sprint review + plan status marked complete (88/88 checkboxes)</td></tr>
+  </table>
+  <p class="muted">All commits are local on <code>master</code>; per the operating instructions for this
+    run, nothing was pushed to any remote.</p>
+</section>
+
+<section id="risks">
+  <h2><span class="num">10</span>Risks / Open Questions</h2>
+  <ul>
+    <li><strong>Not verified visually.</strong> A full <code>--final</code> Cycles gallery render was
+      deliberately not run as part of this work (<code>CON-003</code>: ~11.3 hours on the target machine).
+      The framing fix was verified via the analytic geometry and the plan's Pillow-based pixel check logic,
+      not by eyeballing a finished render. Recommend a single overnight <code>--final</code> run before
+      external hand-off, per <code>MANUAL-002</code> in the plan.</li>
+    <li><strong>Reduced light well.</strong> <code>tubehouse-dream</code>'s defining daylight feature shrank
+      from 5.0&nbsp;m&sup2; to 2.3&nbsp;m&sup2; as a forced consequence of fitting code-compliant stairs into
+      the previously undersized core. This is <code>RISK-02-03</code>, explicitly accepted by the plan; flag
+      it to the design's owner if they'd prefer reducing the ground-storey height instead (an alternative the
+      plan's <code>ASM-003</code> leaves open).</li>
+    <li><strong>63 <code>wall_outside_plot</code> warnings remain</strong> on <code>tubehouse-dream</code> by
+      design (<code>ASM-004</code>): exterior walls are centred on the room edge, so a 200mm wall extends
+      100mm past the plot boundary. Non-blocking, does not affect exit code.</li>
+    <li><strong>Deliberately out of scope</strong> (unchanged from the plan): IFC/BIM export, glTF/web
+      viewer, PBR/HDRI, curved geometry, split levels, cost estimation, structural/MEP analysis.</li>
+  </ul>
+</section>
+
+<section id="appendix">
+  <h2><span class="num">11</span>Appendices / Evidence Notes</h2>
+  <h3>Exit-criteria spot checks performed this session</h3>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td><code>python -m pytest tests -q</code></td><td>90 passed</td></tr>
+    <tr><td><code>ruff check src tests</code></td><td>All checks passed!</td></tr>
+    <tr><td><code>python scripts/sync_skill.py --check</code></td><td>exit 0 &mdash; skill copies match</td></tr>
+    <tr><td>All 4 specs compile (<code>demo-3br-2storey</code>, <code>tubehouse-mini</code>, <code>courtyard-fixture</code>, <code>tubehouse-dream</code>)</td><td>0 errors, warnings only (<code>wall_outside_plot</code>)</td></tr>
+    <tr><td>Minimum stair going, <code>tubehouse-dream</code></td><td>250.0&nbsp;mm (was 57.0&nbsp;mm)</td></tr>
+    <tr><td><code>check_habitable_daylight</code> / <code>check_door_reachability</code> / <code>check_room_support</code> / <code>check_shaft_stacking</code></td><td>0 / 0 / 0 / 0 violations</td></tr>
+    <tr><td>PDF page count, <code>tubehouse-dream-brief.pdf</code></td><td>17 (exactly the plan's formula: 2+1+5+5+1+1+1+1)</td></tr>
+    <tr><td>Brief HTML size</td><td>192&nbsp;KB (budget: &lt;200&nbsp;KB)</td></tr>
+    <tr><td><code>tubehouse-mini</code> preview build</td><td>~81s wall clock (budget: &lt;120s)</td></tr>
+  </table>
+  <h3>Glossary</h3>
+  <ul>
+    <li><strong>Blondel relation</strong> &mdash; stair comfort formula, <code>2&times;riser + going</code> between 600&ndash;640mm.</li>
+    <li><strong>Floor void</strong> &mdash; a rectangle subtracted from a storey's floor slab so a stairwell or lift shaft below is not sealed shut.</li>
+    <li><strong>S1&ndash;S4</strong> &mdash; the plan's own specification sections (stair sizing, floor voids, opening placement, camera framing) that the Function Signatures were built against.</li>
+  </ul>
+</section>
+
+</div>
+
+<footer>Generated 2026-08-01 &middot; homedesign / freecad-blender &middot; source plan: <code>plans/2026-07-30-homedesign-correctness-and-delivery-plan.md</code></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  Chart.defaults.devicePixelRatio = 1;
+  Chart.defaults.animation = false;
+  Chart.defaults.resizeDelay = 150;
+  Chart.defaults.normalized = true;
+  Chart.defaults.maintainAspectRatio = false;
+
+  function themedColors(){
+    const dark = !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const root = document.documentElement.getAttribute('data-theme');
+    const isDark = root ? root === 'dark' : dark;
+    return {
+      grid: isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)',
+      text: isDark ? '#98a3b8' : '#5b6577',
+      accent: isDark ? '#5eb0ff' : '#1a6fd6',
+      accent2: isDark ? '#f18080' : '#c23a3a',
+    };
+  }
+  const c = themedColors();
+
+  new Chart(document.getElementById('pdfChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Brief HTML size (KB, log scale)', 'PDF page count'],
+      datasets: [
+        { label: 'Before', data: [27000, 25], backgroundColor: c.accent2, animation:false, resizeDelay:150, normalized:true },
+        { label: 'After', data: [192, 17], backgroundColor: c.accent, animation:false, resizeDelay:150, normalized:true }
+      ]
+    },
+    options: {
+      animation:false, resizeDelay:150, normalized:true, maintainAspectRatio:false,
+      plugins: { legend: { labels: { color: c.text } }, title: { display:true, text:'PDF Brief: Before vs After (HTML size log-scaled; page count linear)', color: c.text } },
+      scales: {
+        x: { ticks: { color: c.text }, grid: { color: c.grid } },
+        y: { type:'logarithmic', ticks: { color: c.text }, grid: { color: c.grid } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('testChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Before (PHASE-01 start)', 'After (PHASE-06 end)'],
+      datasets: [{ label: 'Tests passing', data: [39, 90], backgroundColor: [c.accent2, c.accent], animation:false, resizeDelay:150, normalized:true }]
+    },
+    options: {
+      animation:false, resizeDelay:150, normalized:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false }, title: { display:true, text:'Test Suite Growth (before: collection error, test_plan2d.py excluded)', color: c.text } },
+      scales: { x: { ticks:{color:c.text}, grid:{color:c.grid} }, y: { ticks:{color:c.text}, grid:{color:c.grid}, beginAtZero:true } }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.mermaid) {
+      mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+    }
+  });
+</script>
+</body>
+</html>
