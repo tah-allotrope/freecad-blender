@@ -1,7 +1,7 @@
 ---
 title: "homedesign: Correctness Pass, Render Economics, and Deliverable Quality"
 date: "2026-07-30"
-status: "draft"
+status: "complete"
 request: "Turn research/2026-07-30-homedesign-next-level-brainstorm.md into a multi-phase implementation plan for the homedesign pipeline (correctness pass, render economics + framing, deliverable quality)."
 plan_type: "multi-phase"
 research_inputs:
