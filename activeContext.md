@@ -13,6 +13,19 @@
 
 ## Review
 
+### Sprint review — 2026-08-01 (plans/2026-07-30-homedesign-correctness-and-delivery-plan.md, all phases done)
+
+**PHASE-01 Packaging/CI:** `pyproject.toml` editable install, unified `homedesign.` imports, ruff gate in CI.
+**PHASE-02 Buildable circulation:** `stairs.py` (Blondel-compliant straight/U-return, min going 250mm vs 57mm before), `rects.py` slab-fragment subtraction, floor voids for stair/elevator shafts, tubehouse-dream core re-laid.
+**PHASE-03 Validation registry:** `checks.py` (door reachability, habitable daylight, room support, shaft stacking, walls-within-plot warnings), opening `align`/`offset_mm` + overlap rejection, `--json` CLI, `_Placer` rotation fix (no `rotation_euler` remains), bed `rot_deg=90`. Fixed real spec defects: overlapping garage door + transom window (moved to west wall), demo stairwell misalignment, missing side windows on F2–F4 habitable rooms, courtyard fixture gained elevator + doors.
+**PHASE-04 Render economics:** EEVEE preview (960x540, 32 samples) — **9.5s build vs minutes**; Cycles final 512s + adaptive sampling; `render` subcommand with `--view/--skip-existing/--detach` (PID + log + kill cmd); streamed subprocess output; device line prints `CPU (no GPU backend available)`. `_set_engine` tries EEVEE_NEXT then EEVEE (CON-001).
+**PHASE-05 Camera framing:** `camera_fit.py` S4 analytic fit (max of horizontal/vertical half-FOV constraints over 8 corners, 8% margin); front camera frames the **facade box** (not full plot depth, which left tube houses a 25% strip); all cameras `sensor_fit=HORIZONTAL`, 35mm exteriors / 20mm rooms. Pillow framing test: exterior now ~88% width, centered, no cropping.
+**PHASE-06 Drawing quality:** SVG door swing arcs + 3-line windows, north arrow, scale bar, title block (1:100 @ A3), viewBox-only root; DXF `_dxf_pt` y-flip fixes the SVG/CAD mirroring; PDF gallery images relative + Pillow-downscaled (1400px), hero at 640px, door/window schedule + quantity take-off pages, page-number footer; HTML **26MB → 192KB**, PDF 17 pages (one per storey). `designs/` dir created (tubehouse-dream moved there), `scripts/sync_skill.py` + CI check, AGENTS.md rewritten, FreeCAD-era docs archived.
+
+**Deviation from plan (PHASE-05):** the plan's worked example for `fit_distance` (2x2x2 cube @ 1080p → 3.7735) computed only the horizontal constraint. With `sensor_fit=HORIZONTAL` the vertical half-FOV is narrower at 16:9, so vertical binds: correct value is 5.938 (tests assert this; the plan's "square frame binds vertical" claim was also backwards).
+
+### Earlier review (2026-07-06 plan)
+
 ### What was built
 - **Geometry (PHASE-01):** `roof.rect`/`roof.voids` for partial roofs and open-to-sky light wells; opening `side` hint (`north|south|east|west`) to disambiguate which exterior wall gets a window when a room borders two exterior faces (street + light well); `elevator` room type.
 - **Render gallery (PHASE-02):** `meta.views` spec block replaces the hardcoded 2-camera setup — named views of kind `exterior_front|exterior_aerial|room`, each landing at `output/png/<name>_<view>.png`; omitting `views` reproduces the old 2-shot default.

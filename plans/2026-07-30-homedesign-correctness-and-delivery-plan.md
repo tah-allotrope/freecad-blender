@@ -441,26 +441,26 @@ lift voids through the floor slabs per S2, and resize the stair shafts in all fo
 compile against the new rules.
 
 **Tasks**
-- [ ] TASK-02-01: Create `src/homedesign/rects.py` holding the pure rectangle-subtraction algorithm,
+- [x] TASK-02-01: Create `src/homedesign/rects.py` holding the pure rectangle-subtraction algorithm,
       moved verbatim from `src/homedesign/blender/roof.py` (`_subtract_rect`, `_subtract_rects`) and
       renamed to the public `subtract_rect` / `subtract_rects`. Update `roof.py` to import them. This
       makes the algorithm unit-testable outside Blender and reusable for floor voids.
-- [ ] TASK-02-02: Create `src/homedesign/stairs.py` implementing S1: sizing, feasibility for both modes,
+- [x] TASK-02-02: Create `src/homedesign/stairs.py` implementing S1: sizing, feasibility for both modes,
       mode selection, and tread/landing generation. It must not import `bpy`.
-- [ ] TASK-02-03: Add `mode` to the `stairs` object in `spec/homespec.schema.json` as
+- [x] TASK-02-03: Add `mode` to the `stairs` object in `spec/homespec.schema.json` as
       `{"type": "string", "enum": ["auto", "straight", "u_return", "none"], "default": "auto"}`. Leave
       `room` and `direction` unchanged.
-- [ ] TASK-02-04: Replace `compiler._derive_stairs` with a call into `stairs.derive_stairs`, propagating
+- [x] TASK-02-04: Replace `compiler._derive_stairs` with a call into `stairs.derive_stairs`, propagating
       `stair_shaft_too_small` and `stair_riser_too_tall` into the compiler's `errors` list (so they
       surface via `SpecValidationError` exactly like existing compile errors).
-- [ ] TASK-02-05: Add `floor_voids: list[Rect]` to the `Storey` dataclass in
+- [x] TASK-02-05: Add `floor_voids: list[Rect]` to the `Storey` dataclass in
       `src/homedesign/model.py` (default `field(default_factory=list)`), populate it in `compile_spec`
       per S2, and round-trip it in `CompiledModel.from_dict`.
-- [ ] TASK-02-06: Update `blender/build_scene.build_floors_and_stairs` to (a) subtract
+- [x] TASK-02-06: Update `blender/build_scene.build_floors_and_stairs` to (a) subtract
       `storey["floor_voids"]` from each room's floor slab using `rects.subtract_rects`, emitting one box
       per surviving fragment, and (b) draw treads as slabs occupying `[z - 0.05, z]` metres per S1's
       redefinition of `Tread.z`.
-- [ ] TASK-02-07: Re-lay the `tubehouse-dream` circulation core on **all five storeys** to the following
+- [x] TASK-02-07: Re-lay the `tubehouse-dream` circulation core on **all five storeys** to the following
       identical rectangles (per ASM-003), replacing the current `elevator` / `hall` / `stair` entries:
       - `stair` (`stairwell`): `{"x": 0, "y": 11000, "w": 1900, "d": 3700}`
       - `hall` (`hall`): `{"x": 1900, "y": 11000, "w": 1100, "d": 3700}`
@@ -469,7 +469,7 @@ compile against the new rules.
         storey — this is the relocated light well.
       Then update the level-4 `roof.voids` entry to `{"x": 3000, "y": 12400, "w": 1000, "d": 2300}` to
       match, keeping `roof.rect` otherwise as authored.
-- [ ] TASK-02-08: Absorb the resulting +1200 mm core depth on each `tubehouse-dream` storey: shift every
+- [x] TASK-02-08: Absorb the resulting +1200 mm core depth on each `tubehouse-dream` storey: shift every
       room with `rect.y >= 13500` by `+1200`, then reduce the depth of the storey's largest such room by
       1200 so that the rearmost room still ends at `y = 25000`. Concretely:
       - L0: `lease_gf` → `{"y": 14700, "d": 10300}`.
@@ -480,13 +480,13 @@ compile against the new rules.
         `laundry_f3` → `{"y": 17700, "d": 3800}`; `flex_lounge_f3` keeps `y = 21500`.
       - L4: `office_f4` → `{"y": 14700, "d": 5000}`; `guestbed_f4` → `{"y": 19700, "d": 3800}`;
         `guestbath_f4` and `storage_f4` keep `y = 23500`.
-- [ ] TASK-02-09: Resize the stair shafts in the three example specs to satisfy the U-return minimum
+- [x] TASK-02-09: Resize the stair shafts in the three example specs to satisfy the U-return minimum
       (1900 x 2900 mm), absorbing the change from the adjacent hall or corridor room so no room overlaps
       and no room leaves the plot: `spec/examples/demo-3br-2storey.json` (currently 2000 x 2500) and
       `spec/examples/tubehouse-mini.json` (currently 1500 x 2000). `spec/examples/courtyard-fixture.json`
       declares no stairs and needs no change. Re-run compilation after each edit and fix any
       `opening_no_wall` errors the geometry shift produces, using the error messages as the guide.
-- [ ] TASK-02-10: Update `.claude/skills/homedesign/SKILL.md` to document `stairs.mode`, the shaft-size
+- [x] TASK-02-10: Update `.claude/skills/homedesign/SKILL.md` to document `stairs.mode`, the shaft-size
       rule, and the fact that an undersized shaft is now a hard compile error naming the required size.
 
 **File Changes**
@@ -564,13 +564,13 @@ compile against the new rules.
 - PHASE-01 (packaged imports and a green baseline).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0.
-- [ ] `python - <<'EOF'` script reading `output/compiled/tubehouse-dream.model.json` reports a minimum
+- [x] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0.
+- [x] `python - <<'EOF'` script reading `output/compiled/tubehouse-dream.model.json` reports a minimum
       tread depth of `>= 250` mm on every storey (today: 57–68 mm).
-- [ ] Every spec in `spec/` and `spec/examples/` compiles without error.
-- [ ] `python -m pytest tests -q` passes, including the new `tests/test_stairs.py` and
+- [x] Every spec in `spec/` and `spec/examples/` compiles without error.
+- [x] `python -m pytest tests -q` passes, including the new `tests/test_stairs.py` and
       `tests/test_rects.py`.
-- [ ] `PYTHONPATH=src python -m homedesign build spec/examples/tubehouse-mini.json` completes and the
+- [x] `PYTHONPATH=src python -m homedesign build spec/examples/tubehouse-mini.json` completes and the
       saved `.blend` contains more floor-slab fragments than rooms on levels above the ground (proof the
       voids were punched).
 
@@ -597,34 +597,34 @@ rotation bug from the furniture path, and enforce the design rules the skill doc
 promises.
 
 **Tasks**
-- [ ] TASK-03-01: Add `severity: str = "error"` to the `SpecError` dataclass in
+- [x] TASK-03-01: Add `severity: str = "error"` to the `SpecError` dataclass in
       `src/homedesign/errors.py` and include it in `to_dict()`. Existing call sites keep the default.
-- [ ] TASK-03-02: Add `offset_mm` (`{"type": "number", "minimum": 0}`) and `align`
+- [x] TASK-03-02: Add `offset_mm` (`{"type": "number", "minimum": 0}`) and `align`
       (`{"type": "string", "enum": ["center", "start", "end"], "default": "center"}`) to the opening
       object in `spec/homespec.schema.json`.
-- [ ] TASK-03-03: Implement S3's offset resolution in `compiler._place_openings`, replacing the
+- [x] TASK-03-03: Implement S3's offset resolution in `compiler._place_openings`, replacing the
       hardcoded `offset = (span - width) / 2`, and emit `opening_out_of_wall` when the resolved opening
       leaves the wall.
-- [ ] TASK-03-04: Create `src/homedesign/checks.py` with a rule registry: a module-level list of
+- [x] TASK-03-04: Create `src/homedesign/checks.py` with a rule registry: a module-level list of
       `(code, callable)` pairs, each callable taking a `CompiledModel` and returning `list[SpecError]`.
       Implement the rules listed under Function Signatures below.
-- [ ] TASK-03-05: Rewrite `validate.validate_compiled` to run the registry and concatenate results,
+- [x] TASK-03-05: Rewrite `validate.validate_compiled` to run the registry and concatenate results,
       preserving the two existing checks (`stairwell_too_narrow`, `room_too_small`) as registry entries.
       Replace the `missing_stair_continuity` check with the registry's `shaft_stacking` rule, which is
       strictly more accurate.
-- [ ] TASK-03-06: Sort `spec["storeys"]` by `level` at the top of `compile_spec` before accumulating
+- [x] TASK-03-06: Sort `spec["storeys"]` by `level` at the top of `compile_spec` before accumulating
       `base_z`, and add a `storeys_out_of_order` rule that reports (as a warning) when the authored
       order differed from the sorted order. This removes the current silent dependence on list order.
-- [ ] TASK-03-07: Split error output by severity in `src/homedesign/__main__.py`: errors go to stderr
+- [x] TASK-03-07: Split error output by severity in `src/homedesign/__main__.py`: errors go to stderr
       and force exit code 1; warnings go to stderr prefixed `warning:` and do not affect the exit code.
       Add a global `--json` flag that emits `{"errors": [...], "warnings": [...]}` to stdout instead,
       using `SpecError.to_dict()`.
-- [ ] TASK-03-08: Fix the furniture rotation mechanism. Add a `_Placer` helper to
+- [x] TASK-03-08: Fix the furniture rotation mechanism. Add a `_Placer` helper to
       `src/homedesign/blender/procedural_furniture.py` holding `(pivot_x, pivot_y, angle_rad)` with a
       `.box(...)` method that calls `geom.make_hinged_box` when `angle_rad != 0` and `geom.make_box`
       otherwise. Change every `_build_*` function to take the placer and call `place.box(...)` instead
       of `make_box(...)`. Delete the `obj.rotation_euler` branch in `build_item` entirely.
-- [ ] TASK-03-09: Make `placement._plan_bedroom` emit `rot_deg = 90` for a bed in a shallow room instead
+- [x] TASK-03-09: Make `placement._plan_bedroom` emit `rot_deg = 90` for a bed in a shallow room instead
       of swapping `bed_w`/`bed_d`, and account for the rotated footprint in the fit check. This gives the
       rotation mechanism a real user and a pure-Python test.
 
@@ -696,13 +696,13 @@ promises.
   be expected to pass).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0 with only
+- [x] `PYTHONPATH=src python -m homedesign compile designs/tubehouse-dream.json` exits 0 with only
       `wall_outside_plot` warnings.
-- [ ] The `tubehouse-dream` level-0 garage door and transom window no longer share a wall footprint —
+- [x] The `tubehouse-dream` level-0 garage door and transom window no longer share a wall footprint —
       verified by a script asserting no two openings on one wall satisfy S3's overlap predicate.
-- [ ] `grep -n "rotation_euler" src/homedesign/blender/procedural_furniture.py` returns no matches.
-- [ ] All four specs pass `check_door_reachability` with an empty result.
-- [ ] `python -m pytest tests -q` passes with the new test modules.
+- [x] `grep -n "rotation_euler" src/homedesign/blender/procedural_furniture.py` returns no matches.
+- [x] All four specs pass `check_door_reachability` with an empty result.
+- [x] `python -m pytest tests -q` passes with the new test modules.
 
 **Phase Risks**
 - **RISK-03-01:** The reachability and daylight rules may fail existing specs that were authored without
@@ -724,41 +724,41 @@ Cut the preview render from minutes to seconds, separate rendering from scene bu
 cheap, and make long final renders resumable, observable, and able to survive a closed terminal.
 
 **Tasks**
-- [ ] TASK-04-01: Add an engine-selection helper to `blender/build_scene.py` that sets the render engine
+- [x] TASK-04-01: Add an engine-selection helper to `blender/build_scene.py` that sets the render engine
       by trying identifiers in order and falling back: for EEVEE try `BLENDER_EEVEE_NEXT` then
       `BLENDER_EEVEE`; for Cycles use `CYCLES`. Raise a clear `RuntimeError` naming the attempted
       identifiers if none is accepted (CON-001).
-- [ ] TASK-04-02: Redefine the render profiles: `PREVIEW = {"engine": "EEVEE", "samples": 32,
+- [x] TASK-04-02: Redefine the render profiles: `PREVIEW = {"engine": "EEVEE", "samples": 32,
       "res": (960, 540)}` and `FINAL = {"engine": "CYCLES", "samples": 512, "res": (1920, 1080)}`
       (ASM-005). Apply samples to `scene.eevee.taa_render_samples` for EEVEE and `scene.cycles.samples`
       for Cycles. Keep the `Filmic` view transform and its existing fallback for both engines.
-- [ ] TASK-04-03: Replace the silent `try: scene.cycles.device = "GPU"` block with
+- [x] TASK-04-03: Replace the silent `try: scene.cycles.device = "GPU"` block with
       `_configure_cycles_device()`, which sets
       `bpy.context.preferences.addons["cycles"].preferences.compute_device_type` by trying `OPTIX`,
       `CUDA`, `HIP`, `ONEAPI`, `METAL` in order, enables every returned device, sets
       `scene.cycles.device = "GPU"` only when at least one device was enabled, and **prints** the
       outcome (`cycles device: CPU (no GPU backend available)` or `cycles device: GPU via CUDA (1
       device)`). No bare excepts.
-- [ ] TASK-04-04: Enable Cycles adaptive sampling (`scene.cycles.use_adaptive_sampling = True`,
+- [x] TASK-04-04: Enable Cycles adaptive sampling (`scene.cycles.use_adaptive_sampling = True`,
       `adaptive_threshold = 0.01`) and `scene.render.use_persistent_data = True` for the final profile.
-- [ ] TASK-04-05: Add `--views` (comma-separated view names, default all) and `--skip-existing` flags to
+- [x] TASK-04-05: Add `--views` (comma-separated view names, default all) and `--skip-existing` flags to
       `blender/build_scene.py`'s argument parser, and honour them in `render()`: skip any view whose
       target PNG already exists when `--skip-existing` is set.
-- [ ] TASK-04-06: Add a `--reuse-blend` flag to `build_scene.py` that, when the target `.blend` exists,
+- [x] TASK-04-06: Add a `--reuse-blend` flag to `build_scene.py` that, when the target `.blend` exists,
       opens it with `bpy.ops.wm.open_mainfile` and skips all geometry construction, going straight to
       rendering.
-- [ ] TASK-04-07: Change `orchestrator.build_scene` to stream Blender's output line by line to stderr
+- [x] TASK-04-07: Change `orchestrator.build_scene` to stream Blender's output line by line to stderr
       via `subprocess.Popen` with `stdout=PIPE, stderr=STDOUT`, instead of `subprocess.run(capture_output=True)`.
       Preserve the non-zero-exit `RuntimeError`, including the last 50 streamed lines in its message.
-- [ ] TASK-04-08: Add `orchestrator.render_only(model_path, out_dir, profile, views, skip_existing,
+- [x] TASK-04-08: Add `orchestrator.render_only(model_path, out_dir, profile, views, skip_existing,
       detach, log_path)`. When `detach` is true, launch Blender with `subprocess.Popen`, redirect
       stdout/stderr to `log_path`, use `creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP`
       on Windows and `start_new_session=True` elsewhere, and return the PID immediately without waiting.
-- [ ] TASK-04-09: Add a `render` subcommand to `src/homedesign/__main__.py`:
+- [x] TASK-04-09: Add a `render` subcommand to `src/homedesign/__main__.py`:
       `python -m homedesign render <spec.json> [--view NAME]... [--profile preview|final]
       [--skip-existing] [--detach]`. It compiles the spec, writes the model JSON, then calls
       `render_only`. With `--detach` it prints the PID and the log path and exits 0 immediately.
-- [ ] TASK-04-10: Create `output/logs/` on demand in `orchestrator` and add `output/` is already
+- [x] TASK-04-10: Create `output/logs/` on demand in `orchestrator` and add `output/` is already
       gitignored, so no `.gitignore` change is needed — verify this rather than assuming.
 
 **File Changes**
@@ -806,14 +806,14 @@ cheap, and make long final renders resumable, observable, and able to survive a 
 - PHASE-01. Independent of PHASE-02 and PHASE-03; may be executed in parallel with them if desired.
 
 **Exit Criteria**
-- [ ] A preview build of `spec/examples/tubehouse-mini.json` completes in under 120 seconds wall clock.
-- [ ] `python -m homedesign render <spec> --view <name>` renders exactly one view and does not rebuild
+- [x] A preview build of `spec/examples/tubehouse-mini.json` completes in under 120 seconds wall clock.
+- [x] `python -m homedesign render <spec> --view <name>` renders exactly one view and does not rebuild
       geometry when `--reuse-blend` is in effect.
-- [ ] `--detach` returns control immediately and the render continues after the launching shell exits.
-- [ ] The Cycles device selection prints an explicit line naming CPU or GPU; no bare `except` remains in
+- [x] `--detach` returns control immediately and the render continues after the launching shell exits.
+- [x] The Cycles device selection prints an explicit line naming CPU or GPU; no bare `except` remains in
       the render path (`grep -n "except Exception" src/homedesign/blender/build_scene.py` returns no
       matches in `render`/device code).
-- [ ] `python -m pytest tests -q` passes.
+- [x] `python -m pytest tests -q` passes.
 
 **Phase Risks**
 - **RISK-04-01:** EEVEE handles the `transmission` glass material and the boolean-cut wall openings
@@ -833,26 +833,26 @@ Replace the hand-tuned camera multipliers with the analytic bounding-box fit in 
 render contains the whole building and every room render contains the furniture actually placed in it.
 
 **Tasks**
-- [ ] TASK-05-01: Create `src/homedesign/camera_fit.py` implementing S4 as pure math over plain tuples —
+- [x] TASK-05-01: Create `src/homedesign/camera_fit.py` implementing S4 as pure math over plain tuples —
       no `bpy` import, so it is unit-testable.
-- [ ] TASK-05-02: Add a helper that computes the building's world bounding box in metres from a
+- [x] TASK-05-02: Add a helper that computes the building's world bounding box in metres from a
       `CompiledModel` dict (plot footprint by total storey height), excluding the ground plane and roof
       overhang.
-- [ ] TASK-05-03: Add a helper that computes a room's subject bounding box: the room's interior volume
+- [x] TASK-05-03: Add a helper that computes a room's subject bounding box: the room's interior volume
       from the storey floor to `min(storey_height, 2.4)` metres, unioned with the world-space footprint
       of every item returned by `placement.plan_room` for that room.
-- [ ] TASK-05-04: Rewrite `_build_exterior_front_camera` to use the fit: direction from the street
+- [x] TASK-05-04: Rewrite `_build_exterior_front_camera` to use the fit: direction from the street
       (azimuth along `+y`, elevation `-15°`), lens left at Blender's 50 mm default. Delete the
       `plot_w * 3.0 + total_height * 1.2 + 6` distance heuristic and the `0.3` / `0.55` offset factors
       along with their explanatory comments, which no longer apply.
-- [ ] TASK-05-05: Rewrite `_build_exterior_aerial_camera` to use the fit at azimuth 45°, elevation
+- [x] TASK-05-05: Rewrite `_build_exterior_aerial_camera` to use the fit at azimuth 45°, elevation
       `-40°`.
-- [ ] TASK-05-06: Rewrite `_build_room_camera` to place the camera at the near end of the room's long
+- [x] TASK-05-06: Rewrite `_build_room_camera` to place the camera at the near end of the room's long
       axis at 1.5 m eye height, aim `-5°` downward along that axis, and set the **lens** (not the
       distance, which is constrained by the walls) to the widest value in `[12, 15, 18, 20, 24]` that
       still fits the subject box per S4. This keeps the camera inside the room while guaranteeing the
       furniture is in frame.
-- [ ] TASK-05-07: Set `cam_data.sensor_fit = 'HORIZONTAL'` and `cam_data.sensor_width = 36.0` on every
+- [x] TASK-05-07: Set `cam_data.sensor_fit = 'HORIZONTAL'` and `cam_data.sensor_width = 36.0` on every
       camera so the S4 field-of-view math matches Blender's actual projection.
 
 **File Changes**
@@ -899,14 +899,14 @@ render contains the whole building and every room render contains the furniture 
 - PHASE-04 (so the verification renders are fast enough to iterate on).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign render designs/tubehouse-dream.json --view exterior_front`
+- [x] `PYTHONPATH=src python -m homedesign render designs/tubehouse-dream.json --view exterior_front`
       produces an image in which the building is fully within frame (the Pillow check above passes).
-- [ ] The same for `--view exterior_aerial`.
-- [ ] A room view of `tubehouse-dream`'s `living_f2` shows the dining table and chairs that
+- [x] The same for `--view exterior_aerial`.
+- [x] A room view of `tubehouse-dream`'s `living_f2` shows the dining table and chairs that
       `placement._plan_living` places — verified by confirming the camera's subject box includes the
       furniture footprint and the camera is positioned outside it along the view axis.
-- [ ] `grep -n "plot_w \* 3.0" src/homedesign/blender/build_scene.py` returns no matches.
-- [ ] `python -m pytest tests -q` passes with `tests/test_camera_fit.py`.
+- [x] `grep -n "plot_w \* 3.0" src/homedesign/blender/build_scene.py` returns no matches.
+- [x] `python -m pytest tests -q` passes with `tests/test_camera_fit.py`.
 
 **Phase Risks**
 - **RISK-05-01:** For `room` views the camera must stay inside the room, so distance is not free — a
@@ -926,54 +926,54 @@ Turn the 2D output into a readable architectural drawing, shrink and correct the
 schedules an architect expects, and bring the repo's documentation back in line with the code.
 
 **Tasks**
-- [ ] TASK-06-01: Add an optional `name` string to the room object in `spec/homespec.schema.json` and to
+- [x] TASK-06-01: Add an optional `name` string to the room object in `spec/homespec.schema.json` and to
       the `Room` dataclass in `src/homedesign/model.py` (default `None`), round-tripped in
       `CompiledModel.from_dict`. Plan labels and the PDF schedule use `room.name or room.id`.
-- [ ] TASK-06-02: In `src/homedesign/plan2d.py`, emit the SVG root with **only** a `viewBox` and
+- [x] TASK-06-02: In `src/homedesign/plan2d.py`, emit the SVG root with **only** a `viewBox` and
       `preserveAspectRatio="xMidYMid meet"` — remove the fixed `width` and `height` attributes. This is
       what makes the PDF's per-storey plan pages fit one A3 sheet.
-- [ ] TASK-06-03: Add door swing arcs to the SVG (a quarter-circle path of radius `width_mm` from the
+- [x] TASK-06-03: Add door swing arcs to the SVG (a quarter-circle path of radius `width_mm` from the
       hinge jamb, plus the leaf line) and a three-line window symbol, replacing the current flat coloured
       rectangles. Keep the existing colour coding (`#c0392b` doors, `#3a7bd5` windows).
-- [ ] TASK-06-04: Add a north arrow (pointing toward `-y`, i.e. up-screen, per the repo's cardinal
+- [x] TASK-06-04: Add a north arrow (pointing toward `-y`, i.e. up-screen, per the repo's cardinal
       convention), a graphic scale bar in metres, and a title-block rectangle in the lower-right of each
       SVG carrying the design name, storey name, plot dimensions, and a `1:100 @ A3` scale note.
-- [ ] TASK-06-05: Fix the DXF vertical mirroring: add a `_dxf_pt(x_mm, y_mm, plot_depth_mm)` helper
+- [x] TASK-06-05: Fix the DXF vertical mirroring: add a `_dxf_pt(x_mm, y_mm, plot_depth_mm)` helper
       returning `(x_mm, plot_depth_mm - y_mm)` and route every DXF coordinate through it, so the CAD
       output matches the SVG orientation. Centre the room labels with
       `set_placement((cx, cy), align="MIDDLE_CENTER")`.
-- [ ] TASK-06-06: Add door swing arcs (`msp.add_arc`) and window symbols to the DXF on their existing
+- [x] TASK-06-06: Add door swing arcs (`msp.add_arc`) and window symbols to the DXF on their existing
       `DOORS` / `WINDOWS` layers, mirroring the SVG symbols.
-- [ ] TASK-06-07: In `src/homedesign/pdf.py`, reference gallery images by relative path
+- [x] TASK-06-07: In `src/homedesign/pdf.py`, reference gallery images by relative path
       (`../png/<file>.png`) instead of base64 data URIs, and downscale each to 1400 px wide with Pillow
       into `output/pdf/img/` first (ASM-007). Keep the cover hero as a data URI so the cover survives
       being moved. Add an `--embed-images` CLI flag that restores full data-URI embedding for a
       self-contained HTML.
-- [ ] TASK-06-08: Add two new PDF sections: a **door and window schedule** (one row per opening: id,
+- [x] TASK-06-08: Add two new PDF sections: a **door and window schedule** (one row per opening: id,
       storey, type, width, sill, head, the two rooms it connects) and a **quantity take-off** (per
       storey: gross floor area in m², exterior wall length in m, partition wall length in m, door count,
       window count; plus a whole-building total row).
-- [ ] TASK-06-09: Add a page footer with the design name and a page number to `PAGE_CSS` using
+- [x] TASK-06-09: Add a page footer with the design name and a page number to `PAGE_CSS` using
       `@page { @bottom-right { content: counter(page) } }`, falling back gracefully if the headless
       browser ignores it.
-- [ ] TASK-06-10: Create a git-tracked `designs/` directory with a `README.md` explaining that
+- [x] TASK-06-10: Create a git-tracked `designs/` directory with a `README.md` explaining that
       user-authored specs live there (ASM-006), and move `designs/tubehouse-dream.json` to
       `designs/tubehouse-dream.json`. Update `.claude/skills/homedesign/SKILL.md` to reference
       `designs/<slug>.json` everywhere it currently says `output/specs/<slug>.json`. Leave
       `spec/examples/` and `spec/homespec.schema.json` where they are.
-- [ ] TASK-06-11: Rewrite `AGENTS.md`: remove the FreeCAD scope paragraph, the `run.sh` reference, the
+- [x] TASK-06-11: Rewrite `AGENTS.md`: remove the FreeCAD scope paragraph, the `run.sh` reference, the
       `freecad-mcp-guide.md` reference and the `spec/floorplan-spec.json` reference; correct the
       verification section to the pytest and ruff commands from PHASE-01; document the `designs/`
       directory and the `render` subcommand.
-- [ ] TASK-06-12: Move `plans/PROGRESS.md`, `docs/HOW_TO_RUN.txt` and `docs/plan-floor-1.md` into
+- [x] TASK-06-12: Move `plans/PROGRESS.md`, `docs/HOW_TO_RUN.txt` and `docs/plan-floor-1.md` into
       `docs/archive/` with a one-line header in each stating it describes the retired FreeCAD pipeline.
       Split `docs/lessons-learned.md`: keep the Blender lesson in place, move lessons 1-6 to
       `docs/archive/freecad-lessons-learned.md`.
-- [ ] TASK-06-13: Replace `.agents/skills/homedesign/SKILL.md` (a stale divergent copy) with a generated
+- [x] TASK-06-13: Replace `.agents/skills/homedesign/SKILL.md` (a stale divergent copy) with a generated
       duplicate: add `scripts/sync_skill.py` that copies `.claude/skills/homedesign/SKILL.md` to
       `.agents/skills/homedesign/SKILL.md` and fails with a non-zero exit if they differ, then add that
       check to the CI workflow from PHASE-01.
-- [ ] TASK-06-14: Delete the retired FreeCAD-era artifact directories `output/fcstd/`, `output/obj/`,
+- [x] TASK-06-14: Delete the retired FreeCAD-era artifact directories `output/fcstd/`, `output/obj/`,
       `output/ifc/`, `output/stl/`, `output/test.ifc` and `output/architect_package_manifest.json`. These
       are gitignored, so this is a local-workspace cleanup with no repository effect.
 
@@ -1033,16 +1033,16 @@ schedules an architect expects, and bring the repo's documentation back in line 
   gallery images the PDF embeds must be correctly framed first).
 
 **Exit Criteria**
-- [ ] `PYTHONPATH=src python -m homedesign pdf designs/tubehouse-dream.json` produces a PDF whose page
+- [x] `PYTHONPATH=src python -m homedesign pdf designs/tubehouse-dream.json` produces a PDF whose page
       count equals `2 (cover + narrative) + 1 (schedule) + 5 (one per storey) + ceil(views/2) + 1
       (requirements) + 1 (openings) + 1 (take-off) + 1 (appendix)` — i.e. **exactly one page per
       storey**, verified by inspecting the PDF page count.
-- [ ] `output/pdf/tubehouse-dream-brief.html` is under 200 KB.
-- [ ] Each generated SVG contains a north arrow, a scale bar, a title block and door swing arcs.
-- [ ] `python scripts/sync_skill.py --check` exits 0 and runs in CI.
-- [ ] `grep -rn "run.sh\|freecad-mcp-guide\|floorplan-spec.json" AGENTS.md` returns no matches.
-- [ ] `grep -rn "output/specs" .claude/skills/homedesign/SKILL.md` returns no matches.
-- [ ] `python -m pytest tests -q` passes.
+- [x] `output/pdf/tubehouse-dream-brief.html` is under 200 KB.
+- [x] Each generated SVG contains a north arrow, a scale bar, a title block and door swing arcs.
+- [x] `python scripts/sync_skill.py --check` exits 0 and runs in CI.
+- [x] `grep -rn "run.sh\|freecad-mcp-guide\|floorplan-spec.json" AGENTS.md` returns no matches.
+- [x] `grep -rn "output/specs" .claude/skills/homedesign/SKILL.md` returns no matches.
+- [x] `python -m pytest tests -q` passes.
 
 **Phase Risks**
 - **RISK-06-01:** Removing the SVG's `width`/`height` attributes changes how the file renders when
