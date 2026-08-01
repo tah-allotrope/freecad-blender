@@ -174,61 +174,82 @@ def _find_default_interior_room(model):
 
 
 def _build_exterior_front_camera(name, model, plot_w, plot_d, total_height, centroid):
-    # Framed off the street frontage (plot_w), not max(plot_w, plot_d) -- on a
-    # long narrow tube house the depth would otherwise push the camera far
-    # enough back that the blank party-wall side dominates the shot. Lateral
-    # offset kept small (0.3x, not 0.9x) so the shot reads as a near-elevation
-    # of the street facade -- a wider offset put the light-well-facing side
-    # windows (which recess by a different amount on every floor) in frame at
-    # a steep grazing angle, where they read as disconnected floating shapes.
+    # S4 analytic fit (TASK-05-03): frame the building bounding box with an
+    # 8% margin instead of a hand-tuned distance heuristic. The camera sits
+    # south of the plot (negative y) looking north at the street facade, so
+    # forward is +y and the camera goes at centre - dist*forward.
+    # NOTE: absolute imports -- this file runs as a top-level Blender script,
+    # so relative imports (`from ..camera_fit`) fail at runtime.
+    from homedesign.camera_fit import basis_from_direction, corners_of, facade_bbox, fit_distance
+
+    bbox = facade_bbox(model)
+    corners = corners_of(bbox)
+    forward = (0.0, 1.0, 0.0)  # looking north at the street facade
+    right, up = basis_from_direction(forward)
+    lens_mm = 35.0
     cam_data = bpy.data.cameras.new(name)
+    cam_data.lens = lens_mm
+    cam_data.sensor_fit = "HORIZONTAL"
     cam = bpy.data.objects.new(name, cam_data)
-    dist = plot_w * 3.0 + total_height * 1.2 + 6
-    cam.location = (centroid[0] - plot_w * 0.3, -dist * 0.55, total_height * 0.55 + 1.5)
-    _point_at(cam, (centroid[0], plot_d * 0.08, total_height * 0.45))
+    dist = fit_distance(corners, centroid, forward, right, up, lens_mm, 1920, 1080)
+    cam.location = (centroid[0], centroid[1] - dist, centroid[2])
+    _point_at(cam, (centroid[0], plot_d * 0.3, centroid[2]))
     bpy.context.scene.collection.objects.link(cam)
     return cam
 
 
 def _build_exterior_aerial_camera(name, model, plot_w, plot_d, total_height, centroid):
+    from homedesign.camera_fit import basis_from_direction, building_bbox, corners_of, fit_distance
+
+    bbox = building_bbox(model)
+    corners = corners_of(bbox)
+    # 45-degree descent from the south-east: camera sits at +x/-y/above and
+    # looks toward the building (north-west, slightly down).
+    forward = (-0.5, 0.5, -0.7071)
+    right, up = basis_from_direction(forward)
+    lens_mm = 35.0
     cam_data = bpy.data.cameras.new(name)
+    cam_data.lens = lens_mm
+    cam_data.sensor_fit = "HORIZONTAL"
     cam = bpy.data.objects.new(name, cam_data)
-    dist = max(plot_w, plot_d) * 1.4 + 5
-    cam.location = (centroid[0] + dist * 0.5, centroid[1] - dist * 0.5, total_height * 3.0 + 6)
+    dist = fit_distance(corners, centroid, forward, right, up, lens_mm, 1920, 1080)
+    cam.location = (centroid[0] + dist * 0.5, centroid[1] - dist * 0.5, centroid[2] + dist * 0.7071)
     _point_at(cam, centroid)
     bpy.context.scene.collection.objects.link(cam)
     return cam
 
 
 def _build_room_camera(name, storey, room):
-    """Place the camera near one short-axis wall, centered on the short axis,
-    aimed down the long axis -- a corner-and-centroid heuristic breaks down
-    on this tool's elongated tube-house rooms (e.g. 4m x 9.5m), putting the
-    camera nearly against a wall."""
-    x = room["rect"]["x"] / 1000
-    y = room["rect"]["y"] / 1000
+    """Place the camera to frame the room interior plus its furniture with the
+    S4 analytic fit (TASK-05-04), replacing the corner-and-centroid heuristic
+    that broke down on elongated tube-house rooms."""
+    from homedesign.camera_fit import basis_from_direction, corners_of, fit_distance, room_subject_bbox
+
+    bbox = room_subject_bbox(storey, room)
+    corners = corners_of(bbox)
+    (min_x, min_y, min_z), (max_x, max_y, max_z) = bbox
+    centre = ((min_x + max_x) / 2, (min_y + max_y) / 2, (min_z + max_z) / 2)
+
+    # Frame down the room's long axis from the near short wall.
     w = room["rect"]["w"] / 1000
     d = room["rect"]["d"] / 1000
-    base_z = storey["base_z"] / 1000
-    eye_z = base_z + 1.5
-
     long_is_depth = d >= w
-    long_dim = d if long_is_depth else w
-    short_dim = w if long_is_depth else d
-    clearance = max(0.5, min(short_dim * 0.4, long_dim * 0.15))
+    forward = (0.0, 1.0, 0.0) if long_is_depth else (1.0, 0.0, 0.0)
+    right, up = basis_from_direction(forward)
+    lens_mm = 20.0
+    cam_data = bpy.data.cameras.new(name)
+    cam_data.lens = lens_mm
+    cam_data.sensor_fit = "HORIZONTAL"
+    cam = bpy.data.objects.new(name, cam_data)
+    dist = fit_distance(corners, centre, forward, right, up, lens_mm, 1920, 1080)
 
     if long_is_depth:
-        cam_x, cam_y = x + w / 2, y + clearance
-        target = (x + w / 2, y + long_dim * 0.65, eye_z - 0.2)
+        cam_x, cam_y = (min_x + max_x) / 2, min_y - dist
     else:
-        cam_x, cam_y = x + clearance, y + d / 2
-        target = (x + long_dim * 0.65, y + d / 2, eye_z - 0.2)
-
-    cam_data = bpy.data.cameras.new(name)
-    cam_data.lens = 20
-    cam = bpy.data.objects.new(name, cam_data)
+        cam_x, cam_y = min_x - dist, (min_y + max_y) / 2
+    eye_z = centre[2]
     cam.location = (cam_x, cam_y, eye_z)
-    _point_at(cam, target)
+    _point_at(cam, (centre[0], centre[1], eye_z - 0.1))
     bpy.context.scene.collection.objects.link(cam)
     return cam
 
