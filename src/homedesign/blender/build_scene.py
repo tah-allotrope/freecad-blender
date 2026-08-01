@@ -22,6 +22,7 @@ if str(_SRC) not in sys.path:
 from homedesign.blender import furnish, joinery, roof as roof_mod  # noqa: E402
 from homedesign.blender.geom import boolean_difference, make_box  # noqa: E402
 from homedesign.blender.materials import floor_material_key, get_material  # noqa: E402
+from homedesign.rects import subtract_rects  # noqa: E402
 
 FLOOR_SLAB_THICKNESS = 0.05
 PREVIEW = {"samples": 24, "res": (640, 360)}
@@ -77,18 +78,27 @@ def build_walls(storey, style, structure):
 
 def build_floors_and_stairs(storey, style, structure):
     base_z = storey["base_z"] / 1000
+    voids_mm = [(v["x"], v["y"], v["w"], v["d"]) for v in storey.get("floor_voids", [])]
     for room in storey["rooms"]:
-        x, y = room["rect"]["x"] / 1000, room["rect"]["y"] / 1000
-        w, d = room["rect"]["w"] / 1000, room["rect"]["d"] / 1000
+        rx, ry = room["rect"]["x"], room["rect"]["y"]
+        rw, rd = room["rect"]["w"], room["rect"]["d"]
         mat = get_material(style, floor_material_key(room["type"]))
-        make_box(f"floor_{room['id']}", x, y, base_z - FLOOR_SLAB_THICKNESS, w, d, FLOOR_SLAB_THICKNESS, structure, mat)
+        fragments = subtract_rects(rx, ry, rw, rd, voids_mm) if voids_mm else [(rx, ry, rw, rd)]
+        for i, (fx, fy, fw, fd) in enumerate(fragments):
+            x, y, w, d = fx / 1000, fy / 1000, fw / 1000, fd / 1000
+            make_box(
+                f"floor_{room['id']}_{i}", x, y, base_z - FLOOR_SLAB_THICKNESS, w, d, FLOOR_SLAB_THICKNESS,
+                structure, mat,
+            )
 
     if storey.get("stairs"):
         mat = get_material(style, "floor_default")
+        tread_thickness = 0.05
         for i, t in enumerate(storey["stairs"]["treads"]):
-            x, y, z = t["x"] / 1000, t["y"] / 1000, base_z + t["z"] / 1000
+            x, y = t["x"] / 1000, t["y"] / 1000
+            z_top = base_z + t["z"] / 1000
             w, d = t["w"] / 1000, t["d"] / 1000
-            make_box(f"tread_{storey['level']}_{i}", x, y, z, w, d, 0.18, structure, mat)
+            make_box(f"tread_{storey['level']}_{i}", x, y, z_top - tread_thickness, w, d, tread_thickness, structure, mat)
 
 
 def build_environment(model, structure):

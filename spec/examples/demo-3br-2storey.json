@@ -10,10 +10,10 @@
       "rooms": [
         {"id": "kitchen", "type": "kitchen", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
         {"id": "living", "type": "living", "rect": {"x": 4000, "y": 0, "w": 6000, "d": 4000}},
-        {"id": "hall", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1500}},
-        {"id": "garage", "type": "garage", "rect": {"x": 0, "y": 5500, "w": 4000, "d": 2500}},
-        {"id": "stairwell", "type": "stairwell", "rect": {"x": 4000, "y": 5500, "w": 2000, "d": 2500}},
-        {"id": "office", "type": "office", "rect": {"x": 6000, "y": 5500, "w": 4000, "d": 2500}}
+        {"id": "hall", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1100}},
+        {"id": "garage", "type": "garage", "rect": {"x": 0, "y": 5100, "w": 4100, "d": 2900}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 4100, "y": 5100, "w": 1900, "d": 2900}},
+        {"id": "office", "type": "office", "rect": {"x": 6000, "y": 5100, "w": 4000, "d": 2900}}
       ],
       "openings": [
         {"type": "door", "between": ["kitchen", "living"], "width_mm": 3800},
@@ -38,10 +38,10 @@
         {"id": "master", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 6000, "d": 4000}},
         {"id": "ensuite", "type": "bathroom", "rect": {"x": 6000, "y": 0, "w": 1500, "d": 4000}},
         {"id": "bedroom2", "type": "bedroom", "rect": {"x": 7500, "y": 0, "w": 2500, "d": 4000}},
-        {"id": "hall2", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1500}},
-        {"id": "bathroom", "type": "bathroom", "rect": {"x": 0, "y": 5500, "w": 3000, "d": 2500}},
-        {"id": "stairwell", "type": "stairwell", "rect": {"x": 3000, "y": 5500, "w": 2000, "d": 2500}},
-        {"id": "bedroom3", "type": "bedroom", "rect": {"x": 5000, "y": 5500, "w": 5000, "d": 2500}}
+        {"id": "hall2", "type": "hall", "rect": {"x": 0, "y": 4000, "w": 10000, "d": 1100}},
+        {"id": "bathroom", "type": "bathroom", "rect": {"x": 0, "y": 5100, "w": 3000, "d": 2900}},
+        {"id": "stairwell", "type": "stairwell", "rect": {"x": 3000, "y": 5100, "w": 1900, "d": 2900}},
+        {"id": "bedroom3", "type": "bedroom", "rect": {"x": 4900, "y": 5100, "w": 5100, "d": 2900}}
       ],
       "openings": [
         {"type": "door", "between": ["master", "ensuite"], "width_mm": 900},

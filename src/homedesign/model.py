@@ -109,6 +109,7 @@ class Storey:
     openings: list[Opening] = field(default_factory=list)
     stairs: Optional[Stairs] = None
     roof: Optional[Roof] = None
+    floor_voids: list[Rect] = field(default_factory=list)
 
 
 @dataclass
@@ -155,6 +156,7 @@ class CompiledModel:
                     openings=openings,
                     stairs=stairs,
                     roof=roof,
+                    floor_voids=[Rect(**v) for v in s.get("floor_voids", [])],
                 )
             )
         views = [View(**v) for v in data.get("views", [])]

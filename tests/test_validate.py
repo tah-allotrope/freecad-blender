@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from homedesign.compiler import compile_spec
+from homedesign.errors import SpecValidationError
 from homedesign.validate import validate_compiled, validate_schema
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -41,6 +44,9 @@ def test_schema_rejects_room_without_rect_or_relative():
 
 
 def test_geometric_validation_flags_narrow_stairwell():
+    """A stairwell shaft too narrow to fit any flight is now rejected at
+    compile time by homedesign.stairs.derive_stairs (stair_shaft_too_small),
+    superseding the old post-compile 900mm-width-only check."""
     spec = load_example("demo-3br-2storey.json")
     for room in spec["storeys"][0]["rooms"]:
         if room["id"] == "stairwell":
@@ -48,9 +54,9 @@ def test_geometric_validation_flags_narrow_stairwell():
     for opening in spec["storeys"][0]["openings"]:
         if opening["between"] == ["hall", "stairwell"]:
             opening["width_mm"] = 600
-    model = compile_spec(spec)
-    errors = validate_compiled(model)
-    assert any(e.code == "stairwell_too_narrow" for e in errors)
+    with pytest.raises(SpecValidationError) as exc:
+        compile_spec(spec)
+    assert any(e.code == "stair_shaft_too_small" for e in exc.value.errors)
 
 
 def test_geometric_validation_flags_missing_stair_continuity():

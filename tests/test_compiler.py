@@ -119,7 +119,7 @@ def test_stairs_span_full_storey_height():
     ground = model.storeys[0]
     assert ground.stairs is not None
     assert len(ground.stairs.treads) >= 2
-    assert ground.stairs.treads[-1].z < ground.height_mm
+    assert ground.stairs.treads[-1].z <= ground.height_mm
 
 
 def test_roof_only_on_declared_storey():

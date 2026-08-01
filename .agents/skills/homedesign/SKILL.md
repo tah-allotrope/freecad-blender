@@ -22,43 +22,17 @@ Cheat sheet:
 - `site.plot_width_mm` / `plot_depth_mm` — the buildable footprint.
 - `storeys[]` — each has `level` (0-based), `height_mm`, `rooms[]`,
   `openings[]`, optional `stairs` (`{room, direction}`), optional `roof`
-  (`{type: flat|gable|shed, pitch_deg, overhang_mm, rect?, voids?}` — only put
-  a roof on the top storey). `rect` overrides the default full-plot span (use
-  it for a partial roof, e.g. a rooftop terrace left open); `voids` (array of
-  `{x,y,w,d}`, `type: flat` only) punches open-to-sky holes in the roof —
-  the standard way to keep a mid-plan light well open at every level, since
-  rooms simply aren't tiled over that footprint on any storey.
-- `meta.views` (optional) — a named camera gallery: each entry is
-  `{name, kind: exterior_front|exterior_aerial|room, room_id?}` (`room_id`
-  required when `kind: room`). Renders land at
-  `output/png/<slug>_<view name>.png`. Omit `views` entirely to get the old
-  2-shot default (one exterior + one auto-picked interior).
+  (`{type: flat|gable|shed, pitch_deg, overhang_mm}` — only put a roof on the
+  top storey).
 - `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
   at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`
-  placement solved against an already-placed room. Room `type` includes
-  `elevator` for a lift shaft (no furniture is placed in it).
-- `stairs` — `{room, direction, mode?}` where `mode` is one of
-  `auto|straight|u_return|none` (default `auto`). The generator sizes treads
-  from the storey height (Blondel relation: `600 <= 2R + G <= 640`, going
-  `>= 250` mm, riser `<= 190` mm) and selects straight vs U-return from the
-  shaft's aspect ratio. **An undersized shaft is now a hard compile error**
-  (`stair_shaft_too_small`) that names the required size, e.g.
-  `a straight flight needs 900x4500mm and a U-return needs 1900x3150mm at a
-  3400mm storey height`. A `stairwell` shaft must therefore be at least
-  `1900 x 2900` mm for a U-return (two 900 mm flights + 100 mm well) unless
-  `mode: none` is set deliberately. Stair and elevator shafts are punched
-  out of the floor slab above automatically (floor voids).
-- `openings[]` — `{type: door|window, between: [room_id, room_id_or_"exterior"], width_mm, sill_mm, head_mm, side?}`.
+  placement solved against an already-placed room.
+- `openings[]` — `{type: door|window, between: [room_id, room_id_or_"exterior"], width_mm, sill_mm, head_mm}`.
   A door/window can only be placed where two rooms (or a room and
   `"exterior"`) actually share a wall — the compiler derives walls from room
   geometry, so **every room must be reachable via a chain of doors from an
   exterior door**, or the design will look right but not compile as a livable
-  home. `side` (`north|south|east|west`; north=min-y, south=max-y, west=min-x,
-  east=max-x) disambiguates which exterior face gets the opening when a room
-  borders more than one exterior wall (e.g. the street facade on one side and
-  a light well on the other) — omit it only when the room has just one
-  exterior wall. `opening_no_wall` is raised if the requested side isn't
-  actually an exterior wall of that room (e.g. it's shared with another room).
+  home.
 - **Design rule that avoids the #1 mistake**: lay each storey out as stacked
   rows tiling the full plot, with a full-width corridor row (a `hall` room
   spanning the whole plot width) between any row of more than ~2 rooms and
@@ -106,32 +80,10 @@ Cheat sheet:
    shrank the office by the same amount") rather than re-describing the
    whole house.
 
-## Architect-brief PDF
-
-Once a spec has a final render gallery (`meta.views`, built with `--final`),
-assemble an A3-landscape architect brief:
-```
-PYTHONPATH=src python -m homedesign pdf output/specs/<slug>.json
-```
-This compiles the spec, regenerates SVG/DXF plans if missing, reads a brief
-copy file at `spec/briefs/<slug>.json` (`{title, subtitle, narrative: [...],
-requirements: [...]}` — write one per house, no budget content), and prints
-`output/pdf/<slug>-brief.html` to `output/pdf/<slug>-brief.pdf` via a headless
-Chromium browser (Edge or Chrome, auto-detected; override with
-`PDF_BROWSER_CMD`). The PDF has one page each for cover (hero render), design
-narrative, room schedule (per-room area + floor totals), one plan page per
-storey (inline vector SVG), a render gallery (2 images/page), requirements,
-and a handover appendix listing the DXF files and source spec. Pass
-`--hero <view name>` to pick the cover image (default: first `meta.views`
-entry) and `--brief <path>` to use a brief copy file at a different path.
-
 ## Known limitations (by design, not bugs)
 
 - Rectilinear geometry only: axis-aligned walls, flat/gable/shed roofs, no
   curved or diagonal walls, no split levels.
-- Roof `voids` (open-to-sky holes) are only implemented for `type: flat`;
-  requesting voids on a `gable`/`shed` roof raises `NotImplementedError` at
-  Blender-build time.
 - Furniture is procedural (parametric boxes), not photoreal asset models —
   there is no bundled CC0 asset library yet. Renders read as furnished but
   stylized, not catalog-photo realistic.

@@ -15,13 +15,12 @@ Resolution order per storey:
 from __future__ import annotations
 
 from .errors import SpecError, SpecValidationError
-from .model import CompiledModel, Opening, Rect, Room, Roof, Stairs, Storey, Tread, View, Wall
+from .model import CompiledModel, Opening, Rect, Room, Roof, Storey, View, Wall
+from .stairs import derive_stairs
 
 EXT_THICKNESS = 200.0
 INT_THICKNESS = 100.0
 DEFAULT_STOREY_HEIGHT = 3000.0
-STAIR_RISE_MM = 175.0
-STAIR_RUN_MM = 280.0
 
 _SIDE_OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east"}
 
@@ -40,7 +39,7 @@ def compile_spec(spec: dict) -> CompiledModel:
         rooms = _resolve_rooms(s["rooms"], plot_w, plot_d, path, errors)
         walls = _derive_walls(rooms, plot_w, plot_d, s["level"])
         openings = _place_openings(s.get("openings", []), rooms, walls, s["level"], path, errors)
-        stairs = _derive_stairs(s.get("stairs"), rooms, height, s["level"])
+        stairs = derive_stairs(s.get("stairs"), rooms, height, s["level"], path, errors)
         roof = _derive_roof(s.get("roof"), plot_w, plot_d, s["level"], base_z + height)
 
         storeys.append(
@@ -57,6 +56,8 @@ def compile_spec(spec: dict) -> CompiledModel:
             )
         )
         base_z += height
+
+    _derive_floor_voids(storeys)
 
     all_room_ids = {r.id for s in storeys for r in s.rooms}
     views = _resolve_views(spec["meta"].get("views", []), all_room_ids, errors)
@@ -344,24 +345,36 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
     return result
 
 
-def _derive_stairs(stairs_spec, rooms, storey_height, level) -> Stairs | None:
-    if not stairs_spec:
-        return None
-    room = next((r for r in rooms if r.id == stairs_spec["room"]), None)
-    if room is None:
-        return None
-    n_risers = max(2, round(storey_height / STAIR_RISE_MM))
-    rect = room.rect
-    vertical_run = rect.d >= rect.w
-    tread_len = (rect.d if vertical_run else rect.w) / n_risers
-    treads = []
-    for i in range(n_risers):
-        z = i * (storey_height / n_risers)
-        if vertical_run:
-            treads.append(Tread(x=rect.x, y=rect.y + i * tread_len, w=rect.w, d=tread_len, z=z))
-        else:
-            treads.append(Tread(x=rect.x + i * tread_len, y=rect.y, w=tread_len, d=rect.d, z=z))
-    return Stairs(room_id=room.id, storey_level=level, direction=stairs_spec.get("direction", "up"), treads=treads)
+def _derive_floor_voids(storeys: list[Storey]) -> None:
+    """S2: for each storey, punch a void from the storey below's stairwell
+    (if it generated stairs) and every elevator room on the storey below,
+    plus every elevator room on the storey's own level (a lift shaft is
+    open at every level it passes through)."""
+    by_level = {s.level: s for s in storeys}
+    levels = sorted(by_level)
+    for idx, level in enumerate(levels):
+        storey = by_level[level]
+        rects: list[Rect] = []
+        if idx > 0:
+            prev = by_level[levels[idx - 1]]
+            prev_has_stairs = prev.stairs is not None
+            for room in prev.rooms:
+                if room.type == "elevator":
+                    rects.append(room.rect)
+                elif room.type == "stairwell" and prev_has_stairs:
+                    rects.append(room.rect)
+        for room in storey.rooms:
+            if room.type == "elevator":
+                rects.append(room.rect)
+
+        deduped: list[Rect] = []
+        for r in rects:
+            if not any(
+                abs(r.x - d.x) <= 1 and abs(r.y - d.y) <= 1 and abs(r.w - d.w) <= 1 and abs(r.d - d.d) <= 1
+                for d in deduped
+            ):
+                deduped.append(r)
+        storey.floor_voids = deduped
 
 
 def _derive_roof(roof_spec, plot_w, plot_d, level, base_z) -> Roof | None:
