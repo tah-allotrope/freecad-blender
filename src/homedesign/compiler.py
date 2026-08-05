@@ -29,6 +29,7 @@ def compile_spec(spec: dict) -> CompiledModel:
     errors: list[SpecError] = []
     plot_w = spec["site"]["plot_width_mm"]
     plot_d = spec["site"]["plot_depth_mm"]
+    wall_alignment = spec["site"].get("wall_alignment", "centre")
 
     # Sort storeys by level so base_z accumulation does not silently depend
     # on list order; warn (later, via the registry) if the authored order
@@ -56,7 +57,8 @@ def compile_spec(spec: dict) -> CompiledModel:
         path = f"storeys[{s_idx}]"
 
         rooms = _resolve_rooms(s["rooms"], plot_w, plot_d, path, errors)
-        walls = _derive_walls(rooms, plot_w, plot_d, s["level"])
+        walls = _derive_walls(rooms, plot_w, plot_d, s["level"], wall_alignment)
+        _derive_interiors(rooms, walls, wall_alignment)
         openings = _place_openings(s.get("openings", []), rooms, walls, s["level"], path, errors)
         stairs = derive_stairs(s.get("stairs"), rooms, height, s["level"], path, errors)
         roof = _derive_roof(s.get("roof"), plot_w, plot_d, s["level"], base_z + height)
@@ -91,6 +93,8 @@ def compile_spec(spec: dict) -> CompiledModel:
         plot_depth_mm=plot_d,
         storeys=storeys,
         views=views,
+        context=spec["site"].get("context", {}),
+        wall_alignment=wall_alignment,
     )
 
 
@@ -193,13 +197,20 @@ def _edge_key(orientation: str, coord: float) -> tuple[str, int]:
     return (orientation, round(coord))
 
 
-def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int) -> list[Wall]:
+def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int,
+                  wall_alignment: str = "centre") -> list[Wall]:
     """Derive wall segments from room-rect edges.
 
     Each room contributes 4 edges. Edges that exactly coincide (same
     orientation, coordinate, and span) between two different rooms merge into
     one partition wall. Any other edge becomes an exterior wall (this also
     naturally covers edges on the plot boundary).
+
+    Per S5, `wall_alignment` selects how an *exterior* wall sits relative to
+    the room edge it derives from: `"centre"` (default, today's geometry) spans
+    `[coord - t/2, coord + t/2]`; `"inside"` lies wholly on the room side of
+    `coord` so its outer face lands on the plot line. Partitions are always
+    centred.
     """
     # edge -> list of (start, end, room_id)
     edges: dict[tuple[str, int], list[tuple[float, float, str]]] = {}
@@ -210,6 +221,7 @@ def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int) -
         edges.setdefault(_edge_key("horizontal", r.y), []).append((r.x, r.x2, room.id))
         edges.setdefault(_edge_key("horizontal", r.y2), []).append((r.x, r.x2, room.id))
 
+    rooms_by_id = {r.id: r for r in rooms}
     walls: list[Wall] = []
     wall_idx = 0
     for (orientation, coord), spans in edges.items():
@@ -240,14 +252,35 @@ def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int) -
             thickness = INT_THICKNESS if kind == "partition" else EXT_THICKNESS
             wall_idx += 1
             wid = f"F{level}_W{wall_idx:03d}"
-            if orientation == "vertical":
-                x = coord - thickness / 2
-                y = start
-                w, h = thickness, end - start
+            if kind == "partition" or wall_alignment != "inside":
+                # Centred: the wall straddles the room-edge coordinate.
+                if orientation == "vertical":
+                    x = coord - thickness / 2
+                    y = start
+                    w, h = thickness, end - start
+                else:
+                    x = start
+                    y = coord - thickness / 2
+                    w, h = end - start, thickness
             else:
-                x = start
-                y = coord - thickness / 2
-                w, h = end - start, thickness
+                # Inset: the exterior wall lies wholly on the room side of the
+                # edge, its outer face on `coord`. The single covering room
+                # decides which side is interior.
+                room = rooms_by_id[covering[0]]
+                if orientation == "vertical":
+                    # Room east of the wall (coord is rect.x) -> wall spans
+                    # [coord, coord+t]; room west (coord is rect.x2) -> [coord-t, coord].
+                    room_east = abs(coord - room.rect.x) < 1.0
+                    x = coord if room_east else coord - thickness
+                    y = start
+                    w, h = thickness, end - start
+                else:
+                    # Room south of the wall (coord is rect.y) -> wall spans
+                    # [coord, coord+t]; room north (coord is rect.y2) -> [coord-t, coord].
+                    room_south = abs(coord - room.rect.y) < 1.0
+                    y = coord if room_south else coord - thickness
+                    x = start
+                    w, h = end - start, thickness
             walls.append(
                 Wall(
                     id=wid,
@@ -264,20 +297,75 @@ def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int) -
     return walls
 
 
+def _edge_inset(wall: Wall, alignment: str) -> float:
+    """How far a wall's own face sits inside the room-edge coordinate (S5)."""
+    if alignment == "inside" and wall.kind == "exterior":
+        return wall.thickness
+    return wall.thickness / 2
+
+
+def _derive_interiors(rooms: list[Room], walls: list[Wall], alignment: str) -> None:
+    """Populate each room's net `interior` rect: the gross rect shrunk by the
+    thickness of every wall on its boundary (full thickness for exterior walls
+    under `"inside"`, half otherwise; partitions always half). Edges with no
+    wall are left as-is. The room schedule keeps reporting the gross area."""
+    eps = 1.0
+    for room in rooms:
+        rect = room.rect
+        insets = {"north": 0.0, "south": 0.0, "east": 0.0, "west": 0.0}
+        for wall in walls:
+            if wall.orientation == "vertical":
+                centre = wall.x + wall.w / 2
+                if abs(centre - rect.x) <= wall.thickness / 2 + eps and _span_overlap(
+                    rect.y, rect.y2, wall.y, wall.y + wall.h
+                ):
+                    insets["west"] = max(insets["west"], _edge_inset(wall, alignment))
+                elif abs(centre - rect.x2) <= wall.thickness / 2 + eps and _span_overlap(
+                    rect.y, rect.y2, wall.y, wall.y + wall.h
+                ):
+                    insets["east"] = max(insets["east"], _edge_inset(wall, alignment))
+            else:
+                centre = wall.y + wall.h / 2
+                if abs(centre - rect.y) <= wall.thickness / 2 + eps and _span_overlap(
+                    rect.x, rect.x2, wall.x, wall.x + wall.w
+                ):
+                    insets["north"] = max(insets["north"], _edge_inset(wall, alignment))
+                elif abs(centre - rect.y2) <= wall.thickness / 2 + eps and _span_overlap(
+                    rect.x, rect.x2, wall.x, wall.x + wall.w
+                ):
+                    insets["south"] = max(insets["south"], _edge_inset(wall, alignment))
+        if any(insets.values()):
+            room.interior = Rect(
+                x=rect.x + insets["west"],
+                y=rect.y + insets["north"],
+                w=rect.w - insets["west"] - insets["east"],
+                d=rect.d - insets["north"] - insets["south"],
+            )
+
+
+def _span_overlap(a1: float, a2: float, b1: float, b2: float) -> bool:
+    return a1 < b2 and b1 < a2
+
+
 def _wall_side(wall: Wall, rect: Rect, eps: float = 1.0) -> str | None:
     """Which cardinal face of `rect` this wall sits on: north=min-y, south=max-y,
-    west=min-x, east=max-x (matches the `relative` placement side convention)."""
+    west=min-x, east=max-x (matches the `relative` placement side convention).
+
+    The tolerance includes half the wall thickness so `"inside"`-aligned walls
+    (whose centre sits t/2 inboard of the room edge) are still recognised.
+    """
+    tol = wall.thickness / 2 + eps
     if wall.orientation == "vertical":
         coord = wall.x + wall.thickness / 2
-        if abs(coord - rect.x) < eps:
+        if abs(coord - rect.x) < tol:
             return "west"
-        if abs(coord - rect.x2) < eps:
+        if abs(coord - rect.x2) < tol:
             return "east"
     else:
         coord = wall.y + wall.thickness / 2
-        if abs(coord - rect.y) < eps:
+        if abs(coord - rect.y) < tol:
             return "north"
-        if abs(coord - rect.y2) < eps:
+        if abs(coord - rect.y2) < tol:
             return "south"
     return None
 
@@ -305,13 +393,14 @@ def _walls_between(rooms_by_id: dict[str, Room], walls: list[Wall], a_id: str, b
 
 
 def _wall_touches_room(wall: Wall, rect: Rect, eps: float = 1.0) -> bool:
+    tol = wall.thickness / 2 + eps
     if wall.orientation == "vertical":
         coord = wall.x + wall.thickness / 2
-        on_edge = abs(coord - rect.x) < eps or abs(coord - rect.x2) < eps
+        on_edge = abs(coord - rect.x) < tol or abs(coord - rect.x2) < tol
         overlaps = not (wall.y + wall.h <= rect.y + eps or rect.y2 <= wall.y + eps)
     else:
         coord = wall.y + wall.thickness / 2
-        on_edge = abs(coord - rect.y) < eps or abs(coord - rect.y2) < eps
+        on_edge = abs(coord - rect.y) < tol or abs(coord - rect.y2) < tol
         overlaps = not (wall.x + wall.w <= rect.x + eps or rect.x2 <= wall.x + eps)
     return on_edge and overlaps
 
@@ -365,7 +454,9 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
                 )
             )
             continue
-        default_head = 2100.0 if o["type"] == "door" else 2100.0
+        # Doors and windows deliberately share a 2100mm head line (the standard
+        # UK door head height; windows align to it for a clean facade).
+        default_head = 2100.0
         result.append(
             Opening(
                 id=f"F{level}_O{idx:03d}",

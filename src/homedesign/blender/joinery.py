@@ -38,6 +38,28 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
         make_box(f"{name_base}_frame_a", x0, y0, z, FRAME_WIDTH, thickness, height, collection, frame_mat)
         make_box(f"{name_base}_frame_b", x0 + width - FRAME_WIDTH, y0, z, FRAME_WIDTH, thickness, height, collection, frame_mat)
 
+    # Head lintel: a FRAME_WIDTH-deep box across the opening head.
+    reveal = 0.03
+    lintel_depth = thickness + 2 * reveal
+    if span_axis == "y":
+        make_box(f"{name_base}_lintel", x0 - reveal, y0, z + height - FRAME_WIDTH,
+                 lintel_depth, width, FRAME_WIDTH, collection, frame_mat)
+    else:
+        make_box(f"{name_base}_lintel", x0, y0 - reveal, z + height - FRAME_WIDTH,
+                 width, lintel_depth, FRAME_WIDTH, collection, frame_mat)
+
+    if opening_mm["type"] == "window":
+        # 25mm-thick sill projecting 30mm past the wall face on the exterior
+        # side (modelled on both faces; the joinery does not know which side is
+        # exterior, and a belt-course read is correct from either angle).
+        sill_thickness = 0.025
+        if span_axis == "y":
+            make_box(f"{name_base}_sill", x0 - reveal, y0, z - sill_thickness,
+                     lintel_depth, width, sill_thickness, collection, frame_mat)
+        else:
+            make_box(f"{name_base}_sill", x0, y0 - reveal, z - sill_thickness,
+                     width, lintel_depth, sill_thickness, collection, frame_mat)
+
     if opening_mm["type"] == "window":
         glass_mat = get_material(style, "glass")
         if span_axis == "y":

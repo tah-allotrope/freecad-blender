@@ -34,11 +34,39 @@ def test_unreachable_room_is_flagged():
     assert any(e.code == "room_unreachable" for e in errors)
 
 
-def test_wall_outside_plot_is_warning():
+def test_wall_outside_plot_clean_under_centre_alignment():
+    # A centre-aligned wall legitimately straddles the plot line by half its
+    # thickness, so a compliant spec emits nothing (was 24/63 warning lines).
     model = compile_spec(load_example("tubehouse-mini.json"))
+    assert model.wall_alignment == "centre"
+    assert check_walls_within_plot(model) == []
+
+
+def test_wall_outside_plot_is_now_an_error():
+    # The compiler rejects rooms outside the plot at compile time, so the
+    # check is unit-tested on a compiled model whose west wall is shoved 400mm
+    # past the plot line -- beyond the centre-alignment tolerance, and the
+    # violation is error-severity, not a warning.
+    from homedesign.model import CompiledModel, Rect, Room, Storey, Wall
+
+    model = CompiledModel(
+        name="t", style="modern-minimal",
+        plot_width_mm=4000, plot_depth_mm=5000,
+        storeys=[
+            Storey(
+                level=0, name="G", height_mm=3000, base_z=0,
+                rooms=[Room(id="a", type="living", rect=Rect(x=0, y=0, w=4000, d=5000))],
+                walls=[
+                    Wall(id="F0_W001", x=-400.0, y=0, w=200.0, h=5000.0,
+                         thickness=200.0, kind="exterior", storey_level=0, orientation="vertical"),
+                ],
+            )
+        ],
+    )
     errors = check_walls_within_plot(model)
     assert errors
-    assert all(e.severity == "warning" for e in errors)
+    assert any(e.code == "wall_outside_plot" for e in errors)
+    assert all(e.severity != "warning" for e in errors)
 
 
 def test_unsupported_room_flagged():

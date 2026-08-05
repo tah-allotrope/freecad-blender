@@ -6,7 +6,11 @@ no unresolved openings) and JSON-serializable.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal, Optional
 
 Kind = Literal["exterior", "partition"]
@@ -34,6 +38,7 @@ class Room:
     type: str
     rect: Rect
     name: Optional[str] = None
+    interior: Optional[Rect] = None  # net usable rect after wall thickness (S5)
 
 
 @dataclass
@@ -121,6 +126,8 @@ class CompiledModel:
     plot_depth_mm: float
     storeys: list[Storey] = field(default_factory=list)
     views: list[View] = field(default_factory=list)
+    context: dict = field(default_factory=dict)
+    wall_alignment: str = "centre"  # "centre" or "inside" (S5)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -129,8 +136,16 @@ class CompiledModel:
     def from_dict(data: dict) -> "CompiledModel":
         storeys = []
         for s in data["storeys"]:
-            rooms = [Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]),
-                          name=r.get("name")) for r in s["rooms"]]
+            rooms = [
+                Room(
+                    id=r["id"],
+                    type=r["type"],
+                    rect=Rect(**r["rect"]),
+                    name=r.get("name"),
+                    interior=Rect(**r["interior"]) if r.get("interior") else None,
+                )
+                for r in s["rooms"]
+            ]
             walls = [Wall(**w) for w in s["walls"]]
             openings = [Opening(**o) for o in s["openings"]]
             stairs = None
@@ -169,4 +184,41 @@ class CompiledModel:
             plot_depth_mm=data["plot_depth_mm"],
             storeys=storeys,
             views=views,
+            context=data.get("context", {}),
+            wall_alignment=data.get("wall_alignment", "centre"),
         )
+
+
+def model_hash(model: "CompiledModel") -> str:
+    """The identity of a compiled model (ASM-007): the first 12 hex characters
+    of the SHA-256 digest of the canonical JSON serialisation. Stable across
+    runs and insensitive to dict ordering inside the model; any geometric
+    change changes the hash, which is what lets `pdf` detect stale renders."""
+    canonical = json.dumps(model.to_dict(), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+
+
+def write_render_sidecar(png_path, model_hash: str, view: str, profile: str) -> Path:
+    """Write `{model_hash, view, profile, rendered_at}` next to a rendered PNG.
+
+    The sidecar is what makes every render declare which compiled model produced
+    it, so a stale gallery can never be shipped silently (TASK-06-02).
+    """
+    sidecar = Path(png_path).with_suffix(Path(png_path).suffix + ".json")
+    payload = {
+        "model_hash": model_hash,
+        "view": view,
+        "profile": profile,
+        "rendered_at": datetime.now(timezone.utc).isoformat(),
+    }
+    sidecar.write_text(json.dumps(payload, indent=2))
+    return sidecar
+
+
+def read_render_sidecar(png_path) -> dict | None:
+    """The parsed sidecar for a render, or None when absent/unparseable."""
+    sidecar = Path(png_path).with_suffix(Path(png_path).suffix + ".json")
+    try:
+        return json.loads(sidecar.read_text())
+    except (OSError, ValueError):
+        return None

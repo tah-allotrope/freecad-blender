@@ -73,3 +73,23 @@ def test_geometric_validation_flags_missing_stair_continuity():
     # The legacy missing_stair_continuity check was replaced by the registry's
     # shaft_stacking rule, which emits shaft_discontinuous in this situation.
     assert any(e.code == "shaft_discontinuous" for e in errors)
+
+
+def test_schema_accepts_site_context():
+    spec = load_example("tubehouse-mini.json")
+    spec["site"]["context"] = {"neighbours": True, "street_depth_mm": 6000}
+    assert validate_schema(spec) == []
+
+
+def test_schema_rejects_site_context_us_spelling():
+    spec = load_example("tubehouse-mini.json")
+    spec["site"]["context"] = {"neighbors": True}
+    errors = validate_schema(spec)
+    assert errors
+    assert errors[0].code == "schema_error"
+
+
+def test_existing_specs_compile_without_context():
+    for name in ("demo-3br-2storey.json", "tubehouse-mini.json", "courtyard-fixture.json"):
+        model = compile_spec(load_example(name))
+        assert model.context == {}

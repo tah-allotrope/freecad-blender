@@ -20,8 +20,12 @@ def test_write_plans_creates_svg_and_dxf_per_storey(tmp_path):
     paths = plan2d.write_plans(model, tmp_path)
     svgs = [p for p in paths if p.suffix == ".svg"]
     dxfs = [p for p in paths if p.suffix == ".dxf"]
-    assert len(svgs) == len(model.storeys)
-    assert len(dxfs) == len(model.storeys)
+    # The complete drawing set: one plan per storey + four elevations + two
+    # sections, each in SVG and DXF.
+    drawing_units = len(model.storeys) + 6
+    assert len(svgs) == drawing_units
+    assert len(dxfs) == drawing_units
+    assert len(paths) == 2 * drawing_units
     for p in paths:
         assert p.exists()
 

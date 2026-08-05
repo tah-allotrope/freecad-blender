@@ -214,14 +214,19 @@ def check_shaft_stacking(model: CompiledModel) -> list[SpecError]:
 
 
 def check_walls_within_plot(model: CompiledModel) -> list[SpecError]:
-    """Walls extending beyond the plot rectangle. Warning, not error: exterior
-    walls are centred on the room edge, so a 200mm wall pokes 100mm out."""
+    """Walls extending beyond the plot rectangle beyond the alignment-appropriate
+    tolerance. Under `"centre"` alignment the tolerance is half the wall's own
+    thickness (a centred wall legitimately straddles the boundary); under
+    `"inside"` exterior walls sit on the plot line so only 1mm slack applies.
+    Now error-severity: with the wall-inset fix the rule is satisfiable, so a
+    violation is a real defect, not a permanent warning."""
     errors: list[SpecError] = []
     for storey in model.storeys:
         for wall in storey.walls:
+            tolerance = 1.0 if model.wall_alignment == "inside" else wall.thickness / 2
             x1, y1 = wall.x, wall.y
             x2, y2 = wall.x + wall.w, wall.y + wall.h
-            if x1 < -1 or y1 < -1 or x2 > model.plot_width_mm + 1 or y2 > model.plot_depth_mm + 1:
+            if x1 < -tolerance or y1 < -tolerance or x2 > model.plot_width_mm + tolerance or y2 > model.plot_depth_mm + tolerance:
                 errors.append(
                     SpecError(
                         code="wall_outside_plot",
@@ -231,7 +236,6 @@ def check_walls_within_plot(model: CompiledModel) -> list[SpecError]:
                             f"and extends beyond the {model.plot_width_mm:.0f}x"
                             f"{model.plot_depth_mm:.0f}mm plot"
                         ),
-                        severity="warning",
                     )
                 )
     return errors
@@ -255,13 +259,14 @@ def check_storey_order(spec_levels: list[int]) -> list[SpecError]:
 
 
 def _wall_touches_room(wall, rect, eps: float = 1.0) -> bool:
+    tol = wall.thickness / 2 + eps
     if wall.orientation == "vertical":
         coord = wall.x + wall.thickness / 2
-        on_edge = abs(coord - rect.x) < eps or abs(coord - rect.x2) < eps
+        on_edge = abs(coord - rect.x) < tol or abs(coord - rect.x2) < tol
         overlaps = not (wall.y + wall.h <= rect.y + eps or rect.y2 <= wall.y + eps)
     else:
         coord = wall.y + wall.thickness / 2
-        on_edge = abs(coord - rect.y) < eps or abs(coord - rect.y2) < eps
+        on_edge = abs(coord - rect.y) < tol or abs(coord - rect.y2) < tol
         overlaps = not (wall.x + wall.w <= rect.x + eps or rect.x2 <= wall.x + eps)
     return on_edge and overlaps
 

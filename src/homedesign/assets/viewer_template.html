@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>homedesign &mdash; __TITLE__</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1c1f26; font-family: "Segoe UI", sans-serif; }
+  #app { position: relative; width: 100%; height: 100%; }
+  #viewer { display: block; width: 100%; height: 100%; }
+  #hud { position: absolute; left: 16px; bottom: 14px; color: #d8dbe0; font-size: 13px; letter-spacing: 0.03em; opacity: 0.85;
+         background: rgba(10,12,16,0.55); padding: 8px 14px; border-radius: 8px; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="viewer"></canvas>
+  <div id="hud">__TITLE__ &mdash; drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+</div>
+<script>__THREE_JS__</script>
+<script>__GLTF_LOADER__</script>
+<script>__ORBIT_CONTROLS__</script>
+<script>
+(function () {
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1c1f26);
+
+  var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 500);
+
+  var renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('viewer'), antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  // Lights: key sun, fill, and a soft rim so the model reads from every angle.
+  scene.add(new THREE.AmbientLight(0x8899aa, 0.5));
+  var key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(6, 10, 8);
+  scene.add(key);
+  var fill = new THREE.DirectionalLight(0xaabbcc, 0.35);
+  fill.position.set(-6, 4, -6);
+  scene.add(fill);
+
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+
+  var loader = new THREE.GLTFLoader();
+  function onModel(gltf) {
+    var root = gltf.scene || gltf.scenes[0];
+    scene.add(root);
+
+    var box = new THREE.Box3().setFromObject(root);
+    var size = new THREE.Vector3();
+    box.getSize(size);
+    var centre = new THREE.Vector3();
+    box.getCenter(centre);
+    var radius = Math.max(size.x, size.y, size.z);
+
+    camera.near = Math.max(radius / 1000, 0.01);
+    camera.far = radius * 100;
+    camera.updateProjectionMatrix();
+
+    var dist = radius * 2.4;
+    camera.position.set(dist * 0.7, dist * 0.6, dist);
+    controls.target.copy(centre);
+    controls.update();
+  }
+  function onModelError(err) {
+    document.getElementById('hud').textContent = 'viewer failed: ' + (err && err.message ? err.message : err);
+  }
+  __LOAD_CALL__
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', resize);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>

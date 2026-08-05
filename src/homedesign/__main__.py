@@ -9,10 +9,22 @@ from pathlib import Path
 
 from .compiler import compile_spec
 from .errors import SpecValidationError
+from .model import model_hash
 from .validate import validate_compiled, validate_schema
 from . import plan2d
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def _write_model_json(model, out_dir: Path) -> Path:
+    """Persist the compiled model with its provenance hash stamped in."""
+    out = out_dir / "compiled"
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"{model.name}.model.json"
+    data = model.to_dict()
+    data["model_hash"] = model_hash(model)
+    path.write_text(json.dumps(data, indent=2))
+    return path
 
 
 def _load_spec(spec_path: Path) -> dict:
@@ -71,8 +83,7 @@ def cmd_compile(args) -> int:
         return code
     out_dir = REPO_ROOT / "output" / "compiled"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{model.name}.model.json"
-    out_path.write_text(json.dumps(model.to_dict(), indent=2))
+    out_path = _write_model_json(model, REPO_ROOT / "output")
     if not args.json:
         print(str(out_path))
     return 0
@@ -105,12 +116,10 @@ def cmd_build(args) -> int:
         for p in plan_paths:
             print(str(p))
 
-    model_path = out_dir / "compiled" / f"{model.name}.model.json"
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    model_path.write_text(json.dumps(model.to_dict(), indent=2))
+    model_path = _write_model_json(model, out_dir)
 
     t0 = time.time()
-    result = orchestrator.build_scene(model_path, out_dir, final=args.final)
+    result = orchestrator.build_scene(model_path, out_dir, final=args.final, profile=args.profile, gltf=args.gltf)
     elapsed = time.time() - t0
     print(f"blender build: {elapsed:.1f}s")
     for p in result:
@@ -129,7 +138,11 @@ def cmd_pdf(args) -> int:
     out_dir = REPO_ROOT / "output"
 
     svg_dir = out_dir / "svg"
-    if not all((svg_dir / f"{model.name}_f{s.level}.svg").exists() for s in model.storeys):
+    needs_drawings = not all((svg_dir / f"{model.name}_f{s.level}.svg").exists() for s in model.storeys)
+    if not needs_drawings:
+        needs_drawings = not (svg_dir / f"{model.name}_elev_north.svg").exists() \
+            or not (svg_dir / f"{model.name}_section_x.svg").exists()
+    if needs_drawings:
         plan2d.write_plans(model, out_dir)
 
     brief_path = Path(args.brief) if args.brief else REPO_ROOT / "spec" / "briefs" / f"{model.name}.json"
@@ -139,7 +152,7 @@ def cmd_pdf(args) -> int:
     brief = json.loads(brief_path.read_text())
 
     pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero,
-                                   embed_images=args.embed_images)
+                                   embed_images=args.embed_images, require_fresh=args.require_fresh)
     if not args.json:
         print(str(pdf_path))
     return 0
@@ -155,9 +168,7 @@ def cmd_render(args) -> int:
         return code
     out_dir = REPO_ROOT / "output"
 
-    model_path = out_dir / "compiled" / f"{model.name}.model.json"
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    model_path.write_text(json.dumps(model.to_dict(), indent=2))
+    model_path = _write_model_json(model, out_dir)
 
     views = args.views or None
     if args.detach:
@@ -197,6 +208,10 @@ def main(argv=None) -> int:
     p_build = sub.add_parser("build", parents=[json_parent], help="full build: plans + Blender scene + render")
     p_build.add_argument("spec")
     p_build.add_argument("--final", action="store_true", help="full-quality render instead of preview")
+    p_build.add_argument("--profile", default=None, choices=["preview", "final", "cycles"],
+                         help="render profile; overrides --final")
+    p_build.add_argument("--gltf", action="store_true",
+                         help="also export a GLB and a self-contained web viewer")
     p_build.add_argument("--floor", type=int, default=None)
     p_build.set_defaults(func=cmd_build)
 
@@ -204,7 +219,7 @@ def main(argv=None) -> int:
     p_render.add_argument("spec")
     p_render.add_argument("--view", dest="views", action="append", default=None,
                           help="view name to render (repeatable; default all)")
-    p_render.add_argument("--profile", default="preview", choices=["preview", "final"])
+    p_render.add_argument("--profile", default="preview", choices=["preview", "final", "cycles"])
     p_render.add_argument("--skip-existing", action="store_true", help="skip views whose PNG exists")
     p_render.add_argument("--detach", action="store_true", help="launch detached and return immediately")
     p_render.set_defaults(func=cmd_render)
@@ -215,6 +230,8 @@ def main(argv=None) -> int:
     p_pdf.add_argument("--hero", default=None, help="view name to use as cover hero image")
     p_pdf.add_argument("--embed-images", action="store_true",
                        help="embed gallery images as base64 data URIs (self-contained HTML; large)")
+    p_pdf.add_argument("--require-fresh", action="store_true",
+                       help="fail (exit 1) if any gallery render is stale vs the current model")
     p_pdf.set_defaults(func=cmd_pdf)
 
     args = parser.parse_args(argv)

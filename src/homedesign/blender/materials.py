@@ -15,6 +15,8 @@ PALETTES = {
         "door_leaf": {"base_color": (0.35, 0.25, 0.18, 1.0), "roughness": 0.5, "metallic": 0.0},
         "furniture": {"base_color": (0.68, 0.55, 0.4, 1.0), "roughness": 0.5, "metallic": 0.0},
         "ground": {"base_color": (0.35, 0.4, 0.3, 1.0), "roughness": 0.9, "metallic": 0.0},
+        "neighbour": {"base_color": (0.55, 0.55, 0.56, 1.0), "roughness": 0.9, "metallic": 0.0},
+        "street": {"base_color": (0.24, 0.25, 0.27, 1.0), "roughness": 0.95, "metallic": 0.0},
     }
 }
 

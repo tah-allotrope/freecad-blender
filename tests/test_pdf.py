@@ -79,8 +79,10 @@ def test_opening_schedule_covers_all_openings():
 def test_takeoff_totals_row_matches_sum():
     model = compile_spec(load_example("tubehouse-mini.json"))
     rows = pdf.build_takeoff(model)
+    # Final row is Total; the row before it is the built-envelope disclosure.
     assert rows[-1]["level"] is None
-    per_storey = sum(r["gfa_m2"] for r in rows[:-1])
+    assert rows[-2]["name"].startswith("Built envelope")
+    per_storey = sum(r["gfa_m2"] for r in rows[:-2])
     assert abs(rows[-1]["gfa_m2"] - per_storey) < 0.1
 
 
@@ -107,3 +109,12 @@ def test_render_brief_html_embed_images_embeds_all(tmp_path):
                                  embed_images=True)
     n_views = len(model.views) or 2
     assert html.count("data:image/png;base64") == n_views + 1  # gallery + hero
+
+
+def test_render_brief_html_includes_elevation_and_section_pages():
+    model = compile_spec(load_example("tubehouse-mini.json"))
+    html = pdf.render_brief_html(model, _brief(), REPO_ROOT / "output",
+                                 EXAMPLES / "tubehouse-mini.json")
+    for heading in ("North Elevation", "South Elevation", "East Elevation", "West Elevation",
+                    "Long Section", "Cross Section"):
+        assert heading in html

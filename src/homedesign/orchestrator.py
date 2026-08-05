@@ -15,8 +15,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 _CANDIDATES = [
-    # Windows: user installs (portable builds) then Program Files.
-    "C:/Users/tukum/Blender/blender-4.1.1-windows-x64/blender.exe",
+    # Windows: the 4.5 LTS portable build preferred (EEVEE Next + AgX), then
+    # Program Files installs.
+    "C:/Users/tukum/Blender/blender-4.5.1-windows-x64/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 4.2/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe",
@@ -46,7 +47,7 @@ def find_blender() -> str:
 
 def _build_command(model_path: Path, out_dir: Path, profile: str,
                    views: list[str] | None = None, skip_existing: bool = False,
-                   reuse_blend: bool = False) -> list[str]:
+                   reuse_blend: bool = False, gltf: bool = False) -> list[str]:
     blender = find_blender()
     builder_script = Path(__file__).resolve().parent / "blender" / "build_scene.py"
     cmd = [
@@ -59,19 +60,23 @@ def _build_command(model_path: Path, out_dir: Path, profile: str,
         cmd += ["--skip-existing"]
     if reuse_blend:
         cmd += ["--reuse-blend"]
+    if gltf:
+        cmd += ["--export-gltf"]
     return cmd
 
 
 def build_scene(model_path: Path, out_dir: Path, final: bool = False,
+                profile: str | None = None,
                 views: list[str] | None = None, skip_existing: bool = False,
-                reuse_blend: bool = False) -> list[Path]:
-    profile = "final" if final else "preview"
+                reuse_blend: bool = False, gltf: bool = False) -> list[Path]:
+    # `profile` ("preview"|"final"|"cycles") overrides the legacy `final` flag.
+    profile = profile or ("final" if final else "preview")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "blend").mkdir(parents=True, exist_ok=True)
     (out_dir / "png").mkdir(parents=True, exist_ok=True)
 
-    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend)
+    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend, gltf)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, cwd=REPO_ROOT, encoding="utf-8", errors="replace")
     streamed: list[str] = []

@@ -42,3 +42,31 @@ def subtract_rects(
             next_boxes.extend(subtract_rect(box, hole))
         boxes = next_boxes
     return boxes
+
+
+def open_edges(rect, others, eps: float = 1.0) -> set[str]:
+    """Which of `{"north", "south", "east", "west"}` of `rect` are not shared
+    with an edge of any rect in `others` (coincident within `eps` millimetres).
+
+    `rect` and the entries of `others` expose `.x/.y/.w/.d`. An edge is shared
+    when another rect's facing edge lies on it (within `eps`) and their spans
+    overlap. Used to decide where a balcony needs a parapet: an edge is open
+    when no neighbouring room on the same storey shares it.
+    """
+    x, y, w, d = rect.x, rect.y, rect.w, rect.d
+    shared = set()
+    for o in others:
+        ox, oy, ow, od = o.x, o.y, o.w, o.d
+        if abs(oy + od - y) < eps and _span_overlap(x, x + w, ox, ox + ow):
+            shared.add("north")
+        if abs(oy - (y + d)) < eps and _span_overlap(x, x + w, ox, ox + ow):
+            shared.add("south")
+        if abs(ox + ow - x) < eps and _span_overlap(y, y + d, oy, oy + od):
+            shared.add("west")
+        if abs(ox - (x + w)) < eps and _span_overlap(y, y + d, oy, oy + od):
+            shared.add("east")
+    return {"north", "south", "east", "west"} - shared
+
+
+def _span_overlap(a: float, b: float, c: float, d: float) -> bool:
+    return a < d and c < b

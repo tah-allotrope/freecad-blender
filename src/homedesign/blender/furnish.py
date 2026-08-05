@@ -15,11 +15,14 @@ from . import procedural_furniture as pf  # noqa: E402
 
 def furnish_storey(storey_mm, style, collection):
     for room in storey_mm["rooms"]:
-        w_m = room["rect"]["w"] / 1000
-        d_m = room["rect"]["d"] / 1000
+        # PHASE-05: furniture consumes the net interior rect when present so it
+        # never intersects a wall under the `inside` alignment.
+        rect = room.get("interior") or room["rect"]
+        w_m = rect["w"] / 1000
+        d_m = rect["d"] / 1000
         items = plan_room(room["type"], w_m, d_m)
-        room_x = room["rect"]["x"] / 1000
-        room_y = room["rect"]["y"] / 1000
+        room_x = rect["x"] / 1000
+        room_y = rect["y"] / 1000
         base_z = storey_mm["base_z"] / 1000
         for item in items:
             pf.build_item(item, room_x, room_y, base_z, style, collection)

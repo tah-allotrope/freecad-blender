@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .model import CompiledModel
+from .model import CompiledModel, model_hash, read_render_sidecar
 
 PAGE_CSS = """
 @page { size: A3 landscape; margin: 14mm;
@@ -130,7 +130,9 @@ def build_opening_schedule(model: CompiledModel) -> list[dict]:
 
 
 def build_takeoff(model: CompiledModel) -> list[dict]:
-    """Per-storey quantities: GFA, wall lengths, opening counts, + totals."""
+    """Per-storey quantities: GFA, wall lengths, opening counts, + totals, and
+    a built-envelope row disclosing the actual outer building dimensions
+    (TASK-05-07: the gross-vs-plot fact is reported on the drawing set)."""
     rows = []
     total_gfa = total_ext = total_part = total_doors = total_windows = 0.0
     for storey in model.storeys:
@@ -150,6 +152,15 @@ def build_takeoff(model: CompiledModel) -> list[dict]:
         total_part += part
         total_doors += doors
         total_windows += windows
+    all_walls = [w for s in model.storeys for w in s.walls]
+    if all_walls:
+        env_w = (max(w.x + w.w for w in all_walls) - min(w.x for w in all_walls)) / 1000
+        env_d = (max(w.y + w.h for w in all_walls) - min(w.y for w in all_walls)) / 1000
+        rows.append({
+            "level": None, "name": "Built envelope (W x D m)",
+            "gfa_m2": round(env_w, 1), "exterior_wall_m": round(env_d, 1),
+            "partition_wall_m": 0.0, "door_count": "", "window_count": "",
+        })
     rows.append({
         "level": None, "name": "Total",
         "gfa_m2": round(total_gfa, 1), "exterior_wall_m": round(total_ext, 1),
@@ -222,13 +233,41 @@ def _plan_pages(model: CompiledModel, svg_dir: Path) -> str:
     return "".join(pages)
 
 
-def _gallery_pages(image_paths: list[Path], embed_images: bool, img_dir: Path) -> str:
+def _elevation_pages(model: CompiledModel, svg_dir: Path) -> str:
+    pages = []
+    for side in ("north", "south", "east", "west"):
+        svg_path = svg_dir / f"{model.name}_elev_{side}.svg"
+        body = _svg_inline(svg_path) if svg_path.exists() else "<p>(elevation not generated)</p>"
+        pages.append(f'<section class="page plan-page"><h2>{side.title()} Elevation</h2>{body}</section>')
+    return "".join(pages)
+
+
+def _section_pages(model: CompiledModel, svg_dir: Path) -> str:
+    pages = []
+    for axis, label in (("x", "Long Section"), ("y", "Cross Section")):
+        svg_path = svg_dir / f"{model.name}_section_{axis}.svg"
+        body = _svg_inline(svg_path) if svg_path.exists() else "<p>(section not generated)</p>"
+        pages.append(f'<section class="page plan-page"><h2>{label}</h2>{body}</section>')
+    return "".join(pages)
+
+
+def _gallery_pages(image_paths: list[Path], embed_images: bool, img_dir: Path,
+                   current_hash: str | None = None) -> str:
     existing = [p for p in image_paths if p.exists()]
     pages = []
     for i in range(0, len(existing), 2):
         chunk = existing[i:i + 2]
         imgs = []
         for p in chunk:
+            # TASK-06-03: a render is stale when its sidecar hash differs from
+            # the model being briefed (or the sidecar is missing).
+            caption = ""
+            if current_hash is not None:
+                sidecar = read_render_sidecar(p)
+                if sidecar is None or sidecar.get("model_hash") != current_hash:
+                    print(f"warning: stale render {p.name} (sidecar hash {sidecar.get('model_hash') if sidecar else 'missing'} != model {current_hash})",
+                          file=sys.stderr)
+                    caption = " <span style='color:#b00020;font-weight:bold'>STALE</span>"
             if embed_images:
                 imgs.append(f'<img src="{_img_data_uri(p)}">')
             else:
@@ -236,7 +275,7 @@ def _gallery_pages(image_paths: list[Path], embed_images: bool, img_dir: Path) -
                 # stays small (ASM-007); cover hero stays a data URI.
                 downscale_png(p, img_dir / p.name)
                 imgs.append(f'<img src="../pdf/img/{p.name}">')
-        pages.append(f'<section class="page"><h2>Renders</h2><div class="gallery">{"".join(imgs)}</div></section>')
+        pages.append(f'<section class="page"><h2>Renders{caption}</h2><div class="gallery">{"".join(imgs)}</div></section>')
     return "".join(pages)
 
 
@@ -293,7 +332,8 @@ def _appendix_page(model: CompiledModel, spec_path: Path) -> str:
 
 
 def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path,
-                       hero_view: str | None = None, embed_images: bool = False) -> str:
+                       hero_view: str | None = None, embed_images: bool = False,
+                       require_fresh: bool = False) -> str:
     svg_dir = out_dir / "svg"
     png_dir = out_dir / "png"
     img_dir = out_dir / "pdf" / "img"
@@ -308,6 +348,24 @@ def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_pat
     hero_path = png_dir / f"{model.name}_{hero_name}.png" if hero_name else None
     if hero_path is not None and not hero_path.exists():
         hero_path = None
+
+    # TASK-06-03/04: gallery staleness is judged against the model being
+    # briefed; `require_fresh` promotes a stale image to a hard error.
+    current_hash = model_hash(model)
+    if require_fresh:
+        stale = []
+        for p in image_paths:
+            if not p.exists():
+                continue
+            sidecar = read_render_sidecar(p)
+            if sidecar is None or sidecar.get("model_hash") != current_hash:
+                stale.append(p.name)
+        if stale:
+            raise RuntimeError(
+                f"stale render(s) for model {current_hash}: {', '.join(sorted(stale))}; "
+                "re-render before building the brief"
+            )
+
     # The cover hero is embedded as a data URI, so downscale it hard -- a
     # full-res 1920px render would otherwise add ~2.7MB of base64 to the
     # HTML, blowing the <200KB budget (ASM-007).
@@ -320,7 +378,9 @@ def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_pat
         _narrative_page(brief),
         _schedule_page(schedule),
         _plan_pages(model, svg_dir),
-        _gallery_pages(image_paths, embed_images, img_dir),
+        _elevation_pages(model, svg_dir),
+        _section_pages(model, svg_dir),
+        _gallery_pages(image_paths, embed_images, img_dir, current_hash=current_hash),
         _requirements_page(brief),
         _opening_schedule_page(openings),
         _takeoff_page(takeoff),
@@ -367,11 +427,12 @@ def print_html_to_pdf(html_path: Path, pdf_path: Path) -> None:
 
 
 def build_brief(model: CompiledModel, brief: dict, out_dir: Path, spec_path: Path,
-                 hero_view: str | None = None, embed_images: bool = False) -> Path:
+                 hero_view: str | None = None, embed_images: bool = False,
+                 require_fresh: bool = False) -> Path:
     pdf_dir = out_dir / "pdf"
     pdf_dir.mkdir(parents=True, exist_ok=True)
     html = render_brief_html(model, brief, out_dir, spec_path, hero_view=hero_view,
-                             embed_images=embed_images)
+                             embed_images=embed_images, require_fresh=require_fresh)
     html_path = pdf_dir / f"{model.name}-brief.html"
     html_path.write_text(html, encoding="utf-8")
     pdf_path = pdf_dir / f"{model.name}-brief.pdf"

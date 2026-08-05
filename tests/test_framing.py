@@ -1,11 +1,13 @@
-"""Framing assertions against real renders (TEST-008/009). These are slow
-(they invoke Blender) and are marked so they can be skipped in CI."""
+"""Framing assertions against real renders (PHASE-01). These invoke Blender
+and are skipped in CI when it is unavailable (CON-002)."""
 
+import json
 from pathlib import Path
 
 import pytest
 
 from homedesign import orchestrator
+from homedesign.compiler import compile_spec
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"
@@ -24,9 +26,8 @@ pytestmark = pytest.mark.skipif(
 def _non_sky_bbox(png: Path) -> tuple[int, int, int, int]:
     """Bounding box of pixels that differ from the sky colour.
 
-    Only the top 55% of the frame is scanned -- the ground plane spans the
-    full width below the horizon and would otherwise make the building's
-    horizontal occupancy look like 100%.
+    Only the top 55% of the frame is scanned: the ground plane sits below the
+    horizon (row ~50%+) and would otherwise stretch the bbox edge-to-edge.
     """
     from PIL import Image
 
@@ -47,21 +48,33 @@ def _non_sky_bbox(png: Path) -> tuple[int, int, int, int]:
     return min_x, min_y, max_x, max_y
 
 
-def test_tubehouse_mini_exterior_framed(tmp_path):
-    """The exterior render contains the whole building: the non-sky bbox
-    occupies >30% and <95% of the frame in each dimension (TEST-008)."""
+def _ensure_render() -> Path:
+    """Compile + build the tubehouse-mini preview render if it is not on disk."""
     out = REPO_ROOT / "output"
     model_path = out / "compiled" / "tubehouse-mini.model.json"
-    if not model_path.exists():
-        pytest.skip("compiled model not present; run `homedesign build` first")
     png = out / "png" / "tubehouse-mini_exterior.png"
-    if not png.exists():
-        pytest.skip("render not present; run `homedesign build` first")
+    if png.exists():
+        return png
+    if not model_path.exists():
+        spec = json.loads((EXAMPLES / "tubehouse-mini.json").read_text())
+        model = compile_spec(spec)
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        model_path.write_text(json.dumps(model.to_dict(), indent=2))
+    orchestrator.build_scene(model_path, out)
+    return png
+
+
+def test_tubehouse_mini_exterior_framed(tmp_path):
+    """The exterior render contains the whole building: the non-sky bbox must
+    not touch any frame edge, with sky visible above the roof. This is the
+    assertion the old test was blind to -- the broken render's building
+    overflowed the top edge (min_y == 0), which this now catches."""
+    png = _ensure_render()
 
     img_w, img_h = __import__("PIL.Image", fromlist=["Image"]).open(png).size
     min_x, min_y, max_x, max_y = _non_sky_bbox(png)
-    bw, bh = max_x - min_x, max_y - min_y
-    assert bw / img_w > 0.30, f"building too narrow: {bw/img_w:.0%}"
-    assert bw / img_w < 0.95
-    assert bh / img_h > 0.30, f"building too short: {bh/img_h:.0%}"
-    assert bh / img_h < 0.95
+    bw = max_x - min_x
+    assert min_x > 0.02 * img_w, f"building touches left edge (min_x={min_x})"
+    assert max_x < 0.98 * img_w, f"building touches right edge (max_x={max_x})"
+    assert min_y > 0.005 * img_h, f"no sky above the roof (min_y={min_y})"
+    assert 0.12 < bw / img_w < 0.95, f"building width {bw / img_w:.0%} out of band"

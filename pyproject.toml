@@ -18,6 +18,9 @@ dev = [
     "ruff==0.15.7",
 ]
 
+[project.scripts]
+homedesign = "homedesign.__main__:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Final Report :: Camera Truth, EEVEE Next, and the Full Drawing Set</title>
+  <meta name="color-scheme" content="dark light">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    async function initMermaid() {
+      const blocks = document.querySelectorAll('.mermaid');
+      if (!blocks.length) {
+        return;
+      }
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        themeVariables: {
+          primaryColor: '#f3ead9',
+          primaryTextColor: '#1f1912',
+          primaryBorderColor: '#9d6b37',
+          lineColor: '#3b6f76',
+          secondaryColor: '#efe4d0',
+          tertiaryColor: '#ffffff',
+          background: '#fbf7f1',
+          mainBkg: '#fbf7f1',
+          nodeBorder: '#9d6b37',
+          clusterBkg: '#f7efdf',
+          clusterBorder: '#3b6f76',
+          edgeLabelBackground: '#fbf7f1'
+        }
+      });
+
+      await mermaid.run({ nodes: blocks });
+    }
+
+    const run = () => initMermaid().catch((error) => console.error('Mermaid render failed', error));
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run, { once: true });
+    } else {
+      run();
+    }
+  </script>
+  <style>
+    :root {
+      --paper: #fbf7f1;
+      --paper-strong: #fffdf9;
+      --ink: #1f1912;
+      --ink-soft: #5f564c;
+      --line: #dccdb6;
+      --line-strong: #bfa37d;
+      --accent: #9d6b37;
+      --accent-soft: #efe4d0;
+      --accent-2: #3b6f76;
+      --shadow: 0 18px 40px rgba(49, 33, 16, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --page-width: 1040px;
+      --display-font: Georgia, "Times New Roman", serif;
+      --body-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono-font: "Cascadia Code", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(157, 107, 55, 0.09), transparent 26%),
+        radial-gradient(circle at 88% 10%, rgba(59, 111, 118, 0.08), transparent 22%),
+        linear-gradient(180deg, #f7f1e7 0%, #fbf7f1 28%, #f6efe5 100%);
+      font-family: var(--body-font);
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+    }
+
+    a {
+      color: var(--accent-2);
+    }
+
+    code,
+    pre,
+    .technical,
+    .meta-chip,
+    .section-index,
+    .eyebrow,
+    .stat-label,
+    .stat-value,
+    .mermaid {
+      font-family: var(--mono-font);
+    }
+
+    .page-shell {
+      width: min(var(--page-width), calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .hero {
+      padding: 34px;
+      border: 1px solid rgba(159, 123, 79, 0.28);
+      border-radius: 30px;
+      background:
+        linear-gradient(135deg, rgba(157, 107, 55, 0.1), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.86)),
+        var(--paper-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr);
+      gap: 24px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .title {
+      margin: 0;
+      max-width: 12ch;
+      font-family: var(--display-font);
+      font-size: clamp(2.8rem, 5vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      text-wrap: balance;
+    }
+
+    .lede {
+      margin: 18px 0 0;
+      max-width: 60ch;
+      color: var(--ink-soft);
+      font-size: 1rem;
+    }
+
+    .takeaway {
+      margin-top: 22px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: rgba(59, 111, 118, 0.08);
+      color: #20373a;
+      font-size: 1.02rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .meta-card,
+    .section,
+    .subcard,
+    .empty-state {
+      border: 1px solid rgba(95, 72, 46, 0.12);
+      background: rgba(255, 253, 249, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .meta-card {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+    }
+
+    .meta-label {
+      color: var(--ink-soft);
+      font-size: 0.76rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .meta-chip {
+      margin-top: 8px;
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .section {
+      margin-top: 22px;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px 18px;
+      align-items: end;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-index {
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(1.45rem, 2vw, 2rem);
+      line-height: 1.05;
+    }
+
+    .summary-grid,
+    .dual-grid,
+    .phase-grid,
+    .stat-grid,
+    .appendix-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-grid,
+    .dual-grid,
+    .phase-grid,
+    .appendix-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .subcard {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .subcard h3,
+    .subcard h4 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .subcard p:first-child,
+    .subcard ul:first-child,
+    .subcard ol:first-child {
+      margin-top: 0;
+    }
+
+    .stat-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    .stat {
+      padding: 14px 16px;
+      border: 1px solid rgba(59, 111, 118, 0.16);
+      border-radius: var(--radius-sm);
+      background: rgba(59, 111, 118, 0.06);
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .stat-label {
+      color: var(--ink-soft);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      margin-top: 8px;
+      color: var(--accent-2);
+      font-size: 1.18rem;
+      font-weight: 700;
+    }
+
+    .narrative,
+    .chart-frame,
+    .technical-frame,
+    .diagram-frame,
+    .viz-frame {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.54);
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .diagram-frame {
+      overflow-x: auto;
+      overflow-y: auto;
+      overscroll-behavior-x: contain;
+      overscroll-behavior-y: contain;
+      max-height: min(70vh, 720px);
+    }
+
+    .chart-frame,
+    .viz-frame {
+      overflow: hidden;
+    }
+
+    .mermaid {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      color: var(--ink);
+    }
+
+    .mermaid svg {
+      display: block;
+      width: auto !important;
+      min-width: 100%;
+      max-width: none !important;
+      height: auto !important;
+    }
+
+    .diagram-frame.compact-diagram {
+      padding: 12px;
+      max-height: min(62vh, 560px);
+    }
+
+    .diagram-frame.compact-diagram .mermaid {
+      min-width: 900px;
+    }
+
+    .chart-frame canvas,
+    .technical-frame > canvas,
+    .viz-frame canvas,
+    canvas.report-chart {
+      display: block;
+      width: 100% !important;
+      max-width: 100%;
+      height: 300px !important;
+      min-height: 300px;
+      max-height: 300px;
+    }
+
+    .technical-frame table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .technical-frame th,
+    .technical-frame td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .technical-frame th {
+      color: var(--accent);
+      font-size: 0.76rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .empty-state {
+      padding: 20px;
+      border-radius: var(--radius-md);
+      text-align: center;
+      color: var(--ink-soft);
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+      font-size: 0.84rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    p:last-child,
+    li:last-child {
+      margin-bottom: 0;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: rgba(95, 86, 76, 0.74);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: right;
+    }
+
+    @media (max-width: 920px) {
+      .hero-grid,
+      .summary-grid,
+      .dual-grid,
+      .phase-grid,
+      .stat-grid,
+      .appendix-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .title {
+        max-width: none;
+      }
+
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        width: min(100vw - 20px, var(--page-width));
+        padding-top: 16px;
+        padding-bottom: 36px;
+      }
+
+      .hero,
+      .section {
+        padding: 18px;
+        border-radius: 20px;
+      }
+
+      .title {
+        font-size: clamp(2.1rem, 12vw, 3.2rem);
+      }
+
+    }
+
+    @media print {
+      :root {
+        --paper: #ffffff;
+        --paper-strong: #ffffff;
+        --ink: #111111;
+        --ink-soft: #444444;
+        --line: #d6d1c8;
+      }
+
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      body {
+        background: #ffffff;
+      }
+
+      .page-shell {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+      }
+
+      .hero,
+      .meta-card,
+      .section,
+      .subcard,
+      .narrative,
+      .chart-frame,
+      .technical-frame,
+      .diagram-frame,
+      .viz-frame,
+      .empty-state,
+      .stat {
+        background: #ffffff;
+        box-shadow: none;
+      }
+
+      .hero,
+      .section {
+        margin-top: 0;
+        margin-bottom: 10mm;
+      }
+
+      .diagram-frame {
+        overflow: visible;
+        max-height: none;
+      }
+
+      .diagram-frame.compact-diagram .mermaid {
+        min-width: 0;
+      }
+
+      .section-header,
+      .takeaway {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" id="title-hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Final Report / Shareable Analysis Artifact</p>
+          <h1 class="title">Camera Truth, EEVEE Next, and the Full Drawing Set</h1>
+          <p class="lede">
+            A presentation-ready synthesis of a multi-phase analysis, written for readers who need context, judgment, and a clear path forward.
+          </p>
+          <div class="takeaway">The pipeline now depicts exactly what it compiles: cameras were rescued from 3.4× over-crop and placed inside their rooms, the full-quality render gallery dropped from 11.3 hours to ~51 minutes, four elevations and two sections joined the drawing set, and every artifact now declares which model produced it.</div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="meta-label">Project</div>
+            <div class="meta-chip">homedesign — camera truth + render economics + architect drawing set</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Repository</div>
+            <div class="meta-chip">freecad-blender</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">Date</div>
+            <div class="meta-chip">2026-08-05</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="executive-summary">
+      <div class="section-header">
+        <div>
+          <div class="section-index">01 / Executive Summary</div>
+          <h2 class="section-title">Executive Summary</h2>
+        </div>
+      </div>
+      <div class="summary-grid">
+        
+<div class="subcard">
+  <h3>What was done</h3>
+  <p>Six phases across the <code>homedesign</code> pipeline, in the order that
+  makes each one trustworthy: fix the cameras so renders show the building
+  they name; upgrade the render engine (Blender 4.5 LTS + EEVEE Next) so a
+  full gallery costs minutes, not an overnight run; add the physical detail
+  an architect notices first (parapets, balustrades, ceilings, window sills,
+  neighbour context); complete the drawing set with four elevations and two
+  sections; make plot geometry honest and the warning channel truthful; and
+  give every artifact a provenance hash so a stale brief can never ship
+  silently.</p>
+</div>
+<div class="subcard">
+  <h3>The answer</h3>
+  <p><strong>Renders depict the building.</strong> The exterior camera was
+  standing 4.69&nbsp;m from a facade that needed 15.90&nbsp;m (a one-character
+  sign error in the analytic fit); every interior camera sat on the lawn
+  outside its own room. Both are fixed and guarded by tests that provably fail
+  on the old code. The 9-view final gallery renders in <strong>50.7
+  minutes</strong> (EEVEE Next) versus <strong>11.3 hours</strong> (Cycles).
+  The architect brief grows from 17 to 23 pages and refuses to assemble from
+  stale renders when asked. All 127 tests pass; lint and the skill-mirror
+  gate are green.</p>
+</div>
+
+      </div>
+    </section>
+
+    <section class="section" id="background-objective">
+      <div class="section-header">
+        <div>
+          <div class="section-index">02 / Background &amp; Objective</div>
+          <h2 class="section-title">Background &amp; Objective</h2>
+        </div>
+      </div>
+      <div class="narrative">
+        
+<p><code>homedesign</code> compiles a JSON home spec into a geometric model,
+then into 2D plans, a headless-Blender scene, renders and an A3 architect
+brief. After a prior sprint closed 88/88 items, the geometry was correct but
+the <strong>depiction was not</strong>: the exterior render cropped the
+building out of frame, every interior camera was placed outside the building,
+the framing regression test could not fail on either defect, the only
+validation warning that ever fired was unsatisfiable noise, and the shipped
+PDF embedded renders of a model state that no longer existed.</p>
+<p>The objective of this plan was to fix depiction first, unlock affordable
+render quality by moving to Blender 4.5 LTS / EEVEE Next, then complete the
+drawing set an architect asks for after plans: elevations and sections.</p>
+
+      </div>
+    </section>
+
+    <section class="section" id="inputs-scope">
+      <div class="section-header">
+        <div>
+          <div class="section-index">03 / Inputs &amp; Scope</div>
+          <h2 class="section-title">Inputs &amp; Scope</h2>
+        </div>
+      </div>
+      <div class="dual-grid">
+        
+<div class="subcard">
+  <h3>Inputs</h3>
+  <ul>
+    <li><code>plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md</code> — the six-phase plan this report verifies.</li>
+    <li><code>research/2026-08-04-homedesign-second-pass-brainstorm.md</code> — evidence-gathering pass that reproduced every defect.</li>
+    <li><code>research/2026-07-30-homedesign-next-level-brainstorm.md</code> — prior roadmap.</li>
+    <li>Specs under <code>spec/examples/</code> and <code>designs/</code> — the compatibility surface.</li>
+  </ul>
+</div>
+<div class="subcard">
+  <h3>Scope</h3>
+  <ul>
+    <li><strong>In:</strong> camera correctness, engine upgrade + benchmark, geometric realism, elevations/sections, wall-inset honesty, artifact provenance, glTF + offline viewer, hygiene.</li>
+    <li><strong>Out:</strong> curved geometry, split levels, code-compliance certification, cost estimation, MEP, cloud/multi-user, photoreal textures and a furniture asset library (explicitly deferred).</li>
+    <li><strong>Constraint:</strong> backwards compatibility for every existing spec; schema growth additive only.</li>
+  </ul>
+</div>
+
+      </div>
+    </section>
+
+    <section class="section" id="assumptions-constraints">
+      <div class="section-header">
+        <div>
+          <div class="section-index">04 / Assumptions &amp; Constraints</div>
+          <h2 class="section-title">Assumptions &amp; Constraints</h2>
+        </div>
+      </div>
+      <div class="dual-grid">
+        
+<div class="subcard">
+  <h3>Decisions taken</h3>
+  <ul>
+    <li><strong>DEC-001:</strong> interior and exterior cameras use different algorithms — pull-back framing is impossible indoors.</li>
+    <li><strong>DEC-002:</strong> the orphaned IFC exporter is deleted, not rewired.</li>
+    <li><strong>DEC-003:</strong> backwards compatibility is mandatory for every spec.</li>
+    <li><strong>DEC-004:</strong> textures/HDRI/asset libraries are deferred; geometric realism goes first.</li>
+  </ul>
+</div>
+<div class="subcard">
+  <h3>Binding defaults &amp; constraints</h3>
+  <ul>
+    <li><strong>ASM-002:</strong> EEVEE Next stays the <code>final</code> profile even if the benchmark misses 30 min — the actual is recorded.</li>
+    <li><strong>ASM-003:</strong> interior eye height 1.5 m, wall inset 0.35 m, lens 12–24 mm.</li>
+    <li><strong>ASM-004:</strong> four elevations + long (x) and cross (y) sections.</li>
+    <li><strong>ASM-005/006/007:</strong> neighbour massing on &le;6&nbsp;m plots; <code>wall_alignment</code> <code>centre|inside</code>; 12-hex SHA-256 model hash.</li>
+    <li><strong>CON-001:</strong> no Cycles GPU backend — EEVEE Next is the strategy.</li>
+    <li><strong>CON-002:</strong> Blender absent in CI; Blender-touching tests skip cleanly.</li>
+  </ul>
+</div>
+
+      </div>
+    </section>
+
+    <section class="section" id="methodology">
+      <div class="section-header">
+        <div>
+          <div class="section-index">05 / Methodology</div>
+          <h2 class="section-title">Methodology</h2>
+        </div>
+      </div>
+      <div class="narrative">
+        
+<p>The work was sequenced so each phase could be verified before the next was
+built on it. Camera math lives in pure Python (<code>src/homedesign/
+camera_fit.py</code>) so it is unit-testable without Blender; the Blender
+builders became thin wrappers with no arithmetic left in them. A deliberate
+off-centre test was added that is <em>mathematically invisible</em> to the old
+symmetric-box suite — the teeth check proved it fails under the old sign and
+passes under the fix. A containment sweep asserts every interior camera stands
+strictly inside its room across every spec in the repo. The framing pixel
+test was tightened to require the building to clear all frame edges, and it
+fails on the old cropped render. Later phases relied on the same pattern:
+pure draw-model builders for elevations/sections, a byte-identity test for the
+compiler change, and model-hash sidecars so staleness is a machine-checkable
+fact rather than an assumption.</p>
+
+      </div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">Orientation</div>
+          <div class="stat-value">multi-phase</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Audience</div>
+          <div class="stat-value">stakeholder-safe</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Evidence Rule</div>
+          <div class="stat-value">no invented data</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="phase-analysis">
+      <div class="section-header">
+        <div>
+          <div class="section-index">06 / Phase-by-Phase Analysis</div>
+          <h2 class="section-title">Phase-by-Phase Analysis</h2>
+        </div>
+      </div>
+      <div class="phase-grid">
+        
+<div class="subcard">
+  <h3>PHASE-01 · Camera truth</h3>
+  <p>One character fixed the exterior camera: <code>fit_distance</code> added
+  the depth term when it must subtract it, so the camera pulled back for the
+  far corners instead of the near ones. Interior cameras were rebuilt as
+  inside-the-room placements with a solved focal length. The tightened framing
+  test and the containment sweep are the permanent guards.</p>
+</div>
+<div class="subcard">
+  <h3>PHASE-02 · EEVEE Next</h3>
+  <p>Blender 4.5.1 LTS installed alongside 4.1.1 and made the default;
+  <code>RENDER_PROFILES</code> define <code>preview / final / cycles</code>;
+  the final profile enables EEVEE Next raytracing and AgX. The 9-view gallery
+  renders in 50.7 min against an 11.3-hour baseline.</p>
+</div>
+<div class="subcard">
+  <h3>PHASE-03 · Geometric realism</h3>
+  <p>Parapets on balcony open edges, stair balustrades, top-storey ceilings,
+  window lintels and sills, and neighbour party-wall massing plus a street
+  strip — the elements whose absence made a correct model read as wrong.</p>
+</div>
+<div class="subcard">
+  <h3>PHASE-04 · Elevations &amp; sections</h3>
+  <p>A pure draw-model module projects four elevations (each side's own
+  horizontal axis) and two sections (cut poché, slab bands, treads, room
+  labels) into SVG and DXF. <code>write_plans</code> emits the complete
+  22-file set; the brief grows by six pages.</p>
+</div>
+<div class="subcard">
+  <h3>PHASE-05 · Honest geometry</h3>
+  <p><code>site.wall_alignment: inside</code> puts exterior walls' outer face
+  on the plot line; <code>Room.interior</code> gives furniture, lights and
+  cameras the net rect; <code>wall_outside_plot</code> becomes a real error.
+  tubehouse-dream warnings drop 63 → 0; the north elevation is 4000&nbsp;mm,
+  not 4200.</p>
+</div>
+<div class="subcard">
+  <h3>PHASE-06 · Provenance &amp; hygiene</h3>
+  <p>Model-hash sidecars make stale renders detectable; <code>--require-fresh</code>
+  makes them fatal. glTF + a self-contained offline viewer (three.js inlined,
+  GLB embedded) ships without render time. Dead code removed, console script
+  added, docs corrected.</p>
+</div>
+
+      </div>
+      
+<div class="diagram-frame compact-diagram">
+<div class="mermaid">
+flowchart LR
+  A[Depiction wrong<br/>cameras outside, over-crop] --> B[PHASE-01 Camera truth]
+  B --> C[PHASE-02 EEVEE Next<br/>50 min gallery]
+  C --> D[PHASE-03 Geometric realism]
+  D --> E[PHASE-04 Elevations + sections]
+  E --> F[PHASE-05 Wall inset<br/>honest warnings]
+  F --> G[PHASE-06 Provenance + viewer]
+  G --> H[Fresh, verifiable deliverables]
+</div>
+</div>
+
+    </section>
+
+    <section class="section" id="findings-recommendation">
+      <div class="section-header">
+        <div>
+          <div class="section-index">07 / Findings &amp; Recommendation</div>
+          <h2 class="section-title">Findings &amp; Recommendation</h2>
+        </div>
+      </div>
+      <div class="narrative">
+        
+<p><strong>1. The sign error was real and one character long.</strong> The
+camera was placed at <code>centre − dist·forward</code>, so the binding corner
+is the <em>nearest</em> one and the depth term must be subtracted. Every
+existing test fitted a box centred on the passed centre, where the two signs
+return identical maxima — the defect was mathematically invisible until a
+deliberately off-centre test was added.</p>
+<p><strong>2. EEVEE Next is the right engine for this hardware.</strong> The
+50.7-minute gallery is 13× faster than the 11.3-hour Cycles baseline; a
+single Cycles view of the smallest house still costs 9.8 minutes. EEVEE Next
+stays the <code>final</code> profile by binding default, and the raytracing
+flag is the recorded lever if a sub-30-minute gallery is ever required.</p>
+<p><strong>3. Honest geometry fixed the noise.</strong> The 63 permanent
+<code>wall_outside_plot</code> warnings were structurally unfalsifiable —
+exterior walls were centred on room edges and always poked 100&nbsp;mm past
+the plot. Insets the walls to the plot line, made the rule alignment-aware and
+error-severity, and the channel carries signal again: tubehouse-dream now
+compiles with zero warnings, and its built width is truthfully 4.0&nbsp;m.</p>
+<p><strong>4. Provenance closes the costliest failure mode.</strong> A brief
+that mixes current plans with six-week-old renders is now detected and
+refused (<code>--require-fresh</code>), because no artifact ships without the
+hash of the model it came from.</p>
+
+      </div>
+      
+<div class="chart-frame">
+  <h3>Render economics — wall-clock per path</h3>
+  <canvas id="renderChart"></canvas>
+</div>
+<script>
+  (function () {
+    var chartEl = document.getElementById('renderChart');
+    if (!chartEl || !window.Chart) { return; }
+    var ctx = chartEl.getContext('2d');
+    var config = Object.assign({}, window.__REPORT_CHART_DEFAULTS__, {
+      type: 'bar',
+      data: {
+        labels: ['Cycles gallery (before)', 'EEVEE Next gallery (now)'],
+        datasets: [{
+          label: 'wall-clock minutes, 9-view tubehouse-dream gallery',
+          data: [678, 50.7],
+          backgroundColor: ['#9d6b37', '#3b6f76']
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'minutes' } }
+        }
+      }
+    });
+    new Chart(ctx, config);
+  })();
+</script>
+
+    </section>
+
+    <section class="section" id="implementation-path">
+      <div class="section-header">
+        <div>
+          <div class="section-index">08 / Implementation Path</div>
+          <h2 class="section-title">Implementation Path</h2>
+        </div>
+      </div>
+      <div class="phase-grid">
+        
+<div class="subcard">
+  <h3>Shipped now</h3>
+  <ul>
+    <li>Corrected cameras + containment/framing regression tests (127 tests, ruff clean).</li>
+    <li>Blender 4.5 LTS runtime, three render profiles, AgX, benchmark recorded in <code>docs/lessons-learned.md</code>.</li>
+    <li>Elevations/sections in SVG + DXF; 23-page A3 brief; 22-file drawing set.</li>
+    <li><code>--gltf</code> offline viewer; <code>--require-fresh</code> staleness gate.</li>
+    <li>Flagship finals committed under <code>deliverables/tubehouse-dream/</code>.</li>
+  </ul>
+</div>
+<div class="subcard">
+  <h3>Suggested next steps</h3>
+  <ol>
+    <li>Cut the gallery to &lt;30 min by benchmarking <code>final</code> with <code>raytracing: False</code>.</li>
+    <li>Projection behind the section cut (ALT-002 was deferred deliberately).</li>
+    <li>HDRI world + CC0 furniture asset library, now gated on the engine outcome.</li>
+    <li>Per-room ceiling height, wall-thickness overrides, site orientation (north angle).</li>
+    <li>IFC export as a clean-sheet feature against <code>CompiledModel</code>.</li>
+  </ol>
+</div>
+
+      </div>
+    </section>
+
+    <section class="section" id="risks-open-questions">
+      <div class="section-header">
+        <div>
+          <div class="section-index">09 / Risks / Open Questions</div>
+          <h2 class="section-title">Risks / Open Questions</h2>
+        </div>
+      </div>
+      <div class="dual-grid">
+        
+<div class="subcard">
+  <h3>Risks / caveats</h3>
+  <ul>
+    <li><strong>Gallery above target:</strong> 50.7 min vs 30 min aspiration — recorded, binding default retained, lever identified.</li>
+    <li><strong>Test thresholds recalibrated:</strong> the plan's framing-pixel numbers assumed no roof protrusion above the facade fit box and a wider facade; real thresholds differ but still fail on the old render.</li>
+    <li><strong>EEVEE vs Cycles look:</strong> glass/opening rendering differs; previews validate layout, not lighting.</li>
+    <li><strong>28 MB of committed finals</strong> in <code>deliverables/</code>; regenerate-in-~50-min alternative exists.</li>
+  </ul>
+</div>
+<div class="subcard">
+  <h3>Open questions</h3>
+  <ul>
+    <li>Is a wide-angle interior acceptable, or should interiors be cutaway exteriors (per-room wall suppression)?</li>
+    <li>Has the audience shifted from "a PDF I hand to an architect" toward the interactive GLB model — which should lead next?</li>
+    <li>Should <code>homedesign</code> gain a <code>verify</code> subcommand that re-checks freshness, camera containment and mesh-in-plot in one call?</li>
+  </ul>
+</div>
+
+      </div>
+    </section>
+
+    <section class="section" id="appendices-evidence">
+      <div class="section-header">
+        <div>
+          <div class="section-index">10 / Appendices / Evidence Notes</div>
+          <h2 class="section-title">Appendices / Evidence Notes</h2>
+        </div>
+      </div>
+      <div class="appendix-grid">
+        
+<div class="subcard">
+  <h3>Evidence</h3>
+  <table>
+    <thead><tr><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>pytest suite</td><td>127 passed</td></tr>
+      <tr><td>ruff check src tests</td><td>All checks passed</td></tr>
+      <tr><td>skill-mirror gate</td><td>ok: skill copies match</td></tr>
+      <tr><td>tubehouse-dream compile stderr</td><td>0 lines (was 63 warnings)</td></tr>
+      <tr><td>North elevation width</td><td>4000 mm (was 4200)</td></tr>
+      <tr><td>EEVEE Next 9-view gallery</td><td>50.7 min</td></tr>
+      <tr><td>Cycles single view (smallest house)</td><td>9.8 min</td></tr>
+      <tr><td>PDF pages (A3 landscape)</td><td>23, opens clean</td></tr>
+      <tr><td>Drawing set</td><td>22 files (5 plans + 4 elevations + 2 sections) SVG+DXF, all DXF open via ezdxf</td></tr>
+      <tr><td>Sidecars vs model hash</td><td>9/9 fresh</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="subcard">
+  <h3>Method notes / glossary</h3>
+  <ul>
+    <li><strong>Teeth check:</strong> the new camera tests were confirmed to fail under the old <code>+</code> sign before the fix was applied.</li>
+    <li><strong>Byte-identity test:</strong> default <code>centre</code> alignment reproduces the pre-change wall geometry exactly.</li>
+    <li><strong>Model hash:</strong> 12 hex chars of SHA-256 over the canonical model JSON; stamped into compiled models and render sidecars.</li>
+    <li><strong>Cardinal convention:</strong> north = min-y, south = max-y, west = min-x, east = max-x.</li>
+  </ul>
+</div>
+
+      </div>
+      <div class="footer-note">designed for html first, printable without reconstruction</div>
+    </section>
+  </main>
+  <script>
+    (function() {
+      const chartCanvases = document.querySelectorAll('canvas');
+      chartCanvases.forEach((canvas) => {
+        canvas.classList.add('report-chart');
+        const parent = canvas.parentElement;
+        if (parent && parent.classList.contains('technical-frame') && !parent.classList.contains('chart-frame')) {
+          parent.classList.add('chart-frame');
+        }
+      });
+    })();
+
+    if (window.Chart) {
+      Chart.defaults.devicePixelRatio = 1;
+      Chart.defaults.animation = false;
+      Chart.defaults.resizeDelay = 150;
+      Chart.defaults.normalized = true;
+      Chart.defaults.maintainAspectRatio = false;
+      Chart.defaults.responsive = true;
+      window.__REPORT_CHART_DEFAULTS__ = {
+        animation: false,
+        resizeDelay: 150,
+        normalized: true,
+        maintainAspectRatio: false,
+        responsive: true
+      };
+    }
+  </script>
+</body>
+</html>

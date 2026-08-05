@@ -50,7 +50,8 @@
   },
   "site": {
     "plot_width_mm": 4000,
-    "plot_depth_mm": 25000
+    "plot_depth_mm": 25000,
+    "wall_alignment": "inside"
   },
   "storeys": [
     {

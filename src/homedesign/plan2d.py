@@ -37,6 +37,12 @@ def write_plans(model: CompiledModel, out_dir: Path) -> list[Path]:
         dxf_path = dxf_dir / f"{model.name}_f{storey.level}.dxf"
         _render_dxf(model, storey, dxf_path)
         paths.append(dxf_path)
+
+    # The complete drawing set: four elevations and two sections alongside the
+    # per-storey plans (lazy import avoids a module cycle).
+    from .elevation import write_elevations, write_sections
+    paths.extend(write_elevations(model, out_dir))
+    paths.extend(write_sections(model, out_dir))
     return paths
 
 
@@ -98,7 +104,12 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     # scale bar bottom-left, title block bottom-right.
     parts.append(_north_arrow())
     parts.append(_scale_bar(depth_px))
-    parts.append(_title_block(model, storey, width_px, depth_px))
+    parts.append(_title_block(width_px, depth_px, [
+        model.name,
+        storey.name or f"Storey {storey.level}",
+        f"Plot {model.plot_width_mm / 1000:.1f} m x {model.plot_depth_mm / 1000:.1f} m",
+        "Scale 1:100 @ A3",
+    ]))
 
     parts.append("</svg>")
     return "\n".join(parts)
@@ -164,12 +175,13 @@ def _north_arrow() -> str:
     )
 
 
-def _scale_bar(depth_px: float) -> str:
+def _scale_bar(height_px: float) -> str:
     """Graphic scale bar in metres: 5 segments of 1m each (5m total).
-    Placed bottom-left, clear of the dimension line on the left edge."""
+    Placed bottom-left, clear of the dimension line on the left edge.
+    Shared by plan and elevation/section drawings."""
     seg = 100.0  # px per metre at 10 mm/px
     x0 = 70.0
-    y0 = depth_px - 60.0
+    y0 = height_px - 60.0
     parts = [f'<g transform="translate({x0},{y0})">']
     for i in range(5):
         fill = "#222" if i % 2 == 0 else "#fff"
@@ -182,18 +194,12 @@ def _scale_bar(depth_px: float) -> str:
     return "\n".join(parts)
 
 
-def _title_block(model: CompiledModel, storey: Storey, width_px: float, depth_px: float) -> str:
-    """Title block in the lower-right corner: design name, storey name, plot
-    dimensions, and a 1:100 @ A3 scale note."""
+def _title_block(width_px: float, height_px: float, lines: list[str]) -> str:
+    """Title block in the lower-right corner. Shared by plan and
+    elevation/section drawings; `lines` carries the drawing title."""
     bw, bh = 360.0, 100.0
     x0 = width_px - bw - 40.0
-    y0 = depth_px - bh - 40.0
-    lines = [
-        model.name,
-        storey.name or f"Storey {storey.level}",
-        f"Plot {model.plot_width_mm / 1000:.1f} m x {model.plot_depth_mm / 1000:.1f} m",
-        "Scale 1:100 @ A3",
-    ]
+    y0 = height_px - bh - 40.0
     parts = [f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="white" stroke="#222" stroke-width="1.2"/>']
     for i, line in enumerate(lines):
         parts.append(f'<text x="{x0 + 12:.1f}" y="{y0 + 22 + i * 20:.1f}" font-size="11" fill="#222">{line}</text>')

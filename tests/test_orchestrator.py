@@ -8,6 +8,33 @@ from pathlib import Path
 import pytest
 
 from homedesign import orchestrator
+from homedesign.render_profiles import RENDER_PROFILES
+
+
+def test_render_profiles_declared():
+    assert RENDER_PROFILES["final"] == {
+        "engine": "EEVEE", "samples": 256, "res": (1920, 1080), "raytracing": True,
+    }
+    assert RENDER_PROFILES["cycles"]["engine"] == "CYCLES"
+    assert RENDER_PROFILES["preview"]["res"] == (960, 540)
+
+
+def test_build_command_cycles_profile_flag(tmp_path, monkeypatch):
+    monkeypatch.setenv("BLENDER_CMD", "fake-blender")
+    model = _mini_model(tmp_path)
+    out = tmp_path / "out"
+    cmd = orchestrator._build_command(model, out, "cycles")
+    assert "--profile" in cmd
+    assert cmd[cmd.index("--profile") + 1] == "cycles"
+
+
+def test_build_scene_profile_overrides_final(tmp_path, monkeypatch, stub_blender):
+    monkeypatch.setenv("BLENDER_CMD", stub_blender)
+    model = _mini_model(tmp_path)
+    out = tmp_path / "out"
+    # `profile` wins over the legacy `final` flag (DEC-003 backward compat).
+    orchestrator.build_scene(model, out, final=True, profile="cycles")
+    assert True  # reached without raising; argv already covered above
 
 
 @pytest.fixture

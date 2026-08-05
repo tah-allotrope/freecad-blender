@@ -45,6 +45,20 @@ def test_degenerate_box_clamps_to_one():
     assert d == 1.0
 
 
+def test_fit_distance_off_centre_near_corner_binds():
+    # The regression test the symmetric-box suite was blind to: the depth term
+    # must be SUBTRACTED (the near corner binds). The box spans y in [-1, 1]
+    # while the centre sits at y = -3, so corner depths along forward=(0,1,0)
+    # are 2 (near face, y=-1) and 4 (far face, y=1). tan_y = 36*1080/(2*50*1920)
+    # = 0.2025, so 1/tan_y = 4.93827...; the corrected formula binds on the near
+    # corner: 4.93827... - 2 = 2.93827...
+    corners = corners_of(((-1, -1, -1), (1, 1, 1)))
+    d = fit_distance(corners, (0, -3, 0), (0, 1, 0), (1, 0, 0), (0, 0, 1),
+                     lens_mm=50, res_x=1920, res_y=1080, margin=1.0)
+    # Under the old `+` sign the far corner binds and this returns 8.93827...
+    assert abs(d - 2.938271604938272) < 1e-3
+
+
 def test_building_bbox_tubehouse_dream():
     model = {
         "plot_width_mm": 4000, "plot_depth_mm": 25000,

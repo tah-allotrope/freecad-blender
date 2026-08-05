@@ -277,3 +277,80 @@ def test_elevator_room_type_compiles_like_any_other_room():
     model = compile_spec(spec)
     lift = next(r for r in model.storeys[0].rooms if r.id == "lift")
     assert lift.type == "elevator"
+
+
+def _single_room_spec(alignment=None):
+    spec = {
+        "meta": {"name": "wall-align", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 5000},
+        "storeys": [
+            {
+                "level": 0, "name": "G", "height_mm": 3000,
+                "rooms": [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 5000}}],
+                "openings": [],
+            }
+        ],
+    }
+    if alignment:
+        spec["site"]["wall_alignment"] = alignment
+    return spec
+
+
+def test_wall_alignment_centre_straddles_edge():
+    model = compile_spec(_single_room_spec())
+    west = next(w for w in model.storeys[0].walls if w.orientation == "vertical" and w.x < 0)
+    assert abs(west.x - (-100)) < 1e-6
+    assert abs(west.w - 200) < 1e-6
+
+
+def test_wall_alignment_inside_lies_on_room_side():
+    model = compile_spec(_single_room_spec("inside"))
+    west = next(w for w in model.storeys[0].walls if w.orientation == "vertical" and abs(w.x) < 1e-6)
+    assert abs(west.x - 0.0) < 1e-6
+    assert abs(west.w - 200) < 1e-6
+
+
+def test_default_alignment_preserves_legacy_geometry():
+    # The byte-identity guarantee of DEC-003: no wall_alignment key compiles to
+    # the same centred geometry as before the change.
+    model = compile_spec(_single_room_spec())
+    assert model.wall_alignment == "centre"
+    west = next(w for w in model.storeys[0].walls if w.orientation == "vertical" and w.x < 0)
+    assert abs(west.x + west.thickness / 2 - 0.0) < 1e-6
+
+
+def test_interior_inside_alignment_full_exterior_walls():
+    model = compile_spec(_single_room_spec("inside"))
+    room = model.storeys[0].rooms[0]
+    assert room.interior is not None
+    i = room.interior
+    assert (i.x, i.y, i.w, i.d) == (200.0, 200.0, 3600.0, 4600.0)
+
+
+def test_interior_centre_partition_bounded_inset_half():
+    # A room with a partition on its east edge is inset by half INT_THICKNESS
+    # (50mm) on that edge only, leaving other edges unshrunk.
+    spec = {
+        "meta": {"name": "part", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 8000, "plot_depth_mm": 4000},
+        "storeys": [
+            {
+                "level": 0, "name": "G", "height_mm": 3000,
+                "rooms": [
+                    {"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                    {"id": "b", "type": "bedroom", "rect": {"x": 4000, "y": 0, "w": 4000, "d": 4000}},
+                ],
+                "openings": [],
+            }
+        ],
+    }
+    model = compile_spec(spec)
+    a = next(r for r in model.storeys[0].rooms if r.id == "a")
+    assert a.interior is not None
+    i = a.interior
+    # East edge (shared partition) inset 50mm; west/north/south (exterior,
+    # centre) inset 100mm each.
+    assert i.x == 100.0
+    assert i.y == 100.0
+    assert i.w == 4000.0 - 100.0 - 50.0
+    assert i.d == 4000.0 - 100.0 - 100.0

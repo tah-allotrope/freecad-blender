@@ -2,49 +2,35 @@
 
 ## Project Info
 - **Workspace:** `freecad-blender`
-- **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF) and furnished 3D Cycles renders via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
+- **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (EEVEE/EEVEE Next/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
-## Current Task Plan (plans/2026-07-06-tubehouse-dream-home-plan.md)
-- [x] PHASE-01: Pipeline geometry extensions (partial roof, roof voids, opening `side` hint, `elevator` room type)
-- [x] PHASE-02: Configurable render gallery via `meta.views` (named camera list, backward-compatible default)
-- [x] PHASE-03: Authored + validated `designs/tubehouse-dream.json` (5-storey, light well, elevator, roof terrace)
-- [x] PHASE-04: Final render gallery (9 views, 512 samples / 1920x1080)
-- [x] PHASE-05: Architect-brief PDF builder (`src/homedesign/pdf.py`, `pdf` CLI subcommand, `spec/briefs/tubehouse-dream.json`)
+## Current Task Plan (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md)
+
+Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
+
+**PHASE-01 Camera Truth:** `fit_distance` sign fix (depth term subtracted — binding corner is the nearest one); `exterior_front_camera` anchored on the facade box centre; `exterior_aerial_camera` and `interior_camera` (inside-the-room constrained, focal length solved) added to `camera_fit.py`; the three Blender camera builders are now thin wrappers. Off-centre regression test fails under the old `+` sign (teeth check verified). Containment sweep across every spec; tightened framing test now asserts the building clears all frame edges (fails on the old cropped render, passes now).
+**PHASE-02 Engine:** Blender **4.5.1 LTS** installed alongside 4.1.1 and made the default candidate; `RENDER_PROFILES` (`preview` EEVEE 32s / `final` EEVEE Next 256s + raytracing + AgX / `cycles` 512s) in a pure module; version-tolerant EEVEE guards; `--profile` on build+render. Benchmark (see `docs/lessons-learned.md`): full 9-view `tubehouse-dream` final gallery **50.7 min** vs 11.3 h previously; single Cycles view of `tubehouse-mini` = 9.8 min. EEVEE Next retained as `final` per ASM-002.
+**PHASE-03 Geometric realism:** `railings.py` (parapets 1100mm on balcony open edges via pure `rects.open_edges`; stair balustrades 900mm per flight); top-storey ceilings for rooms the roof doesn't cover; lintels + window sills in `joinery.py`; `site.context` neighbour party-wall massing + street strip; `neighbour`/`street` materials.
+**PHASE-04 Drawing set:** `elevation.py` produces a neutral draw model rendered to SVG + DXF — four elevations (per-side axis table in S3) and two sections (long `x`/cross `y` cut planes, poché walls, 200mm slab bands, tread outlines, room labels); `plan2d.write_plans` emits the full 22-file set; PDF gains 6 pages (23 total, A3 landscape, verified).
+**PHASE-05 Honest geometry:** `site.wall_alignment` (`centre` default reproduces old geometry byte-identically; `inside` sets exterior walls' outer face on the plot line); `Room.interior` computed per edge (full thickness exterior under `inside`, half otherwise) and consumed by furniture/lights/cameras; `wall_outside_plot` promoted to a real error with alignment-aware tolerance; tubehouse-dream set to `inside` → **0 warnings** (was 63), north elevation now 4000 mm (was 4200); built-envelope row added to the take-off.
+**PHASE-06 Provenance & hygiene:** `model_hash` (SHA-256, 12 hex) stamped into compiled models and every render sidecar; `pdf` warns/stamps `STALE` on stale galleries and `--require-fresh` makes them hard errors; glTF export + self-contained offline viewer (`output/viewer/<name>.html`, three.js inlined, GLB embedded); `src/ifc_export_utils.py` deleted; `[project.scripts]` console script; AGENTS.md/README/SKILL.md accuracy pass; superseded FreeCAD workflow doc archived; dead code removed; `deliverables/` introduced and the flagship finals committed.
 
 ## Review
 
-### Sprint review — 2026-08-01 (plans/2026-07-30-homedesign-correctness-and-delivery-plan.md, all phases done)
+### Sprint review — 2026-08-05 (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md, all phases done)
 
-**PHASE-01 Packaging/CI:** `pyproject.toml` editable install, unified `homedesign.` imports, ruff gate in CI.
-**PHASE-02 Buildable circulation:** `stairs.py` (Blondel-compliant straight/U-return, min going 250mm vs 57mm before), `rects.py` slab-fragment subtraction, floor voids for stair/elevator shafts, tubehouse-dream core re-laid.
-**PHASE-03 Validation registry:** `checks.py` (door reachability, habitable daylight, room support, shaft stacking, walls-within-plot warnings), opening `align`/`offset_mm` + overlap rejection, `--json` CLI, `_Placer` rotation fix (no `rotation_euler` remains), bed `rot_deg=90`. Fixed real spec defects: overlapping garage door + transom window (moved to west wall), demo stairwell misalignment, missing side windows on F2–F4 habitable rooms, courtyard fixture gained elevator + doors.
-**PHASE-04 Render economics:** EEVEE preview (960x540, 32 samples) — **9.5s build vs minutes**; Cycles final 512s + adaptive sampling; `render` subcommand with `--view/--skip-existing/--detach` (PID + log + kill cmd); streamed subprocess output; device line prints `CPU (no GPU backend available)`. `_set_engine` tries EEVEE_NEXT then EEVEE (CON-001).
-**PHASE-05 Camera framing:** `camera_fit.py` S4 analytic fit (max of horizontal/vertical half-FOV constraints over 8 corners, 8% margin); front camera frames the **facade box** (not full plot depth, which left tube houses a 25% strip); all cameras `sensor_fit=HORIZONTAL`, 35mm exteriors / 20mm rooms. Pillow framing test: exterior now ~88% width, centered, no cropping.
-**PHASE-06 Drawing quality:** SVG door swing arcs + 3-line windows, north arrow, scale bar, title block (1:100 @ A3), viewBox-only root; DXF `_dxf_pt` y-flip fixes the SVG/CAD mirroring; PDF gallery images relative + Pillow-downscaled (1400px), hero at 640px, door/window schedule + quantity take-off pages, page-number footer; HTML **26MB → 192KB**, PDF 17 pages (one per storey). `designs/` dir created (tubehouse-dream moved there), `scripts/sync_skill.py` + CI check, AGENTS.md rewritten, FreeCAD-era docs archived.
+**Deviation notes vs the plan text:** (1) the framing-test thresholds were recalibrated to real pixels — the plan's `min_y > 0.02*540` assumes the roof never protrudes above the facade fit box, but the 200mm roof slab + overhang corners leave ~4px of sky, and the `0.30` width floor is unachievable for a 4m facade at 35mm (it is ~24-29% wide); the test asserts `min_y > 0.005*540` and `0.12 < width < 0.95` and still fails on the old cropped render (`min_y == 0`). (2) `build_section(model, "x", -1.0)` returns only `ground` only for a plane clearly past the 100mm centre-aligned wall overhang; the test uses `-1000`. (3) `scene.eevee.use_raytracing` accepts `True` on 4.1.1 too, so "eevee raytracing: unavailable" never prints there — the `hasattr` guard is unchanged. (4) The `final` gallery measured **50.7 min**, above the 30-min aspiration; recorded and kept per ASM-002 (the lever is `raytracing: False` on `final`).
 
-**Deviation from plan (PHASE-05):** the plan's worked example for `fit_distance` (2x2x2 cube @ 1080p → 3.7735) computed only the horizontal constraint. With `sensor_fit=HORIZONTAL` the vertical half-FOV is narrower at 16:9, so vertical binds: correct value is 5.938 (tests assert this; the plan's "square frame binds vertical" claim was also backwards).
-
-### Earlier review (2026-07-06 plan)
+### Earlier review (2026-07-30 plan)
 
 ### What was built
-- **Geometry (PHASE-01):** `roof.rect`/`roof.voids` for partial roofs and open-to-sky light wells; opening `side` hint (`north|south|east|west`) to disambiguate which exterior wall gets a window when a room borders two exterior faces (street + light well); `elevator` room type.
-- **Render gallery (PHASE-02):** `meta.views` spec block replaces the hardcoded 2-camera setup — named views of kind `exterior_front|exterior_aerial|room`, each landing at `output/png/<name>_<view>.png`; omitting `views` reproduces the old 2-shot default.
-- **The house (PHASE-03):** `designs/tubehouse-dream.json` — 4m x 25m x 5-storey tube house, full-height light well beside the stair/elevator core, GF garage+lease, F1 lease studio, F2 living/kitchen/dining, F3 master+kid's room, F4 office/guest+roof terrace. Compiles clean, 5 SVG/DXF plan pairs generated.
-- **Final render gallery (PHASE-04):** 9 views at 512 samples/1920x1080 — exterior_front, exterior_aerial, lightwell, living, kitchen_dining, master_suite, kids_room, office, guest_room.
-- **PDF brief (PHASE-05):** `src/homedesign/pdf.py` assembles an HTML document (room-schedule table, per-floor inline-SVG plan pages, 2-per-page render gallery, requirements, handover appendix) and prints it to A3-landscape PDF via headless Edge/Chrome. `python -m homedesign pdf <spec.json>` CLI subcommand; brief copy lives in `spec/briefs/<name>.json`. Produced `output/pdf/tubehouse-dream-brief.pdf` (21 pages, verified A3 landscape page size, all sections present).
-
-### Bugs found and fixed mid-plan (not in the original plan text)
-1. **Door leaves flung meters from their walls.** `joinery.py` opened door leaves by setting `obj.rotation_euler` on a mesh whose position was baked directly into its vertices with the object origin left at world `(0,0,0)` — rotating the object therefore pivoted around the world origin, not the door's hinge, scattering ~32 leaf objects across the scene (visible as "floating patches" in every exterior render). Fixed by `geom.make_hinged_box`, which bakes the hinge rotation into the mesh directly. Verified via a debug script dumping all mesh object bounding boxes against plot bounds — zero displaced objects after the fix (was 32).
-2. **Interior renders blown out to solid white.** The exterior "Fill" light (200W) bled through window/door openings, and per-room point lights scaled up to 400W in the tube house's larger rooms — both overwhelmed the white-walled interiors under Cycles' "Standard" view transform (hard highlight clip). Fixed with a weaker/farther fill light (25W, moved back), softer AREA-based interior lights (20-90W range), and Filmic tonemapping.
-
-### Known deviations / outstanding follow-ups
-1. **Render time:** the `--final` gallery (9 views, 512 samples/1080p) took **~11.3 hours wall-clock** on this CPU-only machine (no working GPU device for Cycles), averaging ~80-95 minutes per interior view. This is far beyond the tool's original preview-speed target and should be treated as a hard constraint for future `--final` runs — budget accordingly, or investigate enabling actual GPU rendering.
-2. **Background task lifetime:** the harness's tracked background-bash mechanism killed the final-render process twice at almost exactly the ~30-minute mark regardless of progress. Long Blender renders must be launched fully detached (`nohup ... & disown`, logging to a file) and polled with short foreground checks (`tasklist`, `Get-Process -Id <pid> | Select CPU,Responding`) rather than run via the tool's own background-task tracking.
-3. **PDF plan-page overflow:** each per-storey plan page's SVG + room-area legend slightly exceeds one A3 sheet, so Chrome's print-to-pdf spills each plan onto a second physical page. Data is complete and legible, just not single-page per storey; would need tighter SVG scaling or a smaller legend font to fix.
-4. **Room-camera framing:** bedroom/office `room`-kind views (master_suite, kids_room, office, guest_room) tend to frame the doorway/corridor rather than the furnished sleeping area, per the existing `_build_room_camera` corner-and-centroid heuristic. Correctly exposed and geometrically sound, just not the most flattering composition for every room type — a possible future improvement to `build_scene.py`, not a defect.
-5. **Furniture is still procedural-only** (inherited from the original pipeline, unchanged this round) — parametric boxes, not photoreal asset models.
-6. **IFC export** (`src/ifc_export_utils.py`) remains parked, targets the retired spec format, not part of this flow.
+- **PHASE-01 Packaging/CI:** `pyproject.toml` editable install, unified `homedesign.` imports, ruff gate in CI.
+- **PHASE-02 Buildable circulation:** `stairs.py` (Blondel-compliant straight/U-return), `rects.py` slab-fragment subtraction, floor voids, tubehouse-dream core re-laid.
+- **PHASE-03 Validation registry:** `checks.py` (door reachability, habitable daylight, room support, shaft stacking, walls-within-plot), opening `align`/`offset_mm` + overlap rejection, `--json` CLI, `_Placer` rotation fix, bed `rot_deg=90`. Fixed real spec defects.
+- **PHASE-04 Render economics:** EEVEE preview; Cycles final + adaptive sampling; `render` subcommand with `--view/--skip-existing/--detach`.
+- **PHASE-05 Camera framing:** `camera_fit.py` S4 analytic fit; all cameras `sensor_fit=HORIZONTAL`.
+- **PHASE-06 Drawing quality:** SVG door swings + 3-line windows, north arrow, scale bar, title block; DXF y-flip; PDF gallery relative + downscaled, schedules + take-off pages; `designs/` created, skill mirror + CI gate, AGENTS.md rewritten.
 
 ## Prior Phase History
-- `plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md` (all phases complete) — built the original `/homedesign` pipeline (schema, compiler, plan2d, Blender build/furnish, skill doc) after fully removing the legacy FreeCAD path. See `git log` up to `8a8e206`.
-- `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` PHASE-03 (Arch/BIM migration) was obsoleted by the decision to drop FreeCAD entirely — no longer relevant.
+- `plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md` (all phases complete) — built the original `/homedesign` pipeline (schema, compiler, plan2d, Blender build/furnish, skill doc).
+- `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` PHASE-03 (Arch/BIM migration) obsoleted by the decision to drop FreeCAD entirely.

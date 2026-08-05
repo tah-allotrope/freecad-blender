@@ -87,6 +87,32 @@
     "plot_depth_mm": {
      "type": "number",
      "exclusiveMinimum": 0
+    },
+    "context": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "neighbours": {
+       "type": "boolean",
+       "default": true,
+       "description": "Build neighbouring party-wall massing flanking the plot. When absent, neighbours are built only when plot_width_mm <= 6000 (the sandwiched-urban-lot case)."
+      },
+      "street_depth_mm": {
+       "type": "number",
+       "exclusiveMinimum": 0,
+       "default": 6000,
+       "description": "Depth of the street strip modelled south of the plot."
+      }
+     }
+    },
+    "wall_alignment": {
+     "type": "string",
+     "enum": [
+      "centre",
+      "inside"
+     ],
+     "default": "centre",
+     "description": "How exterior walls sit relative to the room edge: 'centre' straddles it (today's geometry); 'inside' lies wholly on the room side so the outer face lands on the plot line."
     }
    }
   },

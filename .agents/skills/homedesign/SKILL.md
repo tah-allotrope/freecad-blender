@@ -1,13 +1,14 @@
 ---
 name: homedesign
-description: Turn a natural-language home idea into validated 2D floor plans and furnished 3D Cycles renders, and apply conversational edits to an existing design. Use when the user says "/homedesign", asks to design/generate a house or floorplan, or asks to edit a home design already produced by this skill (e.g. "make the kitchen bigger").
+description: Turn a natural-language home idea into validated 2D floor plans, elevations and sections (SVG/DXF), and furnished 3D renders (EEVEE preview, EEVEE Next final, or Cycles), plus an interactive GLB web viewer and an A3 architect brief. Use when the user says "/homedesign", asks to design/generate a house or floorplan, or asks to edit a home design already produced by this skill (e.g. "make the kitchen bigger").
 ---
 
 # /homedesign
 
-Turns a plain-language home idea into 2D floor plans (SVG + DXF) and furnished
-3D Cycles renders, via a compact high-level spec and a deterministic Python
-compiler (`src/homedesign/`). No FreeCAD is involved anywhere in this flow.
+Turns a plain-language home idea into 2D floor plans, elevations and sections
+(SVG + DXF) and furnished 3D renders, via a compact high-level spec and a
+deterministic Python compiler (`src/homedesign/`). No FreeCAD is involved
+anywhere in this flow.
 
 ## Spec format
 
@@ -20,6 +21,15 @@ correct.
 Cheat sheet:
 - `meta.name` — used as the output file stem everywhere.
 - `site.plot_width_mm` / `plot_depth_mm` — the buildable footprint.
+- `site.wall_alignment` (optional, `centre|inside`, default `centre`) — how
+  exterior walls sit relative to the room edge. `inside` moves their outer
+  face onto the plot line (the honest built width), which is what
+  `designs/tubehouse-dream.json` uses. The room schedule always reports the
+  gross area regardless.
+- `site.context` (optional) — `{neighbours: bool, street_depth_mm: number}`.
+  When absent, neighbouring party-wall massing is built only when
+  `plot_width_mm <= 6000` (the sandwiched-urban-lot case); the front camera
+  shoots from the street side, which never gets a neighbour block.
 - `storeys[]` — each has `level` (0-based), `height_mm`, `rooms[]`,
   `openings[]`, optional `stairs` (`{room, direction}`), optional `roof`
   (`{type: flat|gable|shed, pitch_deg, overhang_mm, rect?, voids?}` — only put
@@ -75,33 +85,37 @@ Cheat sheet:
    whole spec. This keeps edits diffable and round-trippable.
 2. **Build.** Run:
    ```
-   PYTHONPATH=src python -m homedesign build designs/<slug>.json
+   homedesign build designs/<slug>.json
    ```
    This validates the spec (schema + geometric sanity), compiles it,
-   generates SVG/DXF plans, and drives a headless Blender build + EEVEE
-   preview render (960x540, a few seconds — previews check layout, not
-   lighting; the two engines differ on glass and window openings, so never
-   chase EEVEE artifacts). It prints every artifact path, ending with
-   `blender build: <N>s`.
+   generates SVG/DXF plans plus four elevations and two sections, and drives
+   a headless Blender build + EEVEE preview render (960x540, ~seconds per
+   view — previews check layout, not lighting; the engines differ on glass
+   and window openings, so never chase EEVEE artifacts). It prints every
+   artifact path, ending with `blender build: <N>s`.
 2b. **Re-render without rebuilding.** Once a `.blend` exists, iterate on
    views without redoing geometry:
    ```
-   PYTHONPATH=src python -m homedesign render designs/<slug>.json \
+   homedesign render designs/<slug>.json \
        --view exterior --view interior [--profile final] [--skip-existing]
    ```
    `render` reuses the saved `.blend` (`--reuse-blend` is implicit). Add
    `--skip-existing` to skip views whose PNG already exists.
-2c. **Detached long renders.** A full-quality gallery is an overnight job on
-   this hardware (~11 h). Launch it detached so a closed terminal cannot
-   kill it, then poll the log:
+2c. **Render profiles.** Three are available everywhere `--profile` is
+   accepted: `preview` (EEVEE, 32 samples, 960x540 — the default), `final`
+   (EEVEE Next raytracing + AgX, 256 samples, 1920x1080 — full quality in
+   minutes, not the ~11 h Cycles used to cost), and `cycles` (512 samples —
+   an explicit opt-in hero-shot path). The engine line is always printed
+   (`eevee raytracing: on|unavailable` or `cycles device: ...`) so a run is
+   never ambiguous about which path produced it.
+2d. **Interactive model.** Add `--gltf` to `build` to also export a GLB and
+   write a self-contained offline web viewer:
    ```
-   PYTHONPATH=src python -m homedesign render designs/<slug>.json \
-       --profile final --detach
-   # prints: detached render pid, log path under output/logs/, kill command
-   tail -f output/logs/render-<ts>.log
+   homedesign build designs/<slug>.json --gltf
+   # writes output/gltf/<slug>.glb and output/viewer/<slug>.html
    ```
-   The Cycles device selection prints an explicit line (`cycles device: CPU
-   (no GPU backend available)` on this machine) — GPU is never assumed.
+   The viewer HTML embeds three.js and the GLB (no network requests); open it
+   directly in a browser to orbit the model.
 3. **If the command exits nonzero**, its stderr is a list of
    `[code] path: message` errors (schema errors, room overlap, opening on a
    nonexistent wall, opening too wide for its wall, stairwell too narrow,
@@ -120,8 +134,9 @@ Cheat sheet:
    loop indefinitely.
 5. **Present.** Show the renders and plans, and summarize the design in a
    sentence or two (room count, layout, notable features). Mention that
-   `--final` gives a full-quality render (512 samples, 1080p) if the user
-   wants a polished still instead of the fast preview.
+   `--profile final` gives a full-quality render (EEVEE Next, 256 samples,
+   1080p) in minutes if the user wants a polished still instead of the fast
+   preview.
 6. **Conversational edits.** When the user asks for a change, go back to
    step 1 against the *same* spec file and re-run step 2 onward. Summarize
    what changed in the spec (e.g. "widened the kitchen from 4.0m to 4.6m and
@@ -130,22 +145,27 @@ Cheat sheet:
 
 ## Architect-brief PDF
 
-Once a spec has a final render gallery (`meta.views`, built with `--final`),
-assemble an A3-landscape architect brief:
+Once a spec has a final render gallery (`meta.views`, built with
+`--profile final`), assemble an A3-landscape architect brief:
 ```
-PYTHONPATH=src python -m homedesign pdf designs/<slug>.json
+homedesign pdf designs/<slug>.json
 ```
-This compiles the spec, regenerates SVG/DXF plans if missing, reads a brief
-copy file at `spec/briefs/<slug>.json` (`{title, subtitle, narrative: [...],
-requirements: [...]}` — write one per house, no budget content), and prints
-`output/pdf/<slug>-brief.html` to `output/pdf/<slug>-brief.pdf` via a headless
-Chromium browser (Edge or Chrome, auto-detected; override with
-`PDF_BROWSER_CMD`). The PDF has one page each for cover (hero render), design
-narrative, room schedule (per-room area + floor totals), one plan page per
-storey (inline vector SVG), a render gallery (2 images/page), requirements,
-and a handover appendix listing the DXF files and source spec. Pass
-`--hero <view name>` to pick the cover image (default: first `meta.views`
-entry) and `--brief <path>` to use a brief copy file at a different path.
+This compiles the spec, regenerates SVG/DXF plans + elevations/sections if
+missing, reads a brief copy file at `spec/briefs/<slug>.json` (`{title,
+subtitle, narrative: [...], requirements: [...]}` — write one per house, no
+budget content), and prints `output/pdf/<slug>-brief.html` to
+`output/pdf/<slug>-brief.pdf` via a headless Chromium browser (Edge or Chrome,
+auto-detected; override with `PDF_BROWSER_CMD`). The PDF has one page each for
+cover (hero render), design narrative, room schedule (per-room area + floor
+totals), one plan page per storey, four elevation pages and two section pages
+(all inline vector SVG), a render gallery (2 images/page), requirements, and a
+handover appendix listing the DXF files and source spec. Pass `--hero <view
+name>` to pick the cover image and `--brief <path>` for a different copy file.
+
+Every render carries a sidecar naming the model that produced it; `pdf` warns
+(`stale render: <view>`) and stamps `STALE` in the caption when a gallery image
+predates the model. Pass `--require-fresh` to make a stale image a hard error
+instead — always use it before handing a brief to anyone.
 
 ## Known limitations (by design, not bugs)
 
@@ -157,7 +177,6 @@ entry) and `--brief <path>` to use a brief copy file at a different path.
 - Furniture is procedural (parametric boxes), not photoreal asset models —
   there is no bundled CC0 asset library yet. Renders read as furnished but
   stylized, not catalog-photo realistic.
-- IFC/BIM export is not wired to this pipeline (`src/ifc_export_utils.py`
-  targets the retired low-level spec format and is not part of this flow).
-- Preview renders are low-sample Cycles for speed; always available via
-  `--final` for a slower, cleaner still.
+- Previews are fast EEVEE renders; `--profile final` upgrades the gallery to
+  EEVEE Next raytracing with AgX colour, and `--profile cycles` remains as an
+  explicit (much slower) opt-in path.

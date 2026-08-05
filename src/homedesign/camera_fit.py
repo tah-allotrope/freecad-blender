@@ -15,6 +15,12 @@ MARGIN = 1.08  # leave 8% so the subject never touches the frame edge
 MIN_DISTANCE = 1.0  # degenerate boxes must not put the camera inside geometry
 SENSOR_WIDTH_MM = 36.0
 
+EYE_HEIGHT_M = 1.5  # interior-camera eye height above the storey floor (ASM-003)
+WALL_INSET_M = 0.35  # interior-camera inset from the near wall's interior face (ASM-003)
+INTERIOR_LENS_MIN_MM = 12.0  # widest acceptable interior lens (ASM-003)
+INTERIOR_LENS_MAX_MM = 24.0  # narrowest acceptable interior lens (ASM-003)
+CEILING_CAP_M = 2.4  # visible ceiling height cap so tall storeys do not force absurd lenses (ASM-003)
+
 
 def basis_from_direction(forward: Vec3) -> tuple[Vec3, Vec3]:
     """Orthonormal (right, up) for a forward vector, using world +Z as the up
@@ -47,10 +53,13 @@ def fit_distance(
 ) -> float:
     """Camera distance from `centre` along `-forward` that fits every corner.
 
-    Per S4: for each corner, the required pull-back is the larger of the
-    horizontal and vertical distances needed so the corner's offset onto the
-    camera axes stays inside the half-FOV cones. The result is clamped to
-    MIN_DISTANCE.
+    Per S1: the camera sits at `centre - dist*forward`, so a corner's distance
+    from the camera along the view axis is `dist + dot(v, forward)`. The
+    constraint `|lateral| <= tan * (dist + dot(v, f))` rearranges to
+    `dist >= |lateral|/tan - dot(v, f)` -- the depth term is **subtracted**
+    because the binding corner is the *nearest* one. The result is the max over
+    all corners of the horizontal and vertical requirements, clamped to
+    MIN_DISTANCE and scaled by `margin`.
     """
     half_fov_x = math.atan(SENSOR_WIDTH_MM / (2 * lens_mm))
     half_fov_y = math.atan((SENSOR_WIDTH_MM * res_y) / (2 * lens_mm * res_x))
@@ -59,8 +68,8 @@ def fit_distance(
     required = 0.0
     for c in corners:
         v = (c[0] - centre[0], c[1] - centre[1], c[2] - centre[2])
-        d_x = abs(_dot(v, right)) / tan_x + _dot(v, forward)
-        d_y = abs(_dot(v, up)) / tan_y + _dot(v, forward)
+        d_x = abs(_dot(v, right)) / tan_x - _dot(v, forward)
+        d_y = abs(_dot(v, up)) / tan_y - _dot(v, forward)
         required = max(required, d_x, d_y)
     return max(MIN_DISTANCE, margin * required)
 
@@ -115,6 +124,105 @@ def room_subject_bbox(storey: dict, room: dict) -> BBox:
         max_y = max(max_y, iy + id_)
         max_z = max(max_z, base_z + item.h)
     return (min_x, min_y, min_z), (max_x, max_y, max_z)
+
+
+def exterior_front_camera(
+    model: dict, res_x: int, res_y: int, lens_mm: float = 35.0
+) -> tuple[Vec3, Vec3, float]:
+    """`(position, target, lens_mm)` for the street-facade camera, in metres.
+
+    Fits `facade_bbox(model)` using **that box's own centre**
+    `(plot_w/2, 0.0, total_h/2)` as both the fit centre and the camera anchor --
+    never the plot centroid, whose mid-depth position both hid the old sign
+    error and under-framed the facade. The camera stands south of the plot
+    (negative y) looking north (+y) at the facade plane at y = 0.
+    """
+    bbox = facade_bbox(model)
+    corners = corners_of(bbox)
+    centre = (
+        model["plot_width_mm"] / 2000,
+        0.0,
+        sum(s["height_mm"] for s in model["storeys"]) / 2000,
+    )
+    forward = (0.0, 1.0, 0.0)  # looking north at the street facade
+    right, up = basis_from_direction(forward)
+    dist = fit_distance(corners, centre, forward, right, up, lens_mm, res_x, res_y)
+    position = (centre[0], centre[1] - dist, centre[2])
+    return position, centre, lens_mm
+
+
+def exterior_aerial_camera(
+    model: dict, res_x: int, res_y: int, lens_mm: float = 35.0
+) -> tuple[Vec3, Vec3, float]:
+    """`(position, target, lens_mm)` for the 45-degree south-east aerial camera.
+
+    The fit centre is derived from `building_bbox(model)` so centre and box can
+    never diverge again; the camera descends from the south-east toward the
+    building's bbox centre.
+    """
+    bbox = building_bbox(model)
+    corners = corners_of(bbox)
+    centre = (
+        (bbox[0][0] + bbox[1][0]) / 2,
+        (bbox[0][1] + bbox[1][1]) / 2,
+        (bbox[0][2] + bbox[1][2]) / 2,
+    )
+    # 45-degree descent from the south-east: +x / -y / above.
+    forward = (-0.5, 0.5, -0.7071)
+    right, up = basis_from_direction(forward)
+    dist = fit_distance(corners, centre, forward, right, up, lens_mm, res_x, res_y)
+    position = (
+        centre[0] + dist * 0.5,
+        centre[1] - dist * 0.5,
+        centre[2] + dist * 0.7071,
+    )
+    return position, centre, lens_mm
+
+
+def interior_camera(
+    storey: dict,
+    room: dict,
+    res_x: int,
+    res_y: int,
+    eye_height_m: float = EYE_HEIGHT_M,
+    wall_inset_m: float = WALL_INSET_M,
+    lens_min_mm: float = INTERIOR_LENS_MIN_MM,
+    lens_max_mm: float = INTERIOR_LENS_MAX_MM,
+) -> tuple[Vec3, Vec3, float]:
+    """`(position, target, lens_mm)` for a camera standing **inside** a room (S2).
+
+    Pull-back framing has no solution indoors -- a wall occupies the pull-back
+    position -- so the camera is constrained against the near wall and the focal
+    length is solved to fit the room at that fixed standoff. `room["interior"]`
+    (the net usable rect after wall thickness) is preferred when present;
+    otherwise the gross rect is used with the wall-inset standoff. The position
+    is guaranteed strictly inside the room rect.
+    """
+    base_z = storey["base_z"] / 1000
+    ceil_z = base_z + min(storey["height_mm"] / 1000, CEILING_CAP_M)
+    r = room.get("interior") or room["rect"]
+    x, y, w, d = r["x"] / 1000, r["y"] / 1000, r["w"] / 1000, r["d"] / 1000
+
+    long_is_depth = room["rect"]["d"] >= room["rect"]["w"]
+    z = min(base_z + eye_height_m, ceil_z - 0.15)
+    if long_is_depth:
+        position = (x + w / 2, y + wall_inset_m, z)
+        target = (x + w / 2, y + d - wall_inset_m, z - 0.2)
+        available = d - 2 * wall_inset_m
+        half_w = w / 2 - wall_inset_m
+    else:
+        position = (x + wall_inset_m, y + d / 2, z)
+        target = (x + w - wall_inset_m, y + d / 2, z - 0.2)
+        available = w - 2 * wall_inset_m
+        half_w = d / 2 - wall_inset_m
+
+    available = max(available, 0.5)
+    half_w = max(half_w, 0.3)
+    half_v = max(z - base_z, ceil_z - z)
+    f_x = (SENSOR_WIDTH_MM * available) / (2 * half_w)
+    f_y = (SENSOR_WIDTH_MM * res_y * available) / (2 * res_x * half_v)
+    lens_mm = min(max(min(f_x, f_y), lens_min_mm), lens_max_mm)
+    return position, target, lens_mm
 
 
 def _unit(v: Vec3) -> Vec3:

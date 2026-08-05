@@ -8,8 +8,8 @@ spec JSON: site plot, storeys, rooms, openings, views.
 To build a design, run from the repo root:
 
 ```bash
-PYTHONPATH=src python -m homedesign build designs/<slug>.json
-PYTHONPATH=src python -m homedesign pdf designs/<slug>.json
+homedesign build designs/<slug>.json
+homedesign pdf designs/<slug>.json
 ```
 
 See `AGENTS.md` for the full workflow. `spec/examples/` holds smaller
