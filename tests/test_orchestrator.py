@@ -19,6 +19,21 @@ def test_render_profiles_declared():
     assert RENDER_PROFILES["preview"]["res"] == (960, 540)
 
 
+def test_blender_candidates_prefer_legacy_eevee_build():
+    """Blender 4.1 must be discovered before 4.5.
+
+    EEVEE Next (4.2+) miscompiles on this project's target iGPU (Gen9.5 Intel,
+    UHD 620) and renders every lit surface blood red -- a white 0.92/0.91/0.88
+    surface comes out (194, 34, 53), independent of view transform and
+    raytracing. Blender 4.1's legacy EEVEE renders the same scene correctly
+    (190, 194, 197) and 3.7x faster, so it is the known-good default.
+    """
+    order = [Path(c).as_posix() for c in orchestrator._CANDIDATES]
+    v41 = next(i for i, c in enumerate(order) if "4.1" in c)
+    v45 = next(i for i, c in enumerate(order) if "4.5" in c)
+    assert v41 < v45, "4.1 (legacy EEVEE) must be preferred over 4.5 (EEVEE Next)"
+
+
 def test_build_command_cycles_profile_flag(tmp_path, monkeypatch):
     monkeypatch.setenv("BLENDER_CMD", "fake-blender")
     model = _mini_model(tmp_path)

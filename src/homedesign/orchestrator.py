@@ -15,11 +15,31 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 _CANDIDATES = [
-    # Windows: the 4.5 LTS portable build preferred (EEVEE Next + AgX), then
-    # Program Files installs.
+    # Blender 4.1 (legacy EEVEE) is preferred over 4.2+ (EEVEE Next).
+    #
+    # EEVEE Next is a much heavier consumer of the OpenGL driver than legacy
+    # EEVEE, and it miscompiles on the Gen9.5 Intel iGPU this tool targets
+    # (UHD 620, driver 23.20.16.4849): every lit surface renders blood red.
+    # A white 0.92/0.91/0.88 wall comes out (194, 34, 53) -- independent of
+    # view transform and of `raytracing` -- while the world background is
+    # unaffected, so the corruption is in surface shading, not colour
+    # management. Vulkan is not an escape: Blender rejects the device for
+    # missing timeline semaphores, buffer device address and
+    # VK_EXT_provoking_vertex.
+    #
+    # Legacy EEVEE renders the same scene correctly (190, 194, 197, matching
+    # Cycles' 190, 193, 197) at 29.7s/view vs 169.3s/view for Cycles CPU,
+    # which is the only other correct path here (no OPTIX/CUDA/HIP/oneAPI
+    # device exists on this machine). `build_scene._set_engine` already falls
+    # back to BLENDER_EEVEE, and the `final` profile's `raytracing: True`
+    # degrades to a no-op under 4.1.
+    #
+    # Set BLENDER_CMD to override on a machine with a GPU that EEVEE Next
+    # handles correctly.
+    "C:/Users/tukum/Blender/blender-4.1.1-windows-x64/blender.exe",
+    "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe",
     "C:/Users/tukum/Blender/blender-4.5.1-windows-x64/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 4.2/blender.exe",
-    "C:/Program Files/Blender Foundation/Blender 4.1/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe",
     "C:/Program Files/Blender Foundation/Blender 3.6/blender.exe",
     # macOS
