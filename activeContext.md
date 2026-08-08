@@ -2,20 +2,72 @@
 
 ## Project Info
 - **Workspace:** `freecad-blender`
-- **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (EEVEE/EEVEE Next/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
+- **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (legacy EEVEE/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
 ## Current Task Plan (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md)
 
 Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
 
 **PHASE-01 Camera Truth:** `fit_distance` sign fix (depth term subtracted — binding corner is the nearest one); `exterior_front_camera` anchored on the facade box centre; `exterior_aerial_camera` and `interior_camera` (inside-the-room constrained, focal length solved) added to `camera_fit.py`; the three Blender camera builders are now thin wrappers. Off-centre regression test fails under the old `+` sign (teeth check verified). Containment sweep across every spec; tightened framing test now asserts the building clears all frame edges (fails on the old cropped render, passes now).
-**PHASE-02 Engine:** Blender **4.5.1 LTS** installed alongside 4.1.1 and made the default candidate; `RENDER_PROFILES` (`preview` EEVEE 32s / `final` EEVEE Next 256s + raytracing + AgX / `cycles` 512s) in a pure module; version-tolerant EEVEE guards; `--profile` on build+render. Benchmark (see `docs/lessons-learned.md`): full 9-view `tubehouse-dream` final gallery **50.7 min** vs 11.3 h previously; single Cycles view of `tubehouse-mini` = 9.8 min. EEVEE Next retained as `final` per ASM-002.
+**PHASE-02 Engine:** Blender **4.5.1 LTS** installed alongside 4.1.1 and made the default candidate; `RENDER_PROFILES` (`preview` EEVEE 32s / `final` EEVEE Next 256s + raytracing + AgX / `cycles` 512s) in a pure module; version-tolerant EEVEE guards; `--profile` on build+render. Benchmark (see `docs/lessons-learned.md`): full 9-view `tubehouse-dream` final gallery **50.7 min** vs 11.3 h previously; single Cycles view of `tubehouse-mini` = 9.8 min. EEVEE Next retained as `final` per ASM-002. **[SUPERSEDED 2026-08-08 — EEVEE Next renders every surface blood red on this iGPU; the default is now Blender 4.1 legacy EEVEE. See the 2026-08-08 entry under Review.]**
 **PHASE-03 Geometric realism:** `railings.py` (parapets 1100mm on balcony open edges via pure `rects.open_edges`; stair balustrades 900mm per flight); top-storey ceilings for rooms the roof doesn't cover; lintels + window sills in `joinery.py`; `site.context` neighbour party-wall massing + street strip; `neighbour`/`street` materials.
 **PHASE-04 Drawing set:** `elevation.py` produces a neutral draw model rendered to SVG + DXF — four elevations (per-side axis table in S3) and two sections (long `x`/cross `y` cut planes, poché walls, 200mm slab bands, tread outlines, room labels); `plan2d.write_plans` emits the full 22-file set; PDF gains 6 pages (23 total, A3 landscape, verified).
 **PHASE-05 Honest geometry:** `site.wall_alignment` (`centre` default reproduces old geometry byte-identically; `inside` sets exterior walls' outer face on the plot line); `Room.interior` computed per edge (full thickness exterior under `inside`, half otherwise) and consumed by furniture/lights/cameras; `wall_outside_plot` promoted to a real error with alignment-aware tolerance; tubehouse-dream set to `inside` → **0 warnings** (was 63), north elevation now 4000 mm (was 4200); built-envelope row added to the take-off.
 **PHASE-06 Provenance & hygiene:** `model_hash` (SHA-256, 12 hex) stamped into compiled models and every render sidecar; `pdf` warns/stamps `STALE` on stale galleries and `--require-fresh` makes them hard errors; glTF export + self-contained offline viewer (`output/viewer/<name>.html`, three.js inlined, GLB embedded); `src/ifc_export_utils.py` deleted; `[project.scripts]` console script; AGENTS.md/README/SKILL.md accuracy pass; superseded FreeCAD workflow doc archived; dead code removed; `deliverables/` introduced and the flagship finals committed.
 
 ## Review
+
+### 2026-08-08 — Render engine reverted to legacy EEVEE (supersedes ASM-002 / PHASE-02)
+
+**Symptom:** every render in the shipped `tubehouse-dream` gallery was blood red. A
+white exterior wall (`0.92, 0.91, 0.88`) came out `(214, 56, 51)`; interiors were
+worse (`(149, 1, 46)` — green channel at zero).
+
+**Root cause: EEVEE Next miscompiles on this machine's iGPU.** Isolated with a
+25-line repro (one cube, one sun, the project's own material/engine/view-transform
+code), matrix over engine x view transform x raytracing:
+
+| engine | view transform | white cube renders as |
+|---|---|---|
+| Cycles | AgX | `(190, 193, 197)` correct |
+| Cycles | Standard | `(235, 244, 255)` correct |
+| EEVEE Next | AgX | `(194, 34, 53)` red |
+| EEVEE Next | AgX, raytracing off | `(194, 34, 53)` red |
+| EEVEE Next | Standard | `(208, 0, 55)` red, G channel 0 |
+
+Independent of view transform and of `raytracing`, and the world background is
+unaffected — so the fault is in surface shading, not colour management. Hardware is
+Intel UHD Graphics 620 (Gen9.5) on driver `23.20.16.4849` (2018). Vulkan is not an
+escape: Blender rejects the device for missing timeline semaphores, buffer device
+address and `VK_EXT_provoking_vertex`. Cycles has no GPU path here either —
+OPTIX/CUDA/HIP/oneAPI all enumerate zero devices (i5-8250U, 4c/8t, 7.8 GB RAM).
+
+**Decision:** `orchestrator._CANDIDATES` now prefers **Blender 4.1.1 (legacy EEVEE)**
+over 4.5.1 (EEVEE Next), reversing PHASE-02's "4.5.1 ... made the default candidate"
+and ASM-002's "EEVEE Next retained as `final`". `build_scene._set_engine` already
+falls back to `BLENDER_EEVEE`, and `render_profiles` is unchanged — `final`'s
+`raytracing: True` degrades to a no-op under 4.1. `BLENDER_CMD` still overrides for a
+machine whose GPU handles EEVEE Next correctly. Regression test:
+`test_blender_candidates_prefer_legacy_eevee_build`.
+
+**Measured (1920x1080, `exterior_front`):** legacy EEVEE 256 spp **29.7 s/view**;
+Cycles CPU 64 spp + denoise **169.3 s/view**; EEVEE Next 112 s for a *single cube*.
+Full 9-view `final` gallery + scene build + glTF: **713.5 s (11.9 min)** — down from
+the 50.7 min recorded under EEVEE Next in PHASE-02.
+
+**Verified:** all 9 renders neutral, all sidecars stamped `ea67a4708772` matching the
+current model, brief rebuilt under `--require-fresh` (exit 0, 23 pages, 6.33 MB).
+Old red renders preserved in `output/png_red_backup/`.
+
+**Known-good tradeoff:** legacy EEVEE has no raytraced GI/reflections. On today's
+untextured massing that costs essentially nothing; revisit if materials gain depth.
+
+**Not addressed here** (diagnosed, still open): (a) `deliverables/tubehouse-dream/`
+still holds the red PDF/GLB — manual copy step, left for a deliberate publish;
+(b) the brief's own layout defects (Chromium's default header printed over every
+page, plan SVGs occupying ~14% of page width with ~2.5 pt labels, half-empty gallery
+pages, 44 DPI cover hero); (c) the furniture planner leaves **25 of 41 rooms empty**
+and paints all 41 items one shared tan.
 
 ### Sprint review — 2026-08-05 (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md, all phases done)
 

@@ -44,6 +44,22 @@ homedesign build  designs/<slug>.json --gltf         # also export a GLB + self-
 homedesign pdf    designs/<slug>.json --require-fresh   # architect-brief PDF (A3 landscape); fails on stale renders
 ```
 
+## Render engine (do not change without reading this)
+- Renders **must** run on **Blender 4.1's legacy EEVEE**.
+  `orchestrator._CANDIDATES` already selects 4.1 ahead of 4.5 — leave that
+  order alone, and do not "upgrade to the newest Blender".
+- EEVEE **Next** (4.2+) miscompiles on this machine's Intel UHD 620 iGPU and
+  renders every lit surface blood red (a white `0.92/0.91/0.88` wall comes out
+  `(194, 34, 53)`), regardless of view transform or `raytracing`. Pinned by
+  `test_blender_candidates_prefer_legacy_eevee_build`; full diagnosis in
+  `docs/lessons-learned.md` (2026-08-08).
+- There is **no GPU render path at all** here: Cycles enumerates zero
+  OPTIX/CUDA/HIP/oneAPI devices, so `--profile cycles` is CPU-only
+  (~3 min/view at 1080p). `--profile final` (legacy EEVEE) is ~30 s/view.
+- **If renders look miscoloured, check which Blender ran before suspecting the
+  design.** Re-render one view with `--profile cycles` to confirm the scene
+  data is good. Override discovery with `BLENDER_CMD`.
+
 ## Working Rules
 - Prefer minimal, spec-driven changes; do not redesign rooms unless the
   task explicitly asks for it.

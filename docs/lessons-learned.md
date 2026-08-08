@@ -29,7 +29,55 @@ silently misclassify the shared boundary as all-exterior. Use a sweep-line
 specific rooms share a sub-span even when their row layouts don't align.
 
 
-## Lesson: EEVEE Next vs Cycles on CPU-only hardware (2026-08-05, camera truth + render economics plan)
+## Lesson: EEVEE Next silently miscompiles on Gen9.5 Intel iGPUs (2026-08-08)
+
+**This supersedes the 2026-08-05 lesson below. Do not restore EEVEE Next as the
+`final` engine on this machine.**
+
+Every render in the shipped `tubehouse-dream` gallery came out blood red. The
+palette in `blender/materials.py` contains no red at all — the fault was the
+engine, not the data. Minimal repro (one cube, one sun, the project's own
+material/engine/view-transform code):
+
+| engine | view transform | white `0.92/0.91/0.88` cube renders as |
+|---|---|---|
+| Cycles | AgX | `(190, 193, 197)` correct |
+| Cycles | Standard | `(235, 244, 255)` correct |
+| EEVEE Next | AgX | `(194, 34, 53)` red |
+| EEVEE Next | AgX, raytracing off | `(194, 34, 53)` red |
+| EEVEE Next | Standard | `(208, 0, 55)` red, green channel 0 |
+
+Independent of view transform and of `raytracing`; the world background renders
+correctly, so colour management is innocent and the fault is in surface shading.
+Hardware: Intel UHD Graphics 620 (Gen9.5), driver `23.20.16.4849` (2018).
+Vulkan is not an escape — Blender rejects the device for missing timeline
+semaphores, buffer device address and `VK_EXT_provoking_vertex`.
+
+**Resolution:** `orchestrator._CANDIDATES` prefers **Blender 4.1.1 (legacy
+EEVEE)** over 4.5.1. `build_scene._set_engine` already falls back to
+`BLENDER_EEVEE`; `render_profiles` is unchanged. Pinned by
+`test_blender_candidates_prefer_legacy_eevee_build`. `BLENDER_CMD` overrides on
+a machine whose GPU handles EEVEE Next correctly.
+
+**Measured (1920x1080, `exterior_front`):** legacy EEVEE 256 spp **29.7 s/view**;
+Cycles CPU 64 spp + denoise **169.3 s/view**; EEVEE Next **112 s for a single
+cube**. Full 9-view `final` gallery + scene build + glTF: **713.5 s (11.9 min)** —
+down from the 50.7 min below, so the speed argument for EEVEE Next was wrong too.
+
+**Generalisable rule:** when output colour or geometry contradicts the source
+data, stop reading source and bisect the *pipeline* (engine, view transform,
+device, version) with a minimal scene. Two tells that the tool is at fault:
+unrelated inputs collapsing onto the same wrong output (a white wall and a green
+lawn both landing on the same red), and one element rendering correctly while all
+others fail. Confirm by rendering the same scene through a second engine.
+
+---
+
+## Lesson (SUPERSEDED 2026-08-08): EEVEE Next vs Cycles on CPU-only hardware (2026-08-05, camera truth + render economics plan)
+
+> **Superseded.** The conclusion below — "EEVEE Next remains the `final`
+> profile" — produced a gallery of unusable red renders. The timings are still
+> accurate as history; the recommendation is not. See the 2026-08-08 lesson above.
 
 **Blender 4.5.1 LTS + EEVEE Next replaced the 11.3-hour Cycles gallery.** The
 9-view `tubehouse-dream` gallery at `--profile final` (EEVEE Next raytracing,

@@ -1,6 +1,6 @@
 ---
 name: homedesign
-description: Turn a natural-language home idea into validated 2D floor plans, elevations and sections (SVG/DXF), and furnished 3D renders (EEVEE preview, EEVEE Next final, or Cycles), plus an interactive GLB web viewer and an A3 architect brief. Use when the user says "/homedesign", asks to design/generate a house or floorplan, or asks to edit a home design already produced by this skill (e.g. "make the kitchen bigger").
+description: Turn a natural-language home idea into validated 2D floor plans, elevations and sections (SVG/DXF), and furnished 3D renders (EEVEE preview, EEVEE final, or Cycles), plus an interactive GLB web viewer and an A3 architect brief. Use when the user says "/homedesign", asks to design/generate a house or floorplan, or asks to edit a home design already produced by this skill (e.g. "make the kitchen bigger").
 ---
 
 # /homedesign
@@ -103,11 +103,24 @@ Cheat sheet:
    `--skip-existing` to skip views whose PNG already exists.
 2c. **Render profiles.** Three are available everywhere `--profile` is
    accepted: `preview` (EEVEE, 32 samples, 960x540 — the default), `final`
-   (EEVEE Next raytracing + AgX, 256 samples, 1920x1080 — full quality in
-   minutes, not the ~11 h Cycles used to cost), and `cycles` (512 samples —
-   an explicit opt-in hero-shot path). The engine line is always printed
-   (`eevee raytracing: on|unavailable` or `cycles device: ...`) so a run is
-   never ambiguous about which path produced it.
+   (EEVEE + AgX, 256 samples, 1920x1080 — ~12 min for a 9-view gallery, not
+   the ~11 h Cycles used to cost), and `cycles` (512 samples — an explicit
+   opt-in hero-shot path, ~3 min/view on CPU). The engine line is always
+   printed (`eevee raytracing: on|unavailable` or `cycles device: ...`) so a
+   run is never ambiguous about which path produced it.
+
+   **Renders must come from Blender 4.1's legacy EEVEE.**
+   `orchestrator._CANDIDATES` selects 4.1 ahead of 4.5 for this reason, so the
+   default is already correct — do not "upgrade" it. EEVEE **Next** (Blender
+   4.2+) miscompiles on this project's target iGPU and renders every lit
+   surface blood red: a white `0.92/0.91/0.88` wall comes out `(194, 34, 53)`,
+   independent of view transform and of `raytracing`, while the world
+   background stays correct. Under 4.1 the `final` profile's
+   `raytracing: True` degrades to a harmless no-op. If a gallery comes out
+   red or otherwise miscoloured, **check which Blender ran before you suspect
+   the design** — re-render one view with `--profile cycles` to confirm the
+   scene data is fine. Full diagnosis: the 2026-08-08 entry in
+   `activeContext.md` and `docs/lessons-learned.md`.
 2d. **Interactive model.** Add `--gltf` to `build` to also export a GLB and
    write a self-contained offline web viewer:
    ```
@@ -134,9 +147,8 @@ Cheat sheet:
    loop indefinitely.
 5. **Present.** Show the renders and plans, and summarize the design in a
    sentence or two (room count, layout, notable features). Mention that
-   `--profile final` gives a full-quality render (EEVEE Next, 256 samples,
-   1080p) in minutes if the user wants a polished still instead of the fast
-   preview.
+   `--profile final` gives a full-quality render (EEVEE, 256 samples, 1080p)
+   in minutes if the user wants a polished still instead of the fast preview.
 6. **Conversational edits.** When the user asks for a change, go back to
    step 1 against the *same* spec file and re-run step 2 onward. Summarize
    what changed in the spec (e.g. "widened the kitchen from 4.0m to 4.6m and
@@ -178,5 +190,7 @@ instead — always use it before handing a brief to anyone.
   there is no bundled CC0 asset library yet. Renders read as furnished but
   stylized, not catalog-photo realistic.
 - Previews are fast EEVEE renders; `--profile final` upgrades the gallery to
-  EEVEE Next raytracing with AgX colour, and `--profile cycles` remains as an
-  explicit (much slower) opt-in path.
+  256-sample EEVEE with AgX colour, and `--profile cycles` remains as an
+  explicit (much slower) opt-in path. There is no raytraced GI or reflection
+  path on this hardware: EEVEE Next is unusable (see the engine note under
+  "Render profiles") and Cycles has no GPU device, so `cycles` runs on CPU.
