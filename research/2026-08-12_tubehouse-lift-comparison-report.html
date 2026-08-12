@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydraulic vs Traction Lift — HCMC Tubehouse Decision Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --ink:#1a2233; --mut:#5b6472; --line:#e3e7ee; --bg:#f6f7f9;
+    --acc:#0e6f86; --acc2:#14919b; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+    --card:#ffffff; --chip:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  .wrap{max-width:1060px;margin:0 auto;padding:28px 20px 80px}
+  header.hero{background:linear-gradient(135deg,#123a45 0%,#0e6f86 55%,#14919b 100%);color:#fff;border-radius:16px;padding:34px 36px 26px;box-shadow:0 10px 30px rgba(14,111,134,.18)}
+  .kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+  h1{margin:0 0 10px;font-size:30px;line-height:1.2;font-weight:800}
+  h1 .accent{color:#9fe8df}
+  .sub{font-size:15px;opacity:.94;max-width:820px;margin:0 0 20px}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .fact{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:10px 12px}
+  .fact b{display:block;font-size:19px;font-weight:800;color:#bdf3ec}
+  .fact span{font-size:11.5px;opacity:.88;line-height:1.35;display:block;margin-top:2px}
+  h2{font-size:21px;margin:44px 0 4px;font-weight:800;letter-spacing:-.01em}
+  h2 .k{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);vertical-align:middle;margin-right:10px;border:1px solid var(--acc);border-radius:99px;padding:2px 10px}
+  .lead{color:var(--mut);font-size:14px;margin:2px 0 16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 2px 8px rgba(26,34,51,.05)}
+  .card h3{margin:0 0 8px;font-size:15.5px;font-weight:800}
+  .card p{margin:0 0 8px;font-size:13.5px;color:#333c4d}
+  .card .tag{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 10px;margin-bottom:8px}
+  .do{background:#e9f9ee;color:var(--ok);border:1px solid #bfe8cc}.do .tag{background:var(--ok);color:#fff}
+  .skip{background:#fdf3e7;color:var(--warn);border:1px solid #f3ddbc}.skip .tag{background:var(--warn);color:#fff}
+  .vcard{border-top:3px solid var(--acc);display:flex;flex-direction:column}
+  .vcard .win{color:var(--ok);font-weight:800}
+  .vcard .lose{color:var(--bad);font-weight:700}
+  .vcard .score{font-size:12px;color:var(--mut);margin-top:auto;padding-top:6px}
+  .frame{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px 16px}
+  .chart-wrap{position:relative;height:300px}
+  .mermaid-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto}
+  .mermaid-wrap svg{max-width:100%;height:auto}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13.5px}
+  th{background:#eef2f7;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#3c4557}
+  td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tr.cat td{background:#f2f6f9;font-weight:800;color:#1f6feb;text-transform:uppercase;font-size:12px;letter-spacing:.06em}
+  tr.total td{background:#123a45;color:#fff;font-weight:800}
+  .r{text-align:right;white-space:nowrap}
+  .chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:99px;padding:4px 12px;font-size:12.5px;margin:3px}
+  .bco{display:inline-block;font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+  .bco.global{background:#dff1f5;color:#0e6f86}
+  .bco.dealer{background:#efeafd;color:#6d28d9}
+  .bco.local{background:#eef2f7;color:#3c4557}
+  a{color:var(--acc);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ul{margin:6px 0 10px;padding-left:20px}
+  li{font-size:13.5px;margin:3px 0}
+  .note{font-size:12.5px;color:var(--mut)}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;font-size:12px;color:var(--mut)}
+  .big{font-size:26px;font-weight:800;color:var(--acc);line-height:1.1}
+  @media print{
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .card,.frame,.mermaid-wrap,table{break-inside:avoid;box-shadow:none}
+    header.hero{background:#123a45 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    h2{break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ HEADER ============ -->
+<header class="hero">
+  <p class="kicker">Decision Research Report · Ho Chi Minh City</p>
+  <h1>Hydraulic vs Traction Lift <span class="accent">for a 5-Storey Tubehouse</span></h1>
+  <p class="sub">Cost, safety and space comparison of home-elevator technologies and the brands/companies that actually sell and install them in HCMC — grounded in a 189-source pool (38 verified), Vietnamese installer price tables, official brand pages (KONE VN, Otis VN, TK Elevator, Hyundai VN), VN standards (TCVN 6396-20:2017, 6396-41:2018) and the VDI 2225 academic comparison.</p>
+  <div class="facts">
+    <div class="fact"><b>5 storeys</b><span>Ground Garage/Lease → Floor 4 Office, Guest &amp; Roof Terrace</span></div>
+    <div class="fact"><b>1000 × 1400 mm</b><span>1.4 m² lift shaft in the core zone — lower bound of the mini segment</span></div>
+    <div class="fact"><b>260–350 triệu</b><span>Local-assembled traction, installed, 5 stops — the budget tier</span></div>
+    <div class="fact"><b>900 triệu–1 tỷ</b><span>Imported hydraulic (Domuslift) — most expensive tech at 5 stops</span></div>
+    <div class="fact"><b>≤0.15 m/s</b><span>EN 81-41 platform-lift limit — that standard is <i>not</i> a real passenger lift</span></div>
+    <div class="fact"><b>2–10%</b><span>Share of building energy used by lifts (VDI 2225)</span></div>
+    <div class="fact"><b>189 / 38</b><span>Source pool / verified &amp; cited sources in the ledger</span></div>
+  </div>
+</header>
+
+<!-- ============ EXECUTIVE SUMMARY ============ -->
+<h2><span class="k">01</span>Executive Summary</h2>
+<p class="lead">Lead with the answer: at 5 stops in a 1000×1400 mm shaft, traction MRL is the mainstream fit and hydraulic is not the cheap option in Vietnam.</p>
+<div class="grid2">
+  <div class="card do">
+    <span class="tag">WHAT TO DO</span>
+    <h3>Traction MRL from a brand with an official VN entity</h3>
+    <p>KONE MonoSpace Home (machine fully inside the hoistway, 0.4–1.0 m/s, 250–630 kg, up to 6 stops) or Otis Gen2 Life (MRL, up to 45 m rise / 14 stops) — the 600–800 triệu fully-imported class, or 400–800 triệu liên doanh. Regenerative drive keeps running costs lowest.</p>
+    <p><b>Budget path:</b> local-assembled traction at 260–350 triệu — acceptable only with demonstrated kiểm định (inspection) compliance and a real warranty contract.</p>
+  </div>
+  <div class="card skip">
+    <span class="tag">WHAT TO SKIP</span>
+    <h3>Hydraulic at 5 stops, “platform lifts”, parallel imports</h3>
+    <p>Imported hydraulic (Domuslift) runs 900 triệu–1 tỷ and still needs a machine room + deeper pit — no advantage at this stop count. Screw-driven (Cibes, 800 triệu–1.2 tỷ) only if a no-pit/no-machine-room retrofit is the hard constraint.</p>
+    <p><b>Never</b> accept an EN 81-41 / TCVN 6396-41 “platform lift” (≤0.15 m/s) as a passenger lift, and no parallel-imported units without local warranty (your standing rule).</p>
+  </div>
+</div>
+
+<!-- ============ METHOD & DECISION FLOW ============ -->
+<h2><span class="k">02</span>Method &amp; Decision Flow</h2>
+<p class="lead">Exhaustive research pass: 189-source wide pass (web 96 / industry 66 / academia 18 / github 9), tiered, deduped, then a deep pass with full-text verification of ~40 sources. The decision logic below is what the evidence supports.</p>
+<div class="mermaid-wrap">
+<div class="mermaid">
+flowchart LR
+  A[Tubehouse<br/>5 storeys<br/>shaft 1000x1400] --> B{Real passenger lift?}
+  B -- "EN 81-41 platform lift<br/>&lt;=0.15 m/s = not enough" --> X[Reject<br/>platform-lift offers]
+  B -- "EN 81-20/50<br/>TCVN 6396-20:2017" --> C{Tech choice}
+  C -- Traction MRL --> D[Machine in hoistway<br/>no oil, regen drive]
+  D --> D1{Overhead above<br/>top landing OK?}
+  D1 -- Yes --> R1[Pick MRL<br/>global brand VN entity<br/>or local assembled]
+  C -- Hydraulic --> E[Machine room<br/>+ deeper pit]
+  E --> E1{Remote machine room<br/>+ pit acceptable?}
+  E1 -- Yes --> R2[Hydraulic import<br/>~900tr - 1 ty]
+  C -- Screw Cibes --> F[No pit, no machine room]
+  F --> R3[800tr - 1.2 ty<br/>retrofit-friendly]
+  R1 --> Q[3-5 written quotes:<br/>shaft fit, pit, overhead,<br/>machine room, kiem dinh, warranty]
+  R2 --> Q
+  R3 --> Q
+</div>
+</div>
+
+<!-- ============ FINDINGS GRID ============ -->
+<h2><span class="k">03</span>Findings Grid — Technology Verdicts</h2>
+<p class="lead">Verdict per decision criterion. “MRL” = machine-room-less traction (gearless). Evidence links inline.</p>
+<div class="grid3">
+  <div class="card vcard">
+    <h3>Space</h3>
+    <p><span class="win">Traction MRL wins.</span> Machine sits inside the hoistway (KONE MonoSpace Home; Otis Gen2 Life; Schindler 3300 “fits into the footprint of a hydraulic elevator”). Hydraulic needs a machine room (or remote power unit) + deeper pit; VN “không hố pit” marketing applies to traction/screw minis, not hydraulic.</p>
+    <p class="score">Caution: MRL needs more headroom above the top landing — your Floor 4 has the roof terrace above it. Verify per product. <a href="https://www.kone.vn/vi/new-buildings/elevators-lifts/kone-monospace-home">kone.vn</a> · <a href="https://www.otis.com/vi/vn/products-services/products/gen2-life">otis.com/vi</a> · <a href="https://www.schindler.com/en/elevators/passenger/schindler-3300.html">schindler.com</a></p>
+  </div>
+  <div class="card vcard">
+    <h3>Cost</h3>
+    <p><span class="win">Local traction wins at 5 stops.</span> 260–350 triệu installed vs imported hydraulic at 900 triệu–1 tỷ (GDE price table). The “hydraulic is cheaper” claim holds only at very low rise / in the US market — the Vietnamese tables contradict it at 5 stops.</p>
+    <p class="score">Entry quotes: 250–260 triệu (Thanh Phát, Gia Đình, GHT); 400+ triệu for 5-storey (GemaLift). <a href="https://thangmaygde.com/thang-may-gia-dinh">thangmaygde.com</a> · <a href="https://thangmayght.com/thang-may-gia-dinh-ght">thangmayght.com</a></p>
+  </div>
+  <div class="card vcard">
+    <h3>Safety</h3>
+    <p><span class="lose">Regulatory tie</span> — both technologies must meet TCVN 6396-20:2017 (EN 81-20:2014) and periodic inspection (TT 36/2019 list + TT 12/2021 procedure). Failure modes differ: hydraulic = oil leaks, cylinder/pit corrosion; traction = ropes/counterweight wear. Both carry overspeed + UCM protection.</p>
+    <p class="score">VDI 2225 recommends annual inspection for residential lifts. <a href="https://www.kone.co.uk/tools-downloads/codes-and-standards/en81-20-and-en81-50-compliance">kone.co.uk</a> · <a href="https://tieuchuan.vsqi.gov.vn/tieuchuan/view?sohieu=TCVN+6396-20%3A2017">vsqi.gov.vn</a></p>
+  </div>
+  <div class="card vcard">
+    <h3>Energy</h3>
+    <p><span class="win">Traction regen ahead.</span> Schindler 3300 ships regenerative drive as standard; Otis Gen2 belt-driven. Hydraulic is catching up (VVVF + pressure accumulator, energy recovery, 2025 indirect-hydraulic improvements) but still trails.</p>
+    <p class="score">Lifts use 2–10% of building energy (VDI 2225). Typical home lift ~300.000 đ/month electricity (vendor figure, unverified). <a href="https://doi.org/10.14744/sigma.2024.00105">VDI 2225 (2024)</a> · <a href="https://doi.org/10.3390/en18092163">Energies (2025)</a></p>
+  </div>
+  <div class="card vcard">
+    <h3>Shaft fit (1000×1400)</h3>
+    <p><span class="lose">Borderline for both.</span> 1.4 m² sits at the lower bound of the mini segment (one installer cites ~1.5 m² practical minimum, 250–350 kg; GHT lists cars 600×830 to 1100×930). Fit is per-product — no public shaft drawings found for the big brands.</p>
+    <p class="score">Hard data gap: per-product shaft/pit/overhead drawings must come from supplier quotes. <a href="https://thangmaygde.com/thang-may-gia-dinh">gde</a> · <a href="https://thangmayght.com/thang-may-gia-dinh-ght">ght</a></p>
+  </div>
+  <div class="card vcard">
+    <h3>Regulatory trap</h3>
+    <p><span class="lose">EN 81-41 ≠ a real lift.</span> EN 81-41:2024 / TCVN 6396-41:2018 cover only ≤0.15 m/s platform lifts for persons with impaired mobility (carrier not fully enclosed). A 5-stop enclosed-car lift must be designed to EN 81-20/50. Common market confusion — check the spec sheet, not the brochure.</p>
+    <p class="score"><a href="https://standards.iteh.ai/catalog/standards/cen/62d01d02-95cf-4600-badf-cdda8cc30a3f/en-81-41-2024">EN 81-41:2024 scope</a> · <a href="https://tns-lift.com.vn/5-tieu-chuan-viet-nam-moi-nhat-ve-thang-may-gia-dinh-ban-can-biet">tns-lift TCVN guide</a></p>
+  </div>
+</div>
+
+<!-- ============ COST AT A GLANCE ============ -->
+<h2><span class="k">04</span>Cost at a Glance — Installed Price Tiers (5 stops, VNĐ)</h2>
+<p class="lead">Floating bars = min–max quoted range from installer price tables (GDE, GHT) and title-level entry points. Cross-checked across ≥5 independent installers; vendor-sourced, so treat as planning ranges.</p>
+<div class="frame">
+  <div class="chart-wrap"><canvas id="costChart"></canvas></div>
+</div>
+<table>
+  <tr><th>Tier</th><th>Technology / origin</th><th class="r">Range (triệu VNĐ)</th><th>Source</th></tr>
+  <tr class="cat"><td colspan="4">Local assembly — traction (“liên doanh”)</td></tr>
+  <tr><td>Entry mini (200 kg)</td><td>Local-assembled traction, Fuji/Torise components</td><td class="r">180–320</td><td>GHT price list</td></tr>
+  <tr><td>Standard (250–350 kg)</td><td>Local-assembled traction, trọn gói</td><td class="r">260–350</td><td>GDE; GHT; Thanh Phát (từ 250)</td></tr>
+  <tr class="cat"><td colspan="4">Mid &amp; imported traction</td></tr>
+  <tr><td>Liên doanh mid (300–500+ kg)</td><td>Assembled with imported machinery</td><td class="r">400–800</td><td>GHT; GemaLift (từ 400, 5 tầng)</td></tr>
+  <tr><td>Fully imported home lift</td><td>Mitsubishi, Hitachi (homelift class)</td><td class="r">600–800</td><td>GDE table</td></tr>
+  <tr><td>Premium import</td><td>Major-brand liên doanh “nhập khẩu hãng”</td><td class="r">1.000–2.000</td><td>GHT; VnExpress (~1 tỷ)</td></tr>
+  <tr class="cat"><td colspan="4">Other technologies (context)</td></tr>
+  <tr><td>Hydraulic (imported)</td><td>Domuslift (Italy), machine room + pit</td><td class="r">900–1.000</td><td>GDE table</td></tr>
+  <tr><td>Screw-driven</td><td>Cibeslift (Sweden) — no pit, no machine room</td><td class="r">800–1.200</td><td>GDE table</td></tr>
+  <tr class="total"><td colspan="3">Add-on costs to budget</td><td class="r">+30–40 MRL option · ~10 điện kéo · hố pit civil works</td></tr>
+</table>
+
+<!-- ============ BRANDS & COMPANIES ============ -->
+<h2><span class="k">05</span>Brands &amp; Companies in HCMC</h2>
+<p class="lead">Global brands with verified official VN entities first; then dealer-distributed majors; then the local installers that actually quote and build home lifts in HCMC.</p>
+<div class="grid2">
+  <div class="card">
+    <h3>KONE Việt Nam <span class="bco global">OFFICIAL VN ENTITY</span></h3>
+    <p><b>Product:</b> MonoSpace Home — traction MRL, machine fully inside hoistway, 0.4 / 0.63 / 1.0 m/s, 250–630 kg, up to 6 stops, standard Q/KOS 000326-2022 + TCVN.</p>
+    <p class="note">Direct home-lift product with Vietnamese page — the cleanest fit for a 5-storey tubehouse shaft. <a href="https://www.kone.vn/vi/new-buildings/elevators-lifts/kone-monospace-home">kone.vn →</a></p>
+  </div>
+  <div class="card">
+    <h3>Otis Việt Nam <span class="bco global">OFFICIAL VN ENTITY</span></h3>
+    <p><b>Product:</b> Gen2 Life — traction MRL, components in hoistway, up to 1.6 m/s, up to 1,020 kg (4–13 pax), max 45 m rise / 14 stops. Space-saving design, energy-efficient.</p>
+    <p class="note">Home-lift page in Vietnamese; bigger capacity class than KONE MonoSpace Home. <a href="https://www.otis.com/vi/vn/products-services/products/gen2-life">otis.com/vi →</a></p>
+  </div>
+  <div class="card">
+    <h3>TK Elevator Việt Nam <span class="bco global">OFFICIAL VN ENTITY</span></h3>
+    <p><b>Product:</b> dedicated home elevator &amp; platform lift division (Italy-designed); residential mobility solutions; VN site live.</p>
+    <p class="note"><a href="https://www.tkelevator.com/vn-en/products/elevators/residential-lifts">tkelevator.com/vn-en →</a></p>
+  </div>
+  <div class="card">
+    <h3>Hyundai Elevator VN <span class="bco global">OFFICIAL VN ENTITY</span></h3>
+    <p><b>Product:</b> Hyundai Home series marketed through VN dealers (G20, GHT, Duy Phúc…). Korean brand, local assembly network.</p>
+    <p class="note"><a href="https://www.hyundaielevator.com.vn">hyundaielevator.com.vn →</a></p>
+  </div>
+  <div class="card">
+    <h3>Mitsubishi Electric <span class="bco dealer">DEALER-DISTRIBUTED</span></h3>
+    <p><b>Product:</b> NEXIEZ line for low-rise incl. NEXIEZ-Fit (2024 launch); homelift class quoted at 600–800 triệu in VN tables.</p>
+    <p class="note">Confirm the local entity &amp; warranty terms before relying on dealer quotes. <a href="https://www.scribd.com/document/603641613/passenger-lift-catalog-mitsubisi">NEXIEZ catalog →</a></p>
+  </div>
+  <div class="card">
+    <h3>Schindler <span class="bco dealer">DEALER-DISTRIBUTED</span></h3>
+    <p><b>Product:</b> Schindler 3300 MRL — no machine room/control closet, fits hydraulic footprint, ≤12 stops, 100/150 fpm, regenerative drive standard. Commercial low-rise class; home-fit via dealers.</p>
+    <p class="note"><a href="https://www.schindler.com/en/elevators/passenger/schindler-3300.html">schindler.com →</a></p>
+  </div>
+</div>
+<h3 style="margin-top:22px">Local installers / assemblers seen in HCMC market pages</h3>
+<p>
+  <span class="chip">GDE / Vinalift (price table, từ 260tr)</span><span class="chip">GHT Thang Máy Gia Định (bảng giá, từ 255tr)</span><span class="chip">Nidec</span><span class="chip">YME Lift</span><span class="chip">Kalea Lifts</span><span class="chip">Thang Máy Atlantic</span><span class="chip">Hamico</span><span class="chip">Fuji Lift VN</span><span class="chip">GamaLift</span><span class="chip">Hoàng Triệu</span><span class="chip">Thanh Phát</span><span class="chip">Viettech</span><span class="chip">Nam Thang</span><span class="chip">River</span><span class="chip">Taza</span><span class="chip">Getis</span><span class="chip">TPEC</span><span class="chip">Swift Lifts</span><span class="chip">Homelift VN</span><span class="chip">Dịch Vụ Thang Máy</span>
+</p>
+<p class="note">Fuller lists: <a href="https://thangmaynidec.vn/top-10-cong-ty-thang-chi-minh">Nidec top-10 HCMC</a> · <a href="https://ymelift.com/top-10-cong-ty-thang-mon-tphcm">YME installer list</a> · <a href="https://kalealifts.com.vn/cam-nang/thang-may-gia-dinh-tphcm.html">Kalea 14-company list</a> (scrape-blocked — title-level).</p>
+
+<!-- ============ QUOTE CHECKLIST ============ -->
+<h2><span class="k">06</span>Before You Buy — the 6-Item Quote Checklist</h2>
+<p class="lead">Every supplier quote must answer these six items in writing; the first three are exactly the data this research could not verify from public sources.</p>
+<table>
+  <tr><th>#</th><th>Item to request</th><th>Why it matters</th><th>Evidence status</th></tr>
+  <tr><td>1</td><td><b>Shaft-fit drawing for 1000 × 1400 mm</b></td><td>Your shaft is at the lower bound of the mini segment (~1.5 m² typical minimum); fit is per-product</td><td>Unavailable publicly — must ask</td></tr>
+  <tr><td>2</td><td><b>Pit depth required</b></td><td>Hydraulic needs deeper pit + cylinder; MRL less; affects foundation/civil works</td><td>Vendor-specific — must ask</td></tr>
+  <tr><td>3</td><td><b>Top-landing overhead (headroom)</b></td><td>MRL machine sits above the top landing — your Floor 4 has the roof terrace above</td><td>Vendor-specific — must ask</td></tr>
+  <tr><td>4</td><td><b>Machine room needed?</b></td><td>Hydraulic: yes (or remote power unit); MRL: no (KONE/Otis verified in-hoistway)</td><td>Verified for KONE/Otis/Schindler</td></tr>
+  <tr><td>5</td><td><b>Kiểm định + inspection fee</b></td><td>Lifts are on the strict-safety list (TT 36/2019); periodic inspection per TT 12/2021; VDI 2225 says annual for residential</td><td>Legally required — confirm inclusion</td></tr>
+  <tr><td>6</td><td><b>Warranty + responsible entity</b></td><td>Official VN entity + local warranty only (no parallel imports) — your standing rule</td><td>Verify per brand/dealer</td></tr>
+</table>
+
+<!-- ============ EVIDENCE & CAVEATS ============ -->
+<h2><span class="k">07</span>Evidence, Caveats &amp; Source Notes</h2>
+<div class="grid2">
+  <div class="frame">
+    <p class="big">189</p>
+    <p style="font-size:13.5px;margin:4px 0 12px">Sources gathered in the wide pass, by bucket (all in the JSONL ledger).</p>
+    <div class="chart-wrap" style="height:240px"><canvas id="poolChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Honest caveats</h3>
+    <ul>
+      <li><b>Prices are vendor-sourced.</b> Cross-checked across ≥5 installers (GDE, GHT, Thanh Phát, GemaLift, Gia Đình) with consistent structure — but treat as planning ranges, not quotes.</li>
+      <li><b>Scrape-blocked sources</b> (kalealifts, cibeslift, taza, thiennam, cauthangmay, cafef, reddit, giathangmaygiadinh) are cited at <i>title level</i> — their specific figures are unverified.</li>
+      <li><b>No published VN lifecycle-cost study exists</b> — the 3–5 quote exercise is the substitute for it.</li>
+      <li><b>Electricity figure</b> (~300.000 đ/month) is a single vendor title; the robust anchor is VDI 2225's 2–10% building-energy share.</li>
+      <li><b>Github bucket shortfall</b> (−3) reallocated to web: no reusable open-source prior art exists for this topic.</li>
+      <li><b>Firecrawl unavailable</b> in this environment — industry/web buckets ran on web_search + web_extract instead.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  Generated 2026-08-12 from <a href="research/2026-08-12_tubehouse-lift-comparison.md">research/2026-08-12_tubehouse-lift-comparison.md</a> (domain + literature modes, exhaustive depth).
+  Full source pool: <a href="research/sources/2026-08-12_tubehouse-lift-comparison.sources.jsonl">research/sources/2026-08-12_tubehouse-lift-comparison.sources.jsonl</a> (189 rows) · Ratio used: web=0.45, industry=0.40, academia=0.10, github=0.05.
+  Building context: <code>designs/tubehouse-dream.json</code> (5 storeys, elevator 1000×1400 mm in core zone).
+</footer>
+
+</div>
+
+<script>
+  Chart.defaults.devicePixelRatio = 1;
+  Chart.defaults.animation = false;
+  Chart.defaults.resizeDelay = 150;
+  Chart.defaults.normalized = true;
+  Chart.defaults.maintainAspectRatio = false;
+
+  new Chart(document.getElementById('costChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Liên doanh mini 200kg','Local traction 250–350kg','Liên doanh mid 300–500+kg','Imported home lift (Mitsubishi/Hitachi)','Premium import','Hydraulic import (Domuslift)','Screw-driven (Cibes)'],
+      datasets: [{
+        data: [[180,320],[260,350],[400,800],[600,800],[1000,2000],[900,1000],[800,1200]],
+        backgroundColor: ['#94a3b8','#15803d','#14919b','#0e6f86','#1f6feb','#b45309','#b91c1c'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: function(c){ var v = c.raw; return ' ' + v[0].toLocaleString('vi-VN') + ' – ' + v[1].toLocaleString('vi-VN') + ' triệu VNĐ'; } } } },
+      scales: {
+        x: { min: 0, max: 2100, title: { display: true, text: 'Installed price range, 5 stops (triệu VNĐ)' } },
+        y: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('poolChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['web — 96','industry — 66','academia — 18','github — 9'],
+      datasets: [{ data: [96,66,18,9], backgroundColor: ['#0e6f86','#14919b','#1f6feb','#94a3b8'], borderWidth: 0 }]
+    },
+    options: { responsive: true, cutout: '58%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } } } }
+  });
+
+  mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
+    primaryColor: '#dff1f5', primaryBorderColor: '#0e6f86', primaryTextColor: '#123a45',
+    lineColor: '#5b6472', fontSize: '13px'
+  }});
+</script>
+</body>
+</html>
