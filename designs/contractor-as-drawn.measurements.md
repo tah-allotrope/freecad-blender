@@ -1,46 +1,35 @@
-# contractor-as-drawn — measurement record
+# contractor-as-drawn — measurement record (rev. 2)
 
-Traceable table of every dimension behind `designs/contractor-as-drawn.json`,
-sourced from the five vector PDFs under `contractor/` as read for
-`reports/2026-08-12-contractor-drawing-set-review.html`. All units are integer
-millimetres.
+Traceable table of every dimension behind `designs/contractor-as-drawn.json`, read
+directly from the five vector PDFs under `contractor/` at 8–24× zoom (PyMuPDF
+raster crops; the sheets carry no extractable text, so every figure below is a
+visual read of the printed dimension strings, cross-checked against the vector
+line geometry at K = 43.0 mm/pt where noted).
 
-## Provenance note (read honestly)
+## Revision note
 
-The five sheets carry **no extractable text** (each returns `get_text()` length 0;
-the labels and dimension figures are outlined glyphs). This execution environment
-has **no image-input capability**, so the printed glyphs could not be re-read
-visually in this pass. The figures below therefore come from two already-verified
-sources, cross-checked against one another:
+The first pass of this file (committed in `cca5274`) stated plainly that it could
+not read the sheets and reconstructed the layout from the 2026-08-12 prose review
+plus invented subdivisions. That was wrong in ways that mattered: rooms were on
+the wrong side of the core, the mezzanine void was filled in, no balconies/loggias
+were modelled, the roof covered the whole footprint instead of just the core, and
+a fabricated 1500×1600mm "measured" elevator was invented from nothing. This
+revision replaces it with a direct read of all five sheets.
 
-1. **`reports/2026-08-12-contractor-drawing-set-review.html`** — a measured review
-   of the same sheets, calibrated two independent ways (plot width 3950 mm ≈ 91.8 pt
-   and building depth 20 900 mm ≈ 485.6 pt, both → **K = 43.0 mm/pt**).
-2. The binding defaults in `plans/2026-08-13-contractor-scheme-3d-render-plan.md`
-   (ASM-002…ASM-008), themselves derived from the same review.
-
-Rows marked **`(measured)`** are review-measured facts; rows marked
-**`(inferred)`** are this plan's subdivision of the measured envelope into rooms,
-derived from the review's programme description rather than read off a sheet. This
-split is deliberate and is the point of the `fidelity.md` ledger alongside.
-
-## Coordinate convention (ASM-001)
+## Coordinate convention (unchanged, ASM-001)
 
 - `x = 0` west party wall, `x = plot_width_mm` east party wall.
-- `y = 0` street (front), `y` increasing toward the rear.
-- Plot is the orthogonal collapse of the drawn ~7.2°-skewed rectangle.
+- `y = 0` street / `ranh lộ giới` (front), `y` increasing toward the rear (`sân sau`).
+- Plot is the orthogonal collapse of the drawn ~7.2°-skewed rectangle (DEC-005).
 
-## Plot (ASM-002)
+## Plot
 
 | field | value | source |
 |---|---|---|
-| `plot_width_mm` | 3960 | frontage measured 3950–3960 (tapering); orthogonal collapse |
-| `plot_depth_mm` | 25000 | head of drawn chain 25000 / 22500 / 19500 |
-| front yard | 3000 | y 0…3000 (drawn 3000 → 2500 taper, DEC-005) |
-| building envelope | 20000 | y 3000…23000 |
-| rear yard | 2000 | y 23000…25000 (drawn 2500 → 2000 taper) |
+| `plot_width_mm` | 3960 | frontage printed 3950 on every sheet; +10mm orthogonal margin, unchanged from rev.1 |
+| `plot_depth_mm` | 25000 | `MB 1-LUNG` outer chain, printed directly: `25000` |
 
-## Storey heights (from Section A-A level tags)
+## Storey heights (Section A-A + front elevation level tags — unchanged from rev.1, confirmed again this pass)
 
 | level | name | height_mm | from tags |
 |---|---|---|---|
@@ -52,67 +41,161 @@ split is deliberate and is the point of the `fidelity.md` ledger alongside.
 | 5 | Tầng 5 | 3400 | +17.200 → +20.600 |
 | 6 | Sân thượng | 3200 | +20.600 → +23.800 |
 
-**Sum = 23 800 mm = +23.800** (the roof slab). The plant room rises a further
-2000 mm to **+25.800**; it is a rooftop structure, not a storey (ASM-003/ASM-004),
-and is modelled as a `storage` room on level 6.
+Sum = 23800mm (+23.800, the roof/mái slab level). The plant room rises a further
+2000mm to +25.800 above the roof slab — a rooftop structure, not a storey.
+
+## Ground floor (`MB 1-LUNG-Model.pdf`, "MẶT BẰNG TẦNG 1") — direct read
+
+Rear-to-front dimension chain, printed directly on the west-wall side:
+`2500(taper) / 200 / 1600 / 4100 / 1800 / 3200 / 4800 / 4000 / 3000 / 500(taper)`.
+East-wall side chain: `2000 / 5700 / 1800 / 3200[=19500 bracket] / 4800 / 4000 /
+3500`. The two sides differ because the front/rear boundaries taper (~7.2°,
+DEC-005); the numbers used below are the room-defining values common to both
+reads, reconciled to the printed `19500` and `25000` brackets.
+
+Front (street) to rear, as modelled (y = 0 at `ranh lộ giới`):
+
+| y range | depth | zone | source |
+|---|---|---|---|
+| 0–3500 | 3500 | SÂN TRƯỚC (untiled yard) | "3000" room chain + "500" taper gap, printed |
+| 3500–7500 | 4000 | NƠI ĐỂ XE | printed "4000", directly labelled |
+| 7500–12300 | 4800 | P.KHÁCH | printed "4800", directly labelled — **note: this is BEFORE the stair, not behind it as rev.1 modelled** |
+| 12300–16300 | 4000 | stair core | printed **3200**, enlarged to 4000 (S-2 minimum, see fidelity ledger — same defect rev.1 found, now correctly positioned) |
+| 16300–18100 | 1800 | elevator/technical band | printed "1800"; no per-floor label (see Core note below) |
+| 18100–19700 | 1600 | WC | printed "1600", directly labelled |
+| 19700–23800 | 4100 | BẾP & ĂN (P. ĂN + BẾP) | printed "4100", directly labelled |
+| 23800–25000 | 1200 | SÂN SAU (untiled yard) | printed "2000", **compressed by 800mm to absorb the stair enlargement** — see Discrepancies |
+
+Sum: 3500+4000+4800+4000+1800+1600+4100+1200 = 25000mm. Exact.
+
+## Core note — no elevator is labelled on any residential floor plan
+
+Every one of `MB 1-LUNG`, `MB 2-3-4`, `MB 5-MAI` shows the stair block (21-tread
+U-return, numbered treads 1..21) followed by an unlabelled walled void, then
+"Ô lấy sáng 2200" (an open light well), then WC. **No sheet prints "THANG MÁY"
+next to a shaft on any floor plan.** The label appears exactly once, on
+`MB MAI - MD-Model.pdf`, as "Ô KỸ THUẬT THANG MÁY" (lift plant/technical room),
+1950×2000mm, positioned in the same rear-to-front band as the floor plans'
+unlabelled void (roof chain: SÂN THƯỢNG rear 5700 / gutter 1000 / **[1950+2000
+tech band, depth ~1900]** / skylight zone / gutter 1000 / SÂN THƯỢNG front 4000 —
+this lines up with the floor plans' 1800mm void band between the stair and the
+WC/kitchen zone).
+
+**This model infers a lift shaft stacking through all 7 levels, positioned in
+that band, sized 2000×1800mm (east portion of the band) from the roof plant
+room's printed dimensions — an inference from the roof plan, not a direct
+per-floor read, because no floor plan labels a shaft.** This is weaker
+provenance than every other room in this file and is the single largest
+remaining uncertainty; it should be confirmed against the DWG or by asking the
+contractor directly. See `fidelity.md`.
 
 ## Core (byte-identical on all seven levels)
 
 | room | id | x | y | w | d | source |
 |---|---|---|---|---|---|---|
-| stairwell | `stairwell` | 0 | 6000 | 3005 | 4000 | flight 2×1154 + well 697 = 3005 `(measured)`; depth **4000** is the S-2 minimum for a U-return at H=3800, enlarged from the drawn 3200 `(RISK-02-01)` |
-| hall | `hall` | 3005 | 6000 | 955 | 4000 | `(inferred)` circulation beside stair |
-| elevator | `elevator` | 0 | 10000 | 1500 | 1600 | `(measured)` ~1500 × 1600 |
-| hall (rear) | `hall_rear` | 1500 | 10000 | 1300 | 1600 | `(inferred)` circulation beside lift |
-| light well | — (void) | 2800 | 10000 | 1160 | 1600 | drawn 2200 × 1300 `(measured)`; modelled 1160 × 1600 to tile the 1600-deep lift band `(ledger)` |
+| stairwell | `stairwell` | 0 | 12300 | 3005 | 4000 | flight 2×1154 + well 697 = 3005 (vector-measured, rev.1, unchanged); depth 4000 is the S-2 U-return minimum at H=3800, enlarged from drawn 3200 |
+| hall (beside stair) | `hall_stair` | 3005 | 12300 | 955 | 4000 | circulation, inferred (remainder of stair band) |
+| elevator | `elevator` | 1960 | 16300 | 2000 | 1800 | **inferred from roof plant room dims** (Core note above), not a direct floor-plan read |
+| hall (beside elevator) | `hall_elev` | 0 | 16300 | 1960 | 1800 | circulation, inferred (remainder of elevator band) |
 
-The light well is **not authored** — its footprint is left untiled on every level
-(DEC-003) and punched as a roof `void` (DEC-004).
+The light well is **not authored as a room** — the roof punches a `void` over
+the stairwell's own footprint (DEC-004: the drawing's "Ô kính lấy sáng" glazed
+skylight sits directly over the stair per the roof plan's chain alignment, not
+over a separate feature).
 
-## Rooms per level (all full-width 3960 unless noted)
+## Mezzanine (L1, `MẶT BẰNG LỬNG`, right-hand plan on `MB 1-LUNG-Model.pdf`)
 
-Front zone y 3000…6000 (3000 deep); rear zone y 11600…23000 (11 400 deep), split as
-`[light-well room 6800] + [wc/kho strip 1800] + [rear room 2800]`.
+The rear zone (WC+bếp slot on L0) is replaced by one open room, **P. SINH HOẠT**,
+labelled directly, spanning y 18100–23800 (5700mm, matching the combined
+WC+BẾP footprint below — the printed "+3.800" datum confirms this is the
+mezzanine floor level).
 
-| level | id | name | x | y | w | d | type | source |
-|---|---|---|---|---|---|---|---|---|
-| 0 | `gara` | NƠI ĐỂ XE | 0 | 3000 | 3960 | 3000 | garage | programme `(measured)` |
-| 0 | `khach` | P.KHÁCH | 0 | 11600 | 3960 | 6800 | living | programme `(measured)` |
-| 0 | `wc_gf` | WC | 0 | 18400 | 2000 | 1800 | bathroom | `(inferred)` |
-| 0 | `kho_gf` | KHO | 2000 | 18400 | 1960 | 1800 | storage | `(inferred)` |
-| 0 | `bep_an` | BẾP & ĂN | 0 | 20200 | 3960 | 2800 | kitchen | programme `(measured)` |
-| 1 | `sinh_hoat` | P.SINH HOẠT | 0 | 3000 | 3960 | 3000 | living | lửng family room `(measured)` |
-| 1 | `sinh_hoat_rear` | P.SINH HOẠT | 0 | 11600 | 3960 | 6800 | living | `(inferred)` |
-| 1 | `wc_lung` / `kho_lung` | WC / KHO | — | 18400 | — | 1800 | bathroom / storage | `(inferred)` |
-| 1 | `ngu_lung` | P.NGỦ | 0 | 20200 | 3960 | 2800 | bedroom | `(inferred)` |
-| 2–4 | `ngu_chinh_f{n}` | P.NGỦ CHÍNH | 0 | 3000 | 3960 | 3000 | bedroom | tầng 2–5 bedrooms `(measured)` |
-| 2–4 | `ngu_2_f{n}` | P.NGỦ 2 | 0 | 11600 | 3960 | 6800 | bedroom | `(inferred)` |
-| 2–4 | `wc_f{n}` / `kho_f{n}` | WC / KHO | — | 18400 | — | 1800 | bathroom / storage | `(inferred)` |
-| 2–4 | `ngu_3_f{n}` | P.NGỦ 3 | 0 | 20200 | 3960 | 2800 | bedroom | `(inferred)` |
-| 5 | `tho_f5` | P.THỜ | 0 | 3000 | 3960 | 3000 | living | P.THỜ on tầng 5 `(measured)` |
-| 5 | `ngu_2_f5` / `ngu_3_f5` | P.NGỦ 2 / 3 | — | 11600 / 20200 | 3960 | 6800 / 2800 | bedroom | `(inferred)` |
-| 6 | `san_thuong` | SÂN THƯỢNG | 0 | 3000 | 3960 | 3000 | balcony | `(measured)` |
-| 6 | `oki_thuat` | Ô KỸ THUẬT THANG MÁY | 0 | 11600 | 2000 | 1900 | storage | 2000 × 1900 plant room `(measured)` |
-| 6 | `san_thuong_mid` / `san_thuong_rear` | SÂN THƯỢNG | — | 11600 / 13500 | — | — | balcony | `(inferred)` |
+**The front zone (y 0–12300, over NƠI ĐỂ XE + P.KHÁCH) is drawn with a diagonal
+hatch (×) and is explicitly NOT floored** — it is a double-height void open down
+to the garage and living room below. This is read directly off the sheet, not
+inferred: the hatch pattern is the drawing's own convention for "no slab", used
+identically for the SÂN THƯỢNG zones on the roof-level sheets.
+
+This model leaves y 0–12300 on level 1 completely untiled (no rooms authored),
+matching the drawing exactly. Only the stair, elevator, hall and P. SINH HOẠT
+are built at this level.
+
+## Tầng 2, 3, 4 (`MB 2-3-4-Model.pdf` — identical layout, different height datum only)
+
+Front (street) to rear:
+
+| y range | depth | room | source |
+|---|---|---|---|
+| 3500–4900 | 1400 | Ban công (balcony) | printed "1400", directly labelled, recessed within the building line (not cantilevered — see fidelity ledger) |
+| 4900–8900 | 4000 | P. NGỦ (front bedroom) | printed "4000" |
+| 8900–10500 | 1600 | WC (front bedroom ensuite) | printed "1950"(width)/"1600"(depth pattern, matching the rear WC) |
+| 8900–10500 | (x1950–3960) | hall beside ensuite | inferred, remainder of the WC's own depth band |
+| 10500–12300 | 1800 | hall (full width, to stair) | inferred, remainder of the 4800 slot after the 1600 WC |
+| [core, see above] | | | |
+| 18100–19700 | 1600 | WC (rear bedroom ensuite) | printed "1600", directly labelled, same pattern as L0 |
+| 19700–23800 | 4100 | P. NGỦ (rear bedroom) | printed "4100" |
+
+Only **one bedroom front, one bedroom rear** — two total per floor, each with its
+own ensuite. Rev.1 invented a third bedroom in the WC/storage slot; no third
+bedroom is drawn on any sheet.
+
+## Tầng 5 (`MB 5- MAI-Model.pdf`, "MẶT BẰNG TẦNG 5")
+
+Same rear zone as tầng 2–4 (WC 1600 + P. NGỦ 4100, one bedroom). Front zone
+differs: **P. THỜ** (altar room), 4000mm, printed directly, with an altar
+counter/table against its rear wall (drawn, not a WC). The 4800 zone between
+stair and P. THỜ is open circulation with a serving counter — no ensuite WC on
+this floor's front zone (confirmed: no toilet/sink icons in that zone, unlike
+tầng 2–4). Ban công (1400) at the front, same as tầng 2–4.
+
+## Roof (`MB 5- MAI-Model.pdf` right-hand plan "MẶT BẰNG SÂN THƯỢNG", and `MB MAI - MD-Model.pdf` left-hand plan "MẶT BẰNG MÁI")
+
+Two sheets show the roof level: the "sân thượng" plan (walkable terrace, at
++20.600, i.e. level 6's own floor) and the "mái" plan (the roof/coping at
++23.800, one storey above). Reconciling both against the floor-plan bands:
+
+- Front SÂN THƯỢNG: y 3500–12300 (8800mm, = Ban công + P.NGỦ/P.THỜ + hall bands
+  merged into one open terrace) — printed "SÂN THƯỢNG" with X-hatch (open, no roof).
+- Stair + elevator bands: covered by the roof slab (the "mái" plan's technical +
+  skylight zone). The stairwell's own footprint is left as a `void` in the roof
+  (glazed skylight per the drawing, DEC-004). The elevator band is fully roofed,
+  becoming the enclosed "Ô KỸ THUẬT THANG MÁY" plant room — printed 1950×2000mm,
+  standing 2000mm above the roof slab (+23.800 → +25.800), modelled as a
+  `storage` room on level 6 since the schema has no rooftop-structure construct
+  (DEC-014 unchanged from rev.1).
+- Rear SÂN THƯỢNG: y 18100–23800 (5700mm), printed "SÂN THƯỢNG" with X-hatch
+  (open, no roof) — matches the WC+BẾP/P.NGỦ footprint below exactly.
 
 ## Tiling checks
 
-- Plot area = 3960 × 25000 = 99 000 000 mm².
-- Per level, rooms + light well tile the full building envelope (y 3000…23000):
-  front 3000 + core 5600 + rear 11400 = 20 000, all × 3960, minus the
-  1160 × 1600 light well. Every level sums exactly — no residual, no sliver
-  (ASM-006 never had to absorb a residual).
-- Core rects are byte-identical across levels 0–6 (`shaft_misaligned` absent).
+- Plot area = 3960 × 25000 = 99,000,000 mm².
+- L0: 3500(yard)+4000+4800+4000+1800+1600+4100+1200(yard) = 25000mm depth, full
+  width 3960mm throughout except where explicitly split (core bands) — tiles
+  exactly, no residual.
+- L1: stair+elevator+hall bands (12300–18100, 5800mm) + P. SINH HOẠT
+  (18100–23800, 5700mm) are the only authored rooms; y0–12300 and y23800–25000
+  are deliberately untiled (void / yard), matching the drawing.
+- L2–L5: 3500(void, matches L0 yard)+1400+4000+1600+1800+[core 5800]+1600+4100+1200(void)
+  = 3500+1400=4900;+4000=8900;+1600=10500;+1800=12300;+4000(stair)=16300;+1800(elev)=18100;+1600=19700;+4100=23800;+1200=25000. Exact.
+- L6: front terrace(8800)+core bands(5800)+rear terrace(5700)+yards(3500+1200
+  matching L0's untiled bands, i.e. terrace doesn't extend into the yard
+  footprint any more than the building below does) = 8800+5800+5700=20300,
+  +3500+1200(untiled, unchanged)=25000. Exact.
+- Core rects (stairwell, elevator) are byte-identical across levels 0–6 by
+  construction (same literal x/y/w/d on every level).
 
-## Discrepancies
+## Discrepancies (all carried into `fidelity.md`)
 
-- **Storey-height sum.** The plan's PHASE-01 test text says "sum → +25.800", but the
-  2000 mm above +23.800 is the plant room, not a storey. The seven storeys sum to
-  +23.800; the plant room is modelled as a level-6 `storage` room. Recorded rather
-  than treated as an error.
-- **Light well size.** Drawn 2200 × 1300 (2.86 m²) → modelled 1160 × 1600 (1.86 m²)
-  so it tiles the 1600-deep lift band. See `fidelity.md`.
-- **Stair depth.** Drawn 3200 → modelled 4000 (S-2 U-return minimum at H=3800).
-  See `fidelity.md` (RISK-02-01).
-- **Skewed boundaries.** Both ~7.2° boundaries collapse to the orthogonal plot
-  rectangle; the tapering yards become untiled plot (DEC-005).
+- **Stair depth enlarged 3200 → 4000mm.** Confirmed again this pass: at
+  H=3800mm, `stairs.py` needs n=22 risers, r=172.7mm (≤190 OK), g=254.6mm; a
+  U-return with short=3005mm needs run ≥ 3998.5mm (S-2). The drawn 3200mm does
+  not fit. The extra 800mm is taken from the rear yard (SÂN SAU, compressed
+  2000→1200mm) so the plot still tiles to exactly 25000mm; this is different
+  from rev.1's approach (which grew the plot depth) — the plot dimension itself
+  is unchanged, only the untiled yard shrinks.
+- **Elevator is inferred, not read.** See Core note above. This is the weakest
+  piece of provenance in this file.
+- **Ensuite WC widths (1950/2010 split) are a reasonable reconstruction**, not a
+  pixel-perfect read — the printed "1950" label is a width dimension on the
+  sheet; the exact depth split between WC and hall is this model's own tiling
+  choice, consistent with the identical rear-WC pattern that IS fully dimensioned.
