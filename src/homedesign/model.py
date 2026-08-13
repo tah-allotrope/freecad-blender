@@ -211,7 +211,7 @@ def write_render_sidecar(png_path, model_hash: str, view: str, profile: str) -> 
         "profile": profile,
         "rendered_at": datetime.now(timezone.utc).isoformat(),
     }
-    sidecar.write_text(json.dumps(payload, indent=2))
+    sidecar.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return sidecar
 
 
@@ -219,6 +219,6 @@ def read_render_sidecar(png_path) -> dict | None:
     """The parsed sidecar for a render, or None when absent/unparseable."""
     sidecar = Path(png_path).with_suffix(Path(png_path).suffix + ".json")
     try:
-        return json.loads(sidecar.read_text())
+        return json.loads(sidecar.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None

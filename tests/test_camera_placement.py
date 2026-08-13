@@ -18,7 +18,7 @@ ALL_SPECS = sorted(EXAMPLES.glob("*.json")) + sorted(DESIGNS.glob("*.json"))
 
 
 def _model_of(path: Path):
-    return compile_spec(json.loads(path.read_text()))
+    return compile_spec(json.loads(path.read_text(encoding="utf-8")))
 
 
 @pytest.mark.parametrize("spec_path", ALL_SPECS, ids=lambda p: p.stem)

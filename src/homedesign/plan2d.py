@@ -31,7 +31,7 @@ def write_plans(model: CompiledModel, out_dir: Path) -> list[Path]:
     paths = []
     for storey in model.storeys:
         svg_path = svg_dir / f"{model.name}_f{storey.level}.svg"
-        svg_path.write_text(_render_svg(model, storey))
+        svg_path.write_text(_render_svg(model, storey), encoding="utf-8")
         paths.append(svg_path)
 
         dxf_path = dxf_dir / f"{model.name}_f{storey.level}.dxf"

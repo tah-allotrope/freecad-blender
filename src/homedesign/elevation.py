@@ -258,7 +258,7 @@ def write_elevations(model: CompiledModel, out_dir: Path, sides=("north", "south
         items = build_elevation(model, side)
         width_mm = model.plot_width_mm if side in ("north", "south") else model.plot_depth_mm
         svg_path = svg_dir / f"{model.name}_elev_{side}.svg"
-        svg_path.write_text(_svg(items, f"{model.name} {side.title()} Elevation", width_mm, total_h))
+        svg_path.write_text(_svg(items, f"{model.name} {side.title()} Elevation", width_mm, total_h), encoding="utf-8")
         paths.append(svg_path)
         dxf_path = dxf_dir / f"{model.name}_elev_{side}.dxf"
         _dxf(items, dxf_path)
@@ -279,7 +279,7 @@ def write_sections(model: CompiledModel, out_dir: Path) -> list[Path]:
         width_mm = model.plot_depth_mm if axis == "x" else model.plot_width_mm
         title = "Long Section" if axis == "x" else "Cross Section"
         svg_path = svg_dir / f"{model.name}_section_{axis}.svg"
-        svg_path.write_text(_svg(items, f"{model.name} {title}", width_mm, total_h))
+        svg_path.write_text(_svg(items, f"{model.name} {title}", width_mm, total_h), encoding="utf-8")
         paths.append(svg_path)
         dxf_path = dxf_dir / f"{model.name}_section_{axis}.dxf"
         _dxf(items, dxf_path)

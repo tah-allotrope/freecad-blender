@@ -23,12 +23,12 @@ def _write_model_json(model, out_dir: Path) -> Path:
     path = out / f"{model.name}.model.json"
     data = model.to_dict()
     data["model_hash"] = model_hash(model)
-    path.write_text(json.dumps(data, indent=2))
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
 
 
 def _load_spec(spec_path: Path) -> dict:
-    return json.loads(spec_path.read_text())
+    return json.loads(spec_path.read_text(encoding="utf-8"))
 
 
 def _validate_and_compile(spec_path: Path):
@@ -149,7 +149,7 @@ def cmd_pdf(args) -> int:
     if not brief_path.exists():
         print(f"brief copy not found: {brief_path}", file=sys.stderr)
         return 1
-    brief = json.loads(brief_path.read_text())
+    brief = json.loads(brief_path.read_text(encoding="utf-8"))
 
     pdf_path = pdf_mod.build_brief(model, brief, out_dir, spec_path, hero_view=args.hero,
                                    embed_images=args.embed_images, require_fresh=args.require_fresh)

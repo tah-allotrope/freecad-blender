@@ -9,10 +9,15 @@ from homedesign.validate import validate_compiled, validate_schema
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO_ROOT / "spec" / "examples"
+DESIGNS = REPO_ROOT / "designs"
 
 
 def load_example(name):
     return json.loads((EXAMPLES / name).read_text())
+
+
+def load_design(name):
+    return json.loads((DESIGNS / name).read_text(encoding="utf-8"))
 
 
 def test_example_specs_pass_schema_validation():
@@ -93,3 +98,16 @@ def test_existing_specs_compile_without_context():
     for name in ("demo-3br-2storey.json", "tubehouse-mini.json", "courtyard-fixture.json"):
         model = compile_spec(load_example(name))
         assert model.context == {}
+
+
+def test_contractor_as_drawn_passes_schema_validation():
+    errors = validate_schema(load_design("contractor-as-drawn.json"))
+    assert errors == [], f"contractor-as-drawn: {errors}"
+
+
+def test_contractor_as_drawn_passes_geometric_validation():
+    model = compile_spec(load_design("contractor-as-drawn.json"))
+    errors = validate_compiled(model)
+    # The as-drawn scheme is authored to tile cleanly and stack its core, so
+    # every registry item here must be a warning, never an error.
+    assert all(e.severity == "warning" for e in errors), f"contractor-as-drawn: {errors}"
