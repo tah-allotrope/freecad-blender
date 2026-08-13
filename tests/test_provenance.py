@@ -89,6 +89,11 @@ def test_write_viewer_inlines_glb(tmp_path):
     html = html_path.read_text(encoding="utf-8")
     assert "mini" in html
     assert "atob(" in html  # GLB embedded inline (under the 8MB limit)
+    # The GLB must be decoded to an ArrayBuffer before loader.parse: a bare
+    # atob() string is treated as glTF-JSON and JSON.parse() fails, leaving
+    # the viewer black.
+    assert "loader.parse(_buf.buffer" in html
+    assert "loader.parse(atob(" not in html
     # No external <script> tags -- the three.js sources are inlined. (The
     # bundled libraries mention fetch()/http:// internally in error paths;
     # the model itself is loaded from the embedded base64, never a request.)

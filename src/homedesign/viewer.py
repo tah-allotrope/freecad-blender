@@ -34,7 +34,16 @@ def write_viewer(model_name: str, glb_path: Path, out_dir: Path) -> Path:
 
     if glb.exists() and glb.stat().st_size <= INLINE_GLB_LIMIT_BYTES:
         b64 = base64.b64encode(glb.read_bytes()).decode("ascii")
-        load_call = f"loader.parse(atob('{b64}'), '', onModel, onModelError);"
+        # Decode to an ArrayBuffer, not a string: GLTFLoader.parse treats a JS
+        # string as glTF-JSON text, so passing atob()'s binary string made it
+        # JSON.parse("glTF…") and fail — the viewer rendered nothing.
+        load_call = (
+            f"var _b64='{b64}';"
+            "var _bin=atob(_b64);"
+            "var _buf=new Uint8Array(_bin.length);"
+            "for(var _i=0;_i<_bin.length;_i++){_buf[_i]=_bin.charCodeAt(_i);}"
+            "loader.parse(_buf.buffer, '', onModel, onModelError);"
+        )
         html = template.replace("__LOAD_CALL__", load_call)
     else:
         # Large model: reference the GLB relatively so the HTML stays small.
