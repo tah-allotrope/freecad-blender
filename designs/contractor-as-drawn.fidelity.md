@@ -83,6 +83,16 @@ exterior_aerial renders show a solid massing block with almost no glazing or
 recesses, even though the spec authors real balcony rooms and real windows
 onto them (see (f) below). **Yes — visibly changes the exterior renders.**
 
+> **Resolved (2026-08-14, `plans/2026-08-14-balcony-parapet-render-fix-plan.md`).**
+> Root cause fixed, not worked around: `Wall` now carries an owning `room_id`
+> (populated during `_derive_walls`; `None` for partition walls), and
+> `build_scene.py::build_walls()` skips any exterior wall whose `room_id` is a
+> `balcony`-typed room and that carries no opening — `_add_balcony_parapets()`
+> then places the 1100mm parapet on exactly those edges (verified: the set of
+> balcony-owned walls equals `open_edges()` for every balcony in both real
+> designs, and none of them carries an opening). Balconies and terraces now
+> render open with a railing, not as sealed boxes.
+
 ### (f) Front-facing daylight is modelled as bedroom-to-balcony glazing, not street-facing windows
 Each front bedroom/altar room (`ngu_truoc_*`, `tho_f5`) gets a door + a 1400mm
 window on the wall shared with its balcony, representing a sliding glass door
@@ -96,6 +106,12 @@ on whichever party-wall edge is free — a known pre-existing schema limitation
 (the compiler cannot distinguish a real exterior wall from a shared-with-
 neighbour party wall; both classify as "exterior" once nothing else is
 tiled against them).
+
+> **Resolved (2026-08-14, same fix as (e)).** With the balcony's own open edges
+> no longer built as full-height walls, the bedroom-to-balcony door + window on
+> the shared partition wall is now visible from the exterior camera on every
+> storey — the blocking cause ((e)) is gone, so the front facade shows real
+> glazing rather than a solid massing block.
 
 ### (g) Stair depth enlarged 3200 → 4000mm (confirmed again this pass)
 At the ground-floor storey height (3800mm), `stairs.py`'s Blondel sizing needs

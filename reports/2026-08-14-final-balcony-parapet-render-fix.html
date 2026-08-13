@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Final Report :: Balconies Render Open Now</title>
+  <meta name="color-scheme" content="dark light">
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    async function initMermaid() {
+      const blocks = document.querySelectorAll('.mermaid');
+      if (!blocks.length) { return; }
+      mermaid.initialize({
+        startOnLoad: false, theme: 'base', securityLevel: 'loose',
+        themeVariables: {
+          primaryColor: '#f3ead9', primaryTextColor: '#1f1912', primaryBorderColor: '#9d6b37',
+          lineColor: '#3b6f76', secondaryColor: '#efe4d0', tertiaryColor: '#ffffff',
+          background: '#fbf7f1', mainBkg: '#fbf7f1', nodeBorder: '#9d6b37',
+          clusterBkg: '#f7efdf', clusterBorder: '#3b6f76', edgeLabelBackground: '#fbf7f1'
+        }
+      });
+      await mermaid.run({ nodes: blocks });
+    }
+    const run = () => initMermaid().catch((e) => console.error('Mermaid render failed', e));
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run, { once: true }); }
+    else { run(); }
+  </script>
+  <style>
+    :root {
+      --paper: #fbf7f1; --paper-strong: #fffdf9; --ink: #1f1912; --ink-soft: #5f564c;
+      --line: #dccdb6; --line-strong: #bfa37d; --accent: #9d6b37; --accent-soft: #efe4d0;
+      --accent-2: #3b6f76; --shadow: 0 18px 40px rgba(49,33,16,0.08);
+      --radius-lg: 24px; --radius-md: 18px; --radius-sm: 12px; --page-width: 1040px;
+      --display-font: Georgia, "Times New Roman", serif;
+      --body-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono-font: "Cascadia Code", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--ink);
+      background: radial-gradient(circle at top left, rgba(157,107,55,0.09), transparent 26%),
+                  radial-gradient(circle at 88% 10%, rgba(59,111,118,0.08), transparent 22%),
+                  linear-gradient(180deg, #f7f1e7 0%, #fbf7f1 28%, #f6efe5 100%);
+      font-family: var(--body-font); line-height: 1.65; letter-spacing: 0.01em; }
+    a { color: var(--accent-2); }
+    code, pre, .meta-chip, .section-index, .eyebrow, .stat-label, .stat-value, .mermaid { font-family: var(--mono-font); }
+    .page-shell { width: min(var(--page-width), calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .hero { padding: 34px; border: 1px solid rgba(159,123,79,0.28); border-radius: 30px;
+      background: linear-gradient(135deg, rgba(157,107,55,0.1), transparent 34%),
+                  linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.86)), var(--paper-strong);
+      box-shadow: var(--shadow); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(260px,0.85fr); gap: 24px; align-items: end; }
+    .eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+    .title { margin: 0; max-width: 14ch; font-family: var(--display-font); font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 0.95; letter-spacing: -0.04em; text-wrap: balance; }
+    .lede { margin: 18px 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1rem; }
+    .takeaway { margin-top: 22px; padding: 18px 20px; border-left: 4px solid var(--accent-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: rgba(59,111,118,0.08); color: #20373a; font-size: 1.02rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card, .section, .subcard { border: 1px solid rgba(95,72,46,0.12); background: rgba(255,253,249,0.88); box-shadow: var(--shadow); }
+    .meta-card { padding: 16px 18px; border-radius: var(--radius-md); }
+    .meta-label { color: var(--ink-soft); font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .meta-chip { margin-top: 8px; color: var(--accent); font-size: 1rem; font-weight: 700; word-break: break-word; }
+    .section { margin-top: 22px; padding: 24px; border-radius: var(--radius-lg); break-inside: avoid; page-break-inside: avoid; }
+    .section-header { display: flex; justify-content: space-between; gap: 12px 18px; align-items: end; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .section-index { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+    .section-title { margin: 0; font-family: var(--display-font); font-size: clamp(1.45rem, 2vw, 2rem); line-height: 1.05; }
+    .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { display: grid; gap: 16px; }
+    .summary-grid, .dual-grid, .phase-grid, .appendix-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .subcard { padding: 18px; border-radius: var(--radius-md); break-inside: avoid; page-break-inside: avoid; }
+    .subcard h3 { margin: 0 0 10px; font-size: 1rem; line-height: 1.2; }
+    .subcard p:first-child, .subcard ul:first-child { margin-top: 0; }
+    .stat-grid { grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 16px; }
+    .stat { padding: 14px 16px; border: 1px solid rgba(59,111,118,0.16); border-radius: var(--radius-sm); background: rgba(59,111,118,0.06); break-inside: avoid; page-break-inside: avoid; }
+    .stat-label { color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .stat-value { margin-top: 8px; color: var(--accent-2); font-size: 1.18rem; font-weight: 700; }
+    .narrative, .diagram-frame { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,0.54); break-inside: avoid; page-break-inside: avoid; }
+    .diagram-frame { overflow: auto; max-height: min(70vh, 720px); }
+    .mermaid { width: 100%; max-width: 100%; min-width: 0; color: var(--ink); }
+    .mermaid svg { display: block; min-width: 100%; height: auto !important; }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    p:last-child, li:last-child { margin-bottom: 0; }
+    .footer-note { margin-top: 18px; color: rgba(95,86,76,0.74); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; }
+    @media (max-width: 920px) { .hero-grid, .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { grid-template-columns: 1fr; } .title { max-width: none; } }
+    @media print {
+      :root { --paper: #fff; --paper-strong: #fff; --ink: #111; --ink-soft: #444; --line: #d6d1c8; }
+      @page { size: A4; margin: 14mm; }
+      body { background: #fff; }
+      .page-shell { width: 100%; max-width: none; padding: 0; }
+      .hero, .meta-card, .section, .subcard, .narrative, .diagram-frame, .stat { background: #fff; box-shadow: none; }
+      .hero, .section { margin-top: 0; margin-bottom: 10mm; }
+      .diagram-frame { overflow: visible; max-height: none; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" id="title-hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Final Report / Renderer Fix</p>
+          <h1 class="title">Balconies Render Open Now</h1>
+          <p class="lede">
+            Every balcony and terrace in this pipeline was rendering as a sealed box — a full-height
+            wall on its open edge with a railing bolted on top. The wall is now removed and the railing
+            is all that remains, so the front facades finally show the glazing that was always in the model.
+          </p>
+          <div class="takeaway">
+            One root-cause fix: the compiled model now records which room owns each exterior wall, and the
+            Blender builder no longer erects a full wall on a balcony's own open edge. Both shipped
+            galleries were rebuilt and republished with open, railed balconies.
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="meta-label">Project</div><div class="meta-chip">homedesign — tube house</div></div>
+          <div class="meta-card"><div class="meta-label">Repository</div><div class="meta-chip">freecad-blender</div></div>
+          <div class="meta-card"><div class="meta-label">Date</div><div class="meta-chip">2026-08-14</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="executive-summary">
+      <div class="section-header"><div><div class="section-index">01 / Executive Summary</div><h2 class="section-title">Executive Summary</h2></div></div>
+      <div class="summary-grid">
+        <div class="subcard"><h3>The defect</h3><p>The render-vs-drawing comparison flagged two departures: the front facade showed no glazing
+        on any storey, and balconies/terraces rendered as sealed rooms. Both traced to one cause — the
+        Blender scene builder built a full-height wall on every balcony edge, and the auto-parapet only
+        added a railing on top of that wall.</p></div>
+        <div class="subcard"><h3>The fix</h3><p>The compiled model now tags each exterior wall with the single room it belongs to
+        (<code>Wall.room_id</code>), and the builder skips any wall owned by a <code>balcony</code> room
+        that carries no opening. The existing parapet code then rails exactly those edges. No spec, no
+        check-registry, and no 2D-plan behaviour changed.</p></div>
+        <div class="subcard"><h3>Headline result</h3><p>Both real designs rebuilt at <code>final</code> quality on legacy EEVEE and republished —
+        <code>contractor-as-drawn</code> (12 views) and <code>tubehouse-dream</code> (9 views). All renders
+        fresh and neutral (no red corruption). Tests went 131 → 134, all passing.</p></div>
+        <div class="subcard"><h3>The honest caveat</h3><p>The fix is verified geometrically (each balcony owns exactly its open edges, and none of those
+        edges carries an opening), not by a pixel test — the Blender side isn't importable under pytest,
+        and this environment cannot display rendered images. The verification is the build completing
+        cleanly plus the ownership/parapet correspondence check.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="background-objective">
+      <div class="section-header"><div><div class="section-index">02 / Background &amp; Objective</div><h2 class="section-title">Background &amp; Objective</h2></div></div>
+      <div class="narrative">
+        <p>A render-vs-drawing comparison of the contractor's scheme produced findings 05 and 06: the front
+        facade has no visible glazing, and every <code>ban_công</code> / <code>sân thượng</code> zone renders
+        as a closed room. Reading <code>build_scene.py</code> confirmed the cause — <code>build_walls()</code>
+        constructs every wall in the compiled model unconditionally, and <code>_add_balcony_parapets()</code>
+        adds its 1100mm railing alongside that wall rather than in place of it. The objective was to fix the
+        root cause (not paper over it per-design), apply it to both shipped designs, and republish their
+        galleries so the balconies read as open, railed terraces.</p>
+      </div>
+    </section>
+
+    <section class="section" id="inputs-scope">
+      <div class="section-header"><div><div class="section-index">03 / Inputs &amp; Scope</div><h2 class="section-title">Inputs &amp; Scope</h2></div></div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>In scope</h3><ul>
+          <li>Give derived exterior walls an owning <code>room_id</code> (compiler + <code>Wall</code> dataclass).</li>
+          <li>Suppress the full wall on a balcony's open edges in the Blender builder.</li>
+          <li>Rebuild + republish <code>deliverables/contractor-as-drawn/</code> and <code>deliverables/tubehouse-dream/</code>.</li>
+          <li>Mark fidelity findings (e) and (f) resolved.</li>
+        </ul></div>
+        <div class="subcard"><h3>Out of scope</h3><ul>
+          <li>A kerb/upstand on balcony edges (the 1100mm parapet is sufficient edge protection).</li>
+          <li>Changing <code>railings.build_parapet</code> geometry or height.</li>
+          <li>Any <code>checks.py</code> change — the compiled model still contains every wall entry.</li>
+          <li>The stair depth, elevator inference and mezzanine-void gaps (separate findings).</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="assumptions-constraints">
+      <div class="section-header"><div><div class="section-index">04 / Assumptions &amp; Constraints</div><h2 class="section-title">Assumptions &amp; Constraints</h2></div></div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>Assumptions</h3><ul>
+          <li>No spec authors an opening on a balcony's own free edge; both real designs put doors/windows on the shared partition wall. The suppression check still guards this (condition 3) so a future design loses nothing.</li>
+          <li>A <code>partition</code> wall never needs an owner — suppression only ever applies to a balcony's own free edge, which is by construction an <code>exterior</code> wall.</li>
+        </ul></div>
+        <div class="subcard"><h3>Constraints</h3><ul>
+          <li>Renders must run on Blender 4.1 legacy EEVEE (EEVEE Next renders blood-red on this iGPU).</li>
+          <li><code>build_scene.py</code> imports <code>bpy</code> and is not pytest-testable — verification is a real build plus geometric checks.</li>
+          <li><code>Wall</code> is a dataclass round-tripped by <code>asdict()</code>/<code>Wall(**w)</code>; the new field is default-valued so old cached <code>.model.json</code> files still load.</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="methodology">
+      <div class="section-header"><div><div class="section-index">05 / Methodology</div><h2 class="section-title">Methodology</h2></div></div>
+      <div class="narrative">
+        <p>The fix was made at the model schema rather than by recomputing adjacency inside the Blender
+        script. <code>_derive_walls()</code> already computes, then discards, the exact set of room ids
+        (<code>covering</code>) that produced each wall segment; one field (<code>room_id</code>) captures
+        it instead. The builder then applies a three-condition suppression rule — the wall is skipped only
+        when it has an owner, that owner is a <code>balcony</code> room, and the wall carries no opening —
+        and <code>_add_balcony_parapets()</code> continues to rail the same edges via <code>open_edges()</code>.
+        Verification pairs a full <code>homedesign build</code> with a correspondence check that, for every
+        balcony in both designs, the walls it owns equal its open edges and none of those walls carries an
+        opening.</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Tests</div><div class="stat-value">134 passed</div></div>
+        <div class="stat"><div class="stat-label">Balcony walls suppressed</div><div class="stat-value">18 (6 × 3)</div></div>
+        <div class="stat"><div class="stat-label">Galleries rebuilt</div><div class="stat-value">2 (21 views)</div></div>
+        <div class="stat"><div class="stat-label">Openings lost</div><div class="stat-value">0</div></div>
+        <div class="stat"><div class="stat-label">Render engine</div><div class="stat-value">legacy EEVEE</div></div>
+        <div class="stat"><div class="stat-label">Ruff</div><div class="stat-value">clean</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="phase-analysis">
+      <div class="section-header"><div><div class="section-index">06 / Phase-by-Phase Analysis</div><h2 class="section-title">Phase-by-Phase Analysis</h2></div></div>
+      <div class="phase-grid">
+        <div class="subcard"><h3>1 · Model ownership</h3><p>Added <code>Wall.room_id</code> and populated it during wall derivation; three tests lock in
+        the invariant (exterior walls carry their room, partitions carry <code>None</code>, and no wall
+        references a nonexistent room).</p></div>
+        <div class="subcard"><h3>2 · Renderer suppression</h3><p><code>build_walls()</code> now skips a balcony's own open edges; the parapet code rails exactly
+        those edges. A preview build confirmed no traceback, and the correspondence check confirmed no
+        wall-with-opening is ever skipped.</p></div>
+        <div class="subcard"><h3>3 · Rebuild &amp; republish</h3><p>Both galleries rebuilt at <code>final</code> quality, freshness and colour verified, deliverables
+        republished, and the fidelity ledger updated to mark findings (e) and (f) resolved.</p></div>
+      </div>
+      <div class="diagram-frame" style="margin-top:16px">
+        <pre class="mermaid">
+flowchart LR
+  A["_derive_walls<br/>(already knows `covering`)"] --> B["Wall.room_id = covering[0]<br/>for exterior walls"]
+  B --> C["build_walls(): skip wall if<br/>room_id is a balcony & no opening"]
+  C --> D["_add_balcony_parapets()<br/>rails the same open_edges"]
+  D --> E["open, railed balcony<br/>glazing visible from facade"]
+        </pre>
+      </div>
+    </section>
+
+    <section class="section" id="findings-recommendation">
+      <div class="section-header"><div><div class="section-index">07 / Findings &amp; Recommendation</div><h2 class="section-title">Findings &amp; Recommendation</h2></div></div>
+      <div class="narrative">
+        <h3>Finding</h3>
+        <p>Balconies and terraces rendered as sealed volumes, and the front facade showed no glazing, because
+        a full-height wall was built on every balcony edge with a railing added on top. This affected every
+        design in the repo with a balcony, not just the contractor scheme.</p>
+        <h3>Resolution</h3>
+        <p>Exterior walls now know their owning room, and the builder no longer builds a wall on a balcony's
+        own open edge — the parapet is the only element there. The shared partition wall (which carries the
+        door and window that make the balcony reachable and daylit) is untouched, so the bedroom-to-balcony
+        glazing is now visible from outside.</p>
+        <h3>Recommendation</h3>
+        <p>Ship the republished galleries. Keep the deferred refinement — a short kerb/upstand under the
+        railing — on the backlog for when a review decides the fully-open edge reads wrong; it needs a drawn
+        dimension to source its height from, which neither design provides today.</p>
+      </div>
+    </section>
+
+    <section class="section" id="implementation-path">
+      <div class="section-header"><div><div class="section-index">08 / Implementation Path</div><h2 class="section-title">Implementation Path</h2></div></div>
+      <div class="phase-grid">
+        <div class="subcard"><h3>Done this plan</h3><ul>
+          <li><code>Wall.room_id</code> + the <code>build_walls()</code> suppression check (committed).</li>
+          <li>Both galleries rebuilt and republished.</li>
+          <li>Fidelity findings (e) and (f) marked resolved.</li>
+        </ul></div>
+        <div class="subcard"><h3>Deferred</h3><ul>
+          <li>Balcony kerb/upstand (needs a drawn dimension).</li>
+          <li>Schema work for the skewed site, glazed rooflight, and multi-storey voids.</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="risks-open-questions">
+      <div class="section-header"><div><div class="section-index">09 / Risks / Open Questions</div><h2 class="section-title">Risks / Open Questions</h2></div></div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>Risks</h3><ul>
+          <li>A full-width front balcony also drops its west/east party-wall edges (they are "open" in the
+          model's terms). Accepted for now; a kerb or a party-wall-aware distinction is the future refinement.</li>
+          <li>A future design that authors an opening on a balcony's free edge would silently keep that wall —
+          the suppression rule's condition 3 preserves the opening at the cost of that one edge.</li>
+        </ul></div>
+        <div class="subcard"><h3>Open questions</h3><ul>
+          <li>Does a front balcony in this typology read better with side walls (party) and only a front rail?</li>
+          <li>Is a kerb under the railing warranted for realism in a future pass?</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="appendices-evidence">
+      <div class="section-header"><div><div class="section-index">10 / Appendices / Evidence Notes</div><h2 class="section-title">Appendices / Evidence Notes</h2></div></div>
+      <div class="appendix-grid">
+        <div class="subcard"><h3>Verification</h3><ul>
+          <li><code>python -m pytest tests -q</code> → 134 passed.</li>
+          <li><code>ruff check src tests</code> → clean; <code>sync_skill --check</code> → ok.</li>
+          <li>Freshness: contractor-as-drawn <code>3e5043383bd1</code> / tubehouse-dream <code>e78abed86072</code>, zero stale sidecars.</li>
+          <li>No red render (exterior_front centre pixels sampled neutral).</li>
+          <li>Correspondence check: for every balcony, owned walls == <code>open_edges()</code>, none carrying an opening.</li>
+        </ul></div>
+        <div class="subcard"><h3>Files changed</h3><ul>
+          <li><code>src/homedesign/model.py</code> — <code>Wall.room_id</code>.</li>
+          <li><code>src/homedesign/compiler.py</code> — populate <code>room_id</code>.</li>
+          <li><code>src/homedesign/blender/build_scene.py</code> — wall suppression.</li>
+          <li><code>tests/test_compiler.py</code> — three new tests.</li>
+          <li><code>deliverables/{contractor-as-drawn,tubehouse-dream}/</code> — republished.</li>
+          <li><code>designs/contractor-as-drawn.fidelity.md</code> — (e)/(f) resolved.</li>
+        </ul></div>
+        <div class="subcard"><h3>Glossary</h3><ul>
+          <li><strong>ban công / sân thượng</strong> — balcony / roof terrace.</li>
+          <li><strong>open_edges</strong> — the room edges not shared with another room, where the parapet goes.</li>
+          <li><strong>legacy EEVEE</strong> — the only working render path on this machine's iGPU.</li>
+        </ul></div>
+      </div>
+      <div class="footer-note">designed for html first, printable without reconstruction</div>
+    </section>
+  </main>
+</body>
+</html>

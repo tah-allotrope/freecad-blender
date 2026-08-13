@@ -4,7 +4,25 @@
 - **Workspace:** `freecad-blender`
 - **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (legacy EEVEE/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
-## Current Task Plan (plans/2026-08-13-contractor-scheme-3d-render-plan.md)
+## Current Task Plan (plans/2026-08-14-balcony-parapet-render-fix-plan.md)
+
+Completed in full. Summary:
+
+**Balconies now render open, not as sealed boxes.** The render-vs-drawing
+comparison (`reports/2026-08-14-contractor-render-vs-drawing.html`, findings 05
+and 06) showed every `balcony`-typed room compiling and rendering with a
+full-height wall on its open edge — `build_scene.build_walls()` built every wall
+unconditionally and `_add_balcony_parapets()` only added a 1100mm railing on top.
+Fixed at the root: `Wall` gained an owning `room_id` (populated in
+`_derive_walls` for `exterior` walls, `None` for partitions), and `build_walls()`
+now skips any exterior wall whose `room_id` is a `balcony`-typed room that
+carries no opening. Verified geometrically that the set of balcony-owned walls
+equals `open_edges()` (the parapet edges) for every balcony in both real designs,
+with zero openings lost. Both `tubehouse-dream` and `contractor-as-drawn`
+galleries rebuilt at `final` quality and republished; `fidelity.md` findings (e)
+and (f) marked resolved. Tests: **134 passed** (131 + 3 new in `test_compiler.py`).
+
+## Prior Task Plan (plans/2026-08-13-contractor-scheme-3d-render-plan.md)
 
 Completed in full. Summary:
 
