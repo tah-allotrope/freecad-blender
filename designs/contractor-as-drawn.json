@@ -1,0 +1,1543 @@
+{
+  "meta": {
+    "name": "contractor-as-drawn",
+    "style": "modern-minimal",
+    "views": [
+      {
+        "name": "exterior_front",
+        "kind": "exterior_front"
+      },
+      {
+        "name": "exterior_aerial",
+        "kind": "exterior_aerial"
+      },
+      {
+        "name": "gara",
+        "kind": "room",
+        "room_id": "gara"
+      },
+      {
+        "name": "lung",
+        "kind": "room",
+        "room_id": "sinh_hoat"
+      },
+      {
+        "name": "khach",
+        "kind": "room",
+        "room_id": "khach"
+      },
+      {
+        "name": "bep_an",
+        "kind": "room",
+        "room_id": "bep_an"
+      },
+      {
+        "name": "ngu_chinh",
+        "kind": "room",
+        "room_id": "ngu_chinh_f3"
+      },
+      {
+        "name": "ngu_2",
+        "kind": "room",
+        "room_id": "ngu_2_f3"
+      },
+      {
+        "name": "sinh_hoat",
+        "kind": "room",
+        "room_id": "sinh_hoat_rear"
+      },
+      {
+        "name": "tho",
+        "kind": "room",
+        "room_id": "tho_f5"
+      },
+      {
+        "name": "gieng_troi",
+        "kind": "room",
+        "room_id": "hall_rear"
+      },
+      {
+        "name": "san_thuong",
+        "kind": "room",
+        "room_id": "san_thuong"
+      }
+    ]
+  },
+  "site": {
+    "plot_width_mm": 3960,
+    "plot_depth_mm": 25000,
+    "wall_alignment": "inside",
+    "context": {
+      "neighbours": true,
+      "street_depth_mm": 6000
+    }
+  },
+  "storeys": [
+    {
+      "level": 0,
+      "name": "Ground",
+      "height_mm": 3800,
+      "rooms": [
+        {
+          "id": "gara",
+          "type": "garage",
+          "name": "NƠI ĐỂ XE",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "khach",
+          "type": "living",
+          "name": "P.KHÁCH",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_gf",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_gf",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "bep_an",
+          "type": "kitchen",
+          "name": "BẾP & ĂN",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "gara",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "gara",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "offset_mm": 780
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "khach",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "khach",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "khach",
+            "wc_gf"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "khach",
+            "kho_gf"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "bep_an",
+            "wc_gf"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "bep_an",
+            "kho_gf"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "bep_an",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 1,
+      "name": "Mezzanine",
+      "height_mm": 3200,
+      "rooms": [
+        {
+          "id": "sinh_hoat",
+          "type": "living",
+          "name": "P.SINH HOẠT",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "sinh_hoat_rear",
+          "type": "living",
+          "name": "P.SINH HOẠT",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_lung",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_lung",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "ngu_lung",
+          "type": "bedroom",
+          "name": "P.NGỦ",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "sinh_hoat",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "sinh_hoat",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "sinh_hoat_rear",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "sinh_hoat_rear",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "sinh_hoat_rear",
+            "wc_lung"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "sinh_hoat_rear",
+            "kho_lung"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_lung",
+            "wc_lung"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_lung",
+            "kho_lung"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_lung",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up_and_down",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 2,
+      "name": "Floor 2",
+      "height_mm": 3400,
+      "rooms": [
+        {
+          "id": "ngu_chinh_f2",
+          "type": "bedroom",
+          "name": "P.NGỦ CHÍNH",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "ngu_2_f2",
+          "type": "bedroom",
+          "name": "P.NGỦ 2",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_f2",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_f2",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "ngu_3_f2",
+          "type": "bedroom",
+          "name": "P.NGỦ 3",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "ngu_chinh_f2",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_chinh_f2",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f2",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_2_f2",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f2",
+            "wc_f2"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f2",
+            "kho_f2"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f2",
+            "wc_f2"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f2",
+            "kho_f2"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_3_f2",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up_and_down",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 3,
+      "name": "Floor 3",
+      "height_mm": 3400,
+      "rooms": [
+        {
+          "id": "ngu_chinh_f3",
+          "type": "bedroom",
+          "name": "P.NGỦ CHÍNH",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "ngu_2_f3",
+          "type": "bedroom",
+          "name": "P.NGỦ 2",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_f3",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_f3",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "ngu_3_f3",
+          "type": "bedroom",
+          "name": "P.NGỦ 3",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "ngu_chinh_f3",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_chinh_f3",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f3",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_2_f3",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f3",
+            "wc_f3"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f3",
+            "kho_f3"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f3",
+            "wc_f3"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f3",
+            "kho_f3"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_3_f3",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up_and_down",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 4,
+      "name": "Floor 4",
+      "height_mm": 3400,
+      "rooms": [
+        {
+          "id": "ngu_chinh_f4",
+          "type": "bedroom",
+          "name": "P.NGỦ CHÍNH",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "ngu_2_f4",
+          "type": "bedroom",
+          "name": "P.NGỦ 2",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_f4",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_f4",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "ngu_3_f4",
+          "type": "bedroom",
+          "name": "P.NGỦ 3",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "ngu_chinh_f4",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_chinh_f4",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f4",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_2_f4",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f4",
+            "wc_f4"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f4",
+            "kho_f4"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f4",
+            "wc_f4"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f4",
+            "kho_f4"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_3_f4",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up_and_down",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 5,
+      "name": "Floor 5",
+      "height_mm": 3400,
+      "rooms": [
+        {
+          "id": "tho_f5",
+          "type": "living",
+          "name": "P.THỜ",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "ngu_2_f5",
+          "type": "bedroom",
+          "name": "P.NGỦ 2",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 3960,
+            "d": 6800
+          }
+        },
+        {
+          "id": "wc_f5",
+          "type": "bathroom",
+          "name": "WC",
+          "rect": {
+            "x": 0,
+            "y": 18400,
+            "w": 2000,
+            "d": 1800
+          }
+        },
+        {
+          "id": "kho_f5",
+          "type": "storage",
+          "name": "KHO",
+          "rect": {
+            "x": 2000,
+            "y": 18400,
+            "w": 1960,
+            "d": 1800
+          }
+        },
+        {
+          "id": "ngu_3_f5",
+          "type": "bedroom",
+          "name": "P.NGỦ 3",
+          "rect": {
+            "x": 0,
+            "y": 20200,
+            "w": 3960,
+            "d": 2800
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "tho_f5",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "tho_f5",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 2400,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f5",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_2_f5",
+            "exterior"
+          ],
+          "side": "north",
+          "width_mm": 900,
+          "sill_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f5",
+            "wc_f5"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_2_f5",
+            "kho_f5"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f5",
+            "wc_f5"
+          ],
+          "width_mm": 800
+        },
+        {
+          "type": "door",
+          "between": [
+            "ngu_3_f5",
+            "kho_f5"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "window",
+          "between": [
+            "ngu_3_f5",
+            "exterior"
+          ],
+          "side": "south",
+          "width_mm": 2000,
+          "sill_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "up_and_down",
+        "mode": "u_return"
+      }
+    },
+    {
+      "level": 6,
+      "name": "Roof Terrace",
+      "height_mm": 3200,
+      "rooms": [
+        {
+          "id": "san_thuong",
+          "type": "balcony",
+          "name": "SÂN THƯỢNG",
+          "rect": {
+            "x": 0,
+            "y": 3000,
+            "w": 3960,
+            "d": 3000
+          }
+        },
+        {
+          "id": "stairwell",
+          "type": "stairwell",
+          "name": "THANG",
+          "rect": {
+            "x": 0,
+            "y": 6000,
+            "w": 3005,
+            "d": 4000
+          }
+        },
+        {
+          "id": "hall",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 3005,
+            "y": 6000,
+            "w": 955,
+            "d": 4000
+          }
+        },
+        {
+          "id": "elevator",
+          "type": "elevator",
+          "name": "THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 10000,
+            "w": 1500,
+            "d": 1600
+          }
+        },
+        {
+          "id": "hall_rear",
+          "type": "hall",
+          "name": "HÀNH LANG",
+          "rect": {
+            "x": 1500,
+            "y": 10000,
+            "w": 1300,
+            "d": 1600
+          }
+        },
+        {
+          "id": "oki_thuat",
+          "type": "storage",
+          "name": "Ô KỸ THUẬT THANG MÁY",
+          "rect": {
+            "x": 0,
+            "y": 11600,
+            "w": 2000,
+            "d": 1900
+          }
+        },
+        {
+          "id": "san_thuong_mid",
+          "type": "balcony",
+          "name": "SÂN THƯỢNG",
+          "rect": {
+            "x": 2000,
+            "y": 11600,
+            "w": 1960,
+            "d": 1900
+          }
+        },
+        {
+          "id": "san_thuong_rear",
+          "type": "balcony",
+          "name": "SÂN THƯỢNG",
+          "rect": {
+            "x": 0,
+            "y": 13500,
+            "w": 3960,
+            "d": 9500
+          }
+        }
+      ],
+      "openings": [
+        {
+          "type": "door",
+          "between": [
+            "san_thuong",
+            "hall"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall",
+            "stairwell"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "stairwell",
+            "hall_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "hall_rear",
+            "elevator"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "san_thuong_mid",
+            "hall_rear"
+          ],
+          "width_mm": 700
+        },
+        {
+          "type": "door",
+          "between": [
+            "oki_thuat",
+            "san_thuong_rear"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
+            "san_thuong_mid",
+            "san_thuong_rear"
+          ],
+          "width_mm": 900
+        }
+      ],
+      "stairs": {
+        "room": "stairwell",
+        "direction": "down",
+        "mode": "none"
+      },
+      "roof": {
+        "type": "flat",
+        "overhang_mm": 300,
+        "rect": {
+          "x": 0,
+          "y": 3000,
+          "w": 3960,
+          "d": 20000
+        },
+        "voids": [
+          {
+            "x": 2800,
+            "y": 10000,
+            "w": 1160,
+            "d": 1600
+          }
+        ]
+      }
+    }
+  ]
+}

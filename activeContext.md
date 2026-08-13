@@ -4,7 +4,33 @@
 - **Workspace:** `freecad-blender`
 - **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (legacy EEVEE/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
-## Current Task Plan (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md)
+## Current Task Plan (plans/2026-08-13-contractor-scheme-3d-render-plan.md)
+
+Completed in full. Summary:
+
+**3D render of the contractor's as-drawn scheme.** The five text-less PDFs under
+`contractor/` were reconstructed (via the measured review + the plan's binding
+defaults, documented in `designs/contractor-as-drawn.measurements.md`) into
+`designs/contractor-as-drawn.json` — a seven-storey (trệt / lửng / tầng 2–5 /
+sân thượng), 3960 × 25000 mm tube house with the drawn core (3005 mm U-return
+stair, 1500 × 1600 lift, light well) repeated identically on every level. The
+spec compiles clean (0 schema errors, 0 check items at all) and is covered by two
+new tests in `tests/test_validate.py`. A 12-view `final` legacy-EEVEE gallery,
+a 1.12 MiB GLB and a self-contained viewer are published to
+`deliverables/contractor-as-drawn/`. Every departure from the drawing — the
+skewed boundaries, the glazed light-well cap, the winder treads, the enlarged
+stair shaft, the plant room, and the decorative (not solar) shadows — is ledgered
+in `designs/contractor-as-drawn.fidelity.md`.
+
+**Necessary deviation from the plan's "no src changes":** compiling a spec whose
+room names carry Vietnamese diacritics exposed a latent Windows encoding bug —
+`__main__._load_spec`/`_write_model_json`, the `plan2d`/`elevation` SVG writers,
+and `model`'s render-sidecar helpers read/wrote text with the locale default
+(CP1252), mangling or rejecting UTF-8. Fixed by pinning `encoding="utf-8"` at
+those sites (no logic changed). `tests/test_camera_placement.py`'s
+`_model_of` got the same one-line fix so the design sweep loads the spec.
+
+## Prior Task Plan (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md)
 
 Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
 
@@ -16,6 +42,30 @@ Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
 **PHASE-06 Provenance & hygiene:** `model_hash` (SHA-256, 12 hex) stamped into compiled models and every render sidecar; `pdf` warns/stamps `STALE` on stale galleries and `--require-fresh` makes them hard errors; glTF export + self-contained offline viewer (`output/viewer/<name>.html`, three.js inlined, GLB embedded); `src/ifc_export_utils.py` deleted; `[project.scripts]` console script; AGENTS.md/README/SKILL.md accuracy pass; superseded FreeCAD workflow doc archived; dead code removed; `deliverables/` introduced and the flagship finals committed.
 
 ## Review
+
+### 2026-08-13 — Contractor as-drawn render (plans/2026-08-13-contractor-scheme-3d-render-plan.md, all phases done)
+
+**Render wall-clock:** `blender build: 1450.6s` (~24.2 min) for the 12-view
+`final` gallery + scene build + glTF export — inside the 25-minute budget, and
+~2× the 9-view `tubehouse-dream` set as expected for 40% more geometry.
+**GLB:** 1 179 312 bytes → inlines in the viewer (ASM-007 does not apply).
+**Provenance:** all 12 sidecars match `bb284a0b6ca5`. **No red render** (EEVEE
+Next never ran).
+
+**What had to be inferred (and is ledgered, not hidden):** the environment has no
+image-input capability and the sheets have no text layer, so the printed glyphs
+could not be re-read this pass. Dimensions come from the measured
+`reports/2026-08-12-contractor-drawing-set-review.html` (calibrated K = 43.0 mm/pt)
+cross-checked against the plan's binding defaults; per-room subdivision within the
+measured envelope is `(inferred)` and flagged as such in the measurements file.
+The plan's own 12-view table placed `khach`/`bep_an` on "level 2" and `sinh_hoat`
+on "level 4"; the measured review places living+kitchen on the ground floor and
+the family room on the lửng, so the model follows the **measured** programme and
+the view mapping is reconciled in the fidelity ledger.
+
+**Stair shaft enlarged** (RISK-02-01, as predicted): the drawn 3005 × 3200 shaft
+cannot hold a Blondel U-return at a 3800 mm storey (S-2 needs 3998 mm run); the
+shaft is enlarged to 3005 × 4000 and flagged as a candidate review finding.
 
 ### 2026-08-08 — Render engine reverted to legacy EEVEE (supersedes ASM-002 / PHASE-02)
 

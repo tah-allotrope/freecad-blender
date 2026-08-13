@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Final Report :: The Contractor's Scheme, in 3D</title>
+  <meta name="color-scheme" content="dark light">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    async function initMermaid() {
+      const blocks = document.querySelectorAll('.mermaid');
+      if (!blocks.length) { return; }
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        securityLevel: 'loose',
+        themeVariables: {
+          primaryColor: '#f3ead9', primaryTextColor: '#1f1912', primaryBorderColor: '#9d6b37',
+          lineColor: '#3b6f76', secondaryColor: '#efe4d0', tertiaryColor: '#ffffff',
+          background: '#fbf7f1', mainBkg: '#fbf7f1', nodeBorder: '#9d6b37',
+          clusterBkg: '#f7efdf', clusterBorder: '#3b6f76', edgeLabelBackground: '#fbf7f1'
+        }
+      });
+      await mermaid.run({ nodes: blocks });
+    }
+    const run = () => initMermaid().catch((error) => console.error('Mermaid render failed', error));
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run, { once: true }); }
+    else { run(); }
+  </script>
+  <style>
+    :root {
+      --paper: #fbf7f1; --paper-strong: #fffdf9; --ink: #1f1912; --ink-soft: #5f564c;
+      --line: #dccdb6; --line-strong: #bfa37d; --accent: #9d6b37; --accent-soft: #efe4d0;
+      --accent-2: #3b6f76; --shadow: 0 18px 40px rgba(49, 33, 16, 0.08);
+      --radius-lg: 24px; --radius-md: 18px; --radius-sm: 12px; --page-width: 1040px;
+      --display-font: Georgia, "Times New Roman", serif;
+      --body-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono-font: "Cascadia Code", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--ink);
+      background: radial-gradient(circle at top left, rgba(157,107,55,0.09), transparent 26%),
+                  radial-gradient(circle at 88% 10%, rgba(59,111,118,0.08), transparent 22%),
+                  linear-gradient(180deg, #f7f1e7 0%, #fbf7f1 28%, #f6efe5 100%);
+      font-family: var(--body-font); line-height: 1.65; letter-spacing: 0.01em;
+    }
+    a { color: var(--accent-2); }
+    code, pre, .technical, .meta-chip, .section-index, .eyebrow, .stat-label, .stat-value, .mermaid { font-family: var(--mono-font); }
+    .page-shell { width: min(var(--page-width), calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .hero {
+      padding: 34px; border: 1px solid rgba(159,123,79,0.28); border-radius: 30px;
+      background: linear-gradient(135deg, rgba(157,107,55,0.1), transparent 34%),
+                  linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.86)), var(--paper-strong);
+      box-shadow: var(--shadow);
+    }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr); gap: 24px; align-items: end; }
+    .eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+    .title { margin: 0; max-width: 12ch; font-family: var(--display-font); font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 0.95; letter-spacing: -0.04em; text-wrap: balance; }
+    .lede { margin: 18px 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1rem; }
+    .takeaway { margin-top: 22px; padding: 18px 20px; border-left: 4px solid var(--accent-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: rgba(59,111,118,0.08); color: #20373a; font-size: 1.02rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card, .section, .subcard, .empty-state { border: 1px solid rgba(95,72,46,0.12); background: rgba(255,253,249,0.88); box-shadow: var(--shadow); }
+    .meta-card { padding: 16px 18px; border-radius: var(--radius-md); }
+    .meta-label { color: var(--ink-soft); font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .meta-chip { margin-top: 8px; color: var(--accent); font-size: 1rem; font-weight: 700; word-break: break-word; }
+    .section { margin-top: 22px; padding: 24px; border-radius: var(--radius-lg); break-inside: avoid; page-break-inside: avoid; }
+    .section-header { display: flex; justify-content: space-between; gap: 12px 18px; align-items: end; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .section-index { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+    .section-title { margin: 0; font-family: var(--display-font); font-size: clamp(1.45rem, 2vw, 2rem); line-height: 1.05; }
+    .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { display: grid; gap: 16px; }
+    .summary-grid, .dual-grid, .phase-grid, .appendix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .subcard { padding: 18px; border-radius: var(--radius-md); break-inside: avoid; page-break-inside: avoid; }
+    .subcard h3, .subcard h4 { margin: 0 0 10px; font-size: 1rem; line-height: 1.2; }
+    .subcard p:first-child, .subcard ul:first-child, .subcard ol:first-child { margin-top: 0; }
+    .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px; }
+    .stat { padding: 14px 16px; border: 1px solid rgba(59,111,118,0.16); border-radius: var(--radius-sm); background: rgba(59,111,118,0.06); break-inside: avoid; page-break-inside: avoid; }
+    .stat-label { color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .stat-value { margin-top: 8px; color: var(--accent-2); font-size: 1.18rem; font-weight: 700; }
+    .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,0.54); break-inside: avoid; page-break-inside: avoid; }
+    .diagram-frame { overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; overscroll-behavior-y: contain; max-height: min(70vh, 720px); }
+    .chart-frame, .viz-frame { overflow: hidden; }
+    .mermaid { width: 100%; max-width: 100%; min-width: 0; color: var(--ink); }
+    .mermaid svg { display: block; width: auto !important; min-width: 100%; max-width: none !important; height: auto !important; }
+    .diagram-frame.compact-diagram { padding: 12px; max-height: min(62vh, 560px); }
+    .diagram-frame.compact-diagram .mermaid { min-width: 900px; }
+    .chart-frame canvas, .technical-frame > canvas, .viz-frame canvas, canvas.report-chart { display: block; width: 100% !important; max-width: 100%; height: 300px !important; min-height: 300px; max-height: 300px; }
+    .technical-frame table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .technical-frame th, .technical-frame td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .technical-frame th { color: var(--accent); font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .empty-state { padding: 20px; border-radius: var(--radius-md); text-align: center; color: var(--ink-soft); break-inside: avoid; page-break-inside: avoid; }
+    .empty-state strong { display: block; margin-bottom: 6px; color: var(--accent); font-size: 0.84rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    p:last-child, li:last-child { margin-bottom: 0; }
+    .footer-note { margin-top: 18px; color: rgba(95,86,76,0.74); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; }
+    @media (max-width: 920px) { .hero-grid, .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { grid-template-columns: 1fr; } .title { max-width: none; } }
+    @media (max-width: 640px) { .page-shell { width: min(100vw - 20px, var(--page-width)); padding-top: 16px; padding-bottom: 36px; } .hero, .section { padding: 18px; border-radius: 20px; } .title { font-size: clamp(2.1rem, 12vw, 3.2rem); } }
+    @media print {
+      :root { --paper: #ffffff; --paper-strong: #ffffff; --ink: #111111; --ink-soft: #444444; --line: #d6d1c8; }
+      @page { size: A4; margin: 14mm; }
+      body { background: #ffffff; }
+      .page-shell { width: 100%; max-width: none; padding: 0; }
+      .hero, .meta-card, .section, .subcard, .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame, .empty-state, .stat { background: #ffffff; box-shadow: none; }
+      .hero, .section { margin-top: 0; margin-bottom: 10mm; }
+      .diagram-frame { overflow: visible; max-height: none; }
+      .diagram-frame.compact-diagram .mermaid { min-width: 0; }
+      .section-header, .takeaway { break-after: avoid; page-break-after: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" id="title-hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Final Report / 3D Render of the As-Drawn Scheme</p>
+          <h1 class="title">The Contractor's Scheme, in 3D</h1>
+          <p class="lede">
+            A family-facing 3D model of the seven-level tube house the contractor actually drew —
+            built by the homedesign pipeline from the five issued PDF sheets, with every approximation
+            between drawing and model written down.
+          </p>
+          <div class="takeaway">
+            The contractor's building is now a validated, walkable 3D model: 7 storeys, a 12-view gallery,
+            an interactive viewer, and a ledger that says exactly where the model departs from the drawing —
+            so the renders can be shown as evidence, not as an impression.
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="meta-label">Project</div><div class="meta-chip">homedesign — tube house</div></div>
+          <div class="meta-card"><div class="meta-label">Repository</div><div class="meta-chip">freecad-blender</div></div>
+          <div class="meta-card"><div class="meta-label">Date</div><div class="meta-chip">2026-08-13</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="executive-summary">
+      <div class="section-header">
+        <div><div class="section-index">01 / Executive Summary</div><h2 class="section-title">Executive Summary</h2></div>
+      </div>
+      <div class="summary-grid">
+        <div class="subcard">
+          <h3>What was delivered</h3>
+          <p>Five text-less PDF sheets were turned into a compiled, check-passing building model
+          (<code>designs/contractor-as-drawn.json</code>), a 12-view final render gallery, a 1.12&nbsp;MiB
+          GLB, and a self-contained web viewer — published to <code>deliverables/contractor-as-drawn/</code>.</p>
+        </div>
+        <div class="subcard">
+          <h3>Why it matters</h3>
+          <p>The client family has so far seen only 2D sheets and a written review. This model depicts the
+          building the contractor actually drew — a single-family seven-level house, not the brief's
+          mixed-use five-level scheme — so the render carries evidentiary weight in the programme discussion
+          that the review's finding C-01 opened.</p>
+        </div>
+        <div class="subcard">
+          <h3>Headline result</h3>
+          <p>The model compiles clean — <strong>0 schema errors and 0 check items</strong> — and all 12
+          renders are neutral (no miscolour), proven fresh against the model hash. The 12-view final gallery
+          took 24.2 minutes on legacy EEVEE.</p>
+        </div>
+        <div class="subcard">
+          <h3>The honest caveat</h3>
+          <p>This execution environment cannot read the sheet glyphs (no image input, no text layer), so
+          dimensions trace to the already-measured review rather than a fresh read; per-room subdivision is
+          flagged <em>(inferred)</em>. Every departure from the drawing — skewed boundaries, glazed light-well
+          cap, winder treads, enlarged stair shaft, plant room — is ledgered, not hidden.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="background-objective">
+      <div class="section-header">
+        <div><div class="section-index">02 / Background &amp; Objective</div><h2 class="section-title">Background &amp; Objective</h2></div>
+      </div>
+      <div class="narrative">
+        <p>Five contractor sheets arrived in <code>contractor/</code> — plans for the ground + mezzanine,
+        floors 2–3–4, floor 5 + roof terrace, the roof + front elevation, and a single long section (A-A).
+        They were reviewed on 2026-08-12 into a 13-finding register, but that review is prose and 2D crops.
+        Nobody has seen the building the contractor actually drew, in three dimensions.</p>
+        <p>The objective was to encode that seven-level tube house (3.95 × 25 m, a ~7.2°-skewed plot, a
+        stair-and-lift core that stacks through seven plates, a light well capped with glass, and a rooftop
+        plant room) as a new spec that the homedesign pipeline can compile, check, render and export — and to
+        publish the result as a family-facing artifact with a sidecar ledger recording every place the model
+        departs from the sheet.</p>
+      </div>
+    </section>
+
+    <section class="section" id="inputs-scope">
+      <div class="section-header">
+        <div><div class="section-index">03 / Inputs &amp; Scope</div><h2 class="section-title">Inputs &amp; Scope</h2></div>
+      </div>
+      <div class="dual-grid">
+        <div class="subcard">
+          <h3>Inputs</h3>
+          <ul>
+            <li><code>contractor/</code> — five vector PDFs (no extractable text).</li>
+            <li><code>reports/2026-08-12-contractor-drawing-set-review.html</code> — the measured review (calibration K = 43.0 mm/pt).</li>
+            <li><code>spec/homespec.schema.json</code>, <code>designs/tubehouse-dream.json</code> — the contract and structural exemplar.</li>
+            <li><code>plans/2026-08-13-…plan.md</code> and the accompanying brainstorm/research briefs.</li>
+          </ul>
+        </div>
+        <div class="subcard">
+          <h3>In scope</h3>
+          <ul>
+            <li>A clean-compiling spec + its measurement and fidelity sidecars.</li>
+            <li>12-view final gallery, GLB, self-contained viewer.</li>
+            <li>Publication to <code>deliverables/contractor-as-drawn/</code>.</li>
+          </ul>
+        </div>
+        <div class="subcard">
+          <h3>Out of scope</h3>
+          <ul>
+            <li>Any schema / compiler / checks / Blender code change (one exception noted in §07).</li>
+            <li>The A3 PDF brief, a "brief-restored" variant, and re-rendering <code>tubehouse-dream</code>.</li>
+            <li>Setback, height or permit interpretation — that stays in the review report.</li>
+          </ul>
+        </div>
+        <div class="subcard">
+          <h3>Decisions</h3>
+          <ul>
+            <li>Model <strong>exactly as drawn</strong> — single-family, no lease floors.</li>
+            <li>Approximate inexpressible geometry within the schema; ledger every departure.</li>
+            <li>Legacy EEVEE only (the sole working render path on this machine).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="assumptions-constraints">
+      <div class="section-header">
+        <div><div class="section-index">04 / Assumptions &amp; Constraints</div><h2 class="section-title">Assumptions &amp; Constraints</h2></div>
+      </div>
+      <div class="dual-grid">
+        <div class="subcard">
+          <h3>Assumptions</h3>
+          <ul>
+            <li>Plot is the orthogonal collapse of the skewed rectangle: 3960 × 25000 mm; front yard 3000, rear yard 2000.</li>
+            <li>Seven storeys: trệt (3800) / lửng (3200) / tầng 2–5 (3400 ×4) / sân thượng (3200) — heights from the section tags.</li>
+            <li>The light well is expressed by omission (untiled footprint) with a roof void over it.</li>
+            <li>Winders become a <code>u_return</code> flight; risers re-derived per storey.</li>
+          </ul>
+        </div>
+        <div class="subcard">
+          <h3>Constraints</h3>
+          <ul>
+            <li>Room <code>type</code> is a closed 12-value enum; <code>site</code> is a rectangle; roofs are axis-aligned.</li>
+            <li>One stair object per storey; <code>check_room_support</code> is a hard error (≥80% coverage).</li>
+            <li>Renders must run on Blender 4.1's legacy EEVEE (EEVEE Next renders blood-red on this iGPU).</li>
+            <li>Shadows are decorative — the schema has no north angle and the sheets have no north point.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="methodology">
+      <div class="section-header">
+        <div><div class="section-index">05 / Methodology</div><h2 class="section-title">Methodology</h2></div>
+      </div>
+      <div class="narrative">
+        <p>The work ran as five phases over the existing pipeline, with no change to how the pipeline models
+        geometry. <strong>Phase 1</strong> recorded every dimension with its source, cross-checked against the
+        review's two-way calibration and the plan's binding defaults. <strong>Phase 2</strong> authored the spec so it
+        tiles every level exactly, stacks its core byte-identically, and satisfies the five-rule check registry —
+        applying the stair fit (Blondel) up front so a compile failure surfaced as a finding rather than a crash.
+        <strong>Phase 3</strong> wrote the fidelity ledger (drawing → model → why → does the render change).
+        <strong>Phase 4</strong> built, rendered (legacy EEVEE <code>final</code>), and exported. <strong>Phase 5</strong> published the finals.</p>
+        <p>One necessary deviation from "no code change": compiling a spec whose room names carry Vietnamese
+        diacritics exposed a Windows encoding bug (files read/written with the CP1252 locale default instead of
+        UTF-8), which mangled <code>P.KHÁCH</code> or raised. Fixed by pinning <code>encoding="utf-8"</code> at the
+        file I/O sites — a correctness fix with no logic change.</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Storeys</div><div class="stat-value">7</div></div>
+        <div class="stat"><div class="stat-label">Views</div><div class="stat-value">12</div></div>
+        <div class="stat"><div class="stat-label">Check items</div><div class="stat-value">0 (clean)</div></div>
+        <div class="stat"><div class="stat-label">Final gallery</div><div class="stat-value">24.2 min</div></div>
+        <div class="stat"><div class="stat-label">GLB size</div><div class="stat-value">1.12 MiB</div></div>
+        <div class="stat"><div class="stat-label">Tests</div><div class="stat-value">131 passed</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="phase-analysis">
+      <div class="section-header">
+        <div><div class="section-index">06 / Phase-by-Phase Analysis</div><h2 class="section-title">Phase-by-Phase Analysis</h2></div>
+      </div>
+      <div class="phase-grid">
+        <div class="subcard"><h3>1 · Measure</h3><p>Recorded every dimension with source and calibration, and
+        applied the tiling check (rooms + light well = 3960 × 25000 exactly). Found the drawn 3005 × 3200 stair
+        shaft <em>cannot</em> hold a U-return at a 3800 mm storey.</p></div>
+        <div class="subcard"><h3>2 · Author &amp; validate</h3><p>Wrote the spec so it compiles clean; added two
+        CI tests; the design is picked up automatically by the camera sweep.</p></div>
+        <div class="subcard"><h3>3 · Ledger</h3><p>Recorded every departure — skewed boundaries, glazed cap,
+        winders, enlarged shaft, plant room, decorative shadows — plus the lift-shaft premise change.</p></div>
+        <div class="subcard"><h3>4 · Build &amp; render</h3><p>Preview pass first (camera sanity), then the full
+        <code>final</code> build + glTF export; verified no red render and all sidecars fresh.</p></div>
+        <div class="subcard"><h3>5 · Publish</h3><p>Copied 12 PNGs + GLB + viewer into the tracked deliverables
+        tree, excluding provenance sidecars.</p></div>
+      </div>
+      <div class="diagram-frame compact-diagram" style="margin-top:16px">
+        <pre class="mermaid">
+flowchart LR
+  A["contractor/*.pdf<br/>5 text-less sheets"] --> B["PHASE-01<br/>Measure → measurements.md"]
+  B --> C["PHASE-02<br/>Author spec + tests"]
+  C --> D["compile + checks<br/>0 errors"]
+  D --> E["PHASE-03<br/>fidelity.md ledger"]
+  D --> F["PHASE-04<br/>build · render 12 · gltf"]
+  E --> G["PHASE-05<br/>publish deliverables/"]
+  F --> G
+  G --> H["family-facing 3D + ledger"]
+        </pre>
+      </div>
+    </section>
+
+    <section class="section" id="findings-recommendation">
+      <div class="section-header">
+        <div><div class="section-index">07 / Findings &amp; Recommendation</div><h2 class="section-title">Findings &amp; Recommendation</h2></div>
+      </div>
+      <div class="narrative">
+        <h3>The model is faithful where it can be, and honest where it can't.</h3>
+        <p>The measured facts — plot, storey heights, core, programme — are reproduced. Two things the schema
+        cannot express had to be approximated and are therefore <em>findings about the drawing</em>, not just modelling
+        compromises:</p>
+        <ul>
+          <li><strong>The stair shaft is too small as drawn.</strong> A 3005 × 3200 mm shaft cannot hold a
+          Blondel U-return at a 3800 mm storey (needs ~3998 mm run). The model enlarges it to 3005 × 4000 mm —
+          flagged as a candidate review finding (the drawing's copy-pasted stair block never resolves which riser
+          each floor uses).</li>
+          <li><strong>The light well is smaller than drawn</strong> (2200 × 1300 → 1160 × 1600 mm) to tile the lift
+          band, and its glazed cap is modelled as an open void because the renderer has no glass.</li>
+        </ul>
+        <p>The render also makes the programme discrepancy concrete: the contractor drew a single-family house
+        (living + kitchen on the ground floor, bedrooms above, P.THỜ on tầng 5) where the brief asked for leased
+        floors — which is exactly what the family needs to see to have the C-01 conversation.</p>
+        <h3>Recommendation</h3>
+        <p>Show the gallery and viewer to the family as a walkthrough, with one sentence pointing to the review
+        report for the findings. Treat the enlarged stair shaft and the glazed light-well cap as open questions
+        for the contractor alongside the existing 13 findings.</p>
+      </div>
+      <div class="viz-frame" style="margin-top:16px">
+        <canvas id="renderChart"></canvas>
+      </div>
+    </section>
+
+    <section class="section" id="implementation-path">
+      <div class="section-header">
+        <div><div class="section-index">08 / Implementation Path</div><h2 class="section-title">Implementation Path</h2></div>
+      </div>
+      <div class="phase-grid">
+        <div class="subcard"><h3>Immediate</h3><ul>
+          <li>Open <code>deliverables/contractor-as-drawn/viewer/contractor-as-drawn.html</code> for the family.</li>
+          <li>Add the stair-shaft and light-well questions to the review register.</li>
+        </ul></div>
+        <div class="subcard"><h3>Next</h3><ul>
+          <li>Revise <code>research/2026-08-12_tubehouse-lift-comparison.md</code> for the 2.4 m² / seven-stop shaft.</li>
+          <li>When the DWG arrives, verify this model against it.</li>
+        </ul></div>
+        <div class="subcard"><h3>Deferred</h3><ul>
+          <li>Schema work to express the skewed site, glazed rooflight, and a cutaway view kind.</li>
+          <li>A Cycles hero shot for the cover (CPU-only, ~3 min/view).</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="risks-open-questions">
+      <div class="section-header">
+        <div><div class="section-index">09 / Risks / Open Questions</div><h2 class="section-title">Risks / Open Questions</h2></div>
+      </div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>Risks</h3><ul>
+          <li><strong>Persuasiveness:</strong> a render is convincing in a way a caveat is not — the ledger ships beside the renders for exactly this reason.</li>
+          <li><strong>Context:</strong> shown alone, the single-family scheme could be read as the agreed design; the published page links the review report.</li>
+          <li><strong>Inference:</strong> per-room subdivision is inferred, not read off the sheet; a future pass with image reading should verify.</li>
+        </ul></div>
+        <div class="subcard"><h3>Open questions</h3><ul>
+          <li>Is the drawn light-well glazing fixed or operable, and how does the well exhaust (finding C-02)?</li>
+          <li>What is the intended lift technology — the drawn machine room contradicts the MRL recommendation (C-05)?</li>
+          <li>Are the per-storey riser heights (C-07) acceptable to the client?</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="appendices-evidence">
+      <div class="section-header">
+        <div><div class="section-index">10 / Appendices / Evidence Notes</div><h2 class="section-title">Appendices / Evidence Notes</h2></div>
+      </div>
+      <div class="appendix-grid">
+        <div class="subcard"><h3>Evidence of completion</h3><ul>
+          <li><code>homedesign compile</code> exits 0; model hash <code>bb284a0b6ca5</code>.</li>
+          <li>12 sidecars all match the current model hash (no stale render).</li>
+          <li><code>python -m pytest tests -q</code> → 131 passed; <code>ruff check src tests</code> → clean; <code>sync_skill --check</code> → ok.</li>
+        </ul></div>
+        <div class="subcard"><h3>Files</h3><ul>
+          <li><code>designs/contractor-as-drawn.json</code> — the spec.</li>
+          <li><code>designs/contractor-as-drawn.measurements.md</code> — dimension trail.</li>
+          <li><code>designs/contractor-as-drawn.fidelity.md</code> — the departure ledger.</li>
+          <li><code>deliverables/contractor-as-drawn/</code> — 12 PNGs, GLB, viewer.</li>
+        </ul></div>
+        <div class="subcard"><h3>Glossary</h3><ul>
+          <li><strong>trệt / lửng / sân thượng</strong> — ground / mezzanine / roof terrace.</li>
+          <li><strong>giếng trời</strong> — light well; <strong>ô kỹ thuật thang máy</strong> — lift machine room; <strong>ô kính lấy sáng</strong> — glazed rooflight.</li>
+          <li><strong>Blondel</strong> — the 2R+G = 600 stair relation the pipeline enforces.</li>
+        </ul></div>
+      </div>
+      <div class="footer-note">designed for html first, printable without reconstruction</div>
+    </section>
+  </main>
+  <script>
+    (function() {
+      document.querySelectorAll('canvas').forEach((canvas) => {
+        canvas.classList.add('report-chart');
+        const parent = canvas.parentElement;
+        if (parent && parent.classList.contains('technical-frame') && !parent.classList.contains('chart-frame')) {
+          parent.classList.add('chart-frame');
+        }
+      });
+    })();
+    if (window.Chart) {
+      Chart.defaults.devicePixelRatio = 1;
+      Chart.defaults.animation = false;
+      Chart.defaults.resizeDelay = 150;
+      Chart.defaults.normalized = true;
+      Chart.defaults.maintainAspectRatio = false;
+      Chart.defaults.responsive = true;
+    }
+    (function() {
+      function bootstrap() {
+        if (!window.Chart) { return; }
+        var el = document.getElementById('renderChart');
+        if (!el) { return; }
+        new Chart(el, {
+          type: 'bar',
+          data: {
+            labels: ['EEVEE Next final (9-view)', 'Legacy EEVEE final (9-view)', 'Legacy EEVEE final (12-view)'],
+            datasets: [{
+              label: 'Final-gallery render wall-clock (minutes)',
+              data: [50.7, 11.9, 24.2],
+              backgroundColor: ['#9d6b37', '#3b6f76', '#3b6f76'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false, normalized: true, resizeDelay: 150,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { title: { display: true, text: 'minutes' }, beginAtZero: true }
+            }
+          }
+        });
+      }
+      if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrap, { once: true }); }
+      else { bootstrap(); }
+    })();
+  </script>
+</body>
+</html>

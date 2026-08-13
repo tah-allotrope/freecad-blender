@@ -1,0 +1,448 @@
+<title>Contractor Set Review</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ground: #F4F6F5;
+    --surface: #FFFFFF;
+    --surface-2: #EDF0EF;
+    --ink: #131816;
+    --ink-2: #3D4845;
+    --ink-mute: #66736F;
+    --rule: #D2D9D6;
+    --rule-strong: #A9B4B0;
+    --accent: #0E6357;
+    --accent-soft: #E2EFEC;
+    --crit: #A62B22;
+    --crit-soft: #F8E7E5;
+    --warn: #8A5A06;
+    --warn-soft: #F9EEDC;
+    --ok: #2A6B44;
+    --ok-soft: #E4F0E8;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101514;
+      --surface: #171D1C;
+      --surface-2: #1E2625;
+      --ink: #E6ECEA;
+      --ink-2: #BCC7C4;
+      --ink-mute: #8B9996;
+      --rule: #2B3533;
+      --rule-strong: #3E4B48;
+      --accent: #58BFAC;
+      --accent-soft: #16302C;
+      --crit: #E58A80;
+      --crit-soft: #33201E;
+      --warn: #DBA94A;
+      --warn-soft: #2E2617;
+      --ok: #79BF95;
+      --ok-soft: #1A2E22;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #101514;
+    --surface: #171D1C;
+    --surface-2: #1E2625;
+    --ink: #E6ECEA;
+    --ink-2: #BCC7C4;
+    --ink-mute: #8B9996;
+    --rule: #2B3533;
+    --rule-strong: #3E4B48;
+    --accent: #58BFAC;
+    --accent-soft: #16302C;
+    --crit: #E58A80;
+    --crit-soft: #33201E;
+    --warn: #DBA94A;
+    --warn-soft: #2E2617;
+    --ok: #79BF95;
+    --ok-soft: #1A2E22;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+
+  /* ---- sheet header ---- */
+  .sheet {
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .sheet-top { padding: 1.75rem 1.75rem 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    line-height: 1.15;
+    letter-spacing: -.02em;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  .standfirst { margin: 0; color: var(--ink-2); max-width: 60ch; }
+  .meta {
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  }
+  .meta div { padding: .85rem 1.75rem; border-right: 1px solid var(--rule); }
+  .meta div:last-child { border-right: 0; }
+  .meta dt {
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-mute); margin: 0 0 .2rem;
+  }
+  .meta dd { margin: 0; font-family: var(--mono); font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+  /* ---- generic section ---- */
+  section { margin-top: 3.25rem; }
+  h2 {
+    font-size: 1.05rem; letter-spacing: .02em; margin: 0 0 .25rem;
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: .78rem; color: var(--accent);
+    letter-spacing: .1em;
+  }
+  .sect-note { margin: 0 0 1.25rem; color: var(--ink-mute); font-size: .93rem; max-width: 68ch; }
+  .rule { height: 1px; background: var(--rule-strong); margin: 0 0 1.25rem; }
+
+  /* ---- tally ---- */
+  .tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .tally div { background: var(--surface); padding: 1rem 1.1rem; }
+  .tally .n { font-family: var(--mono); font-size: 1.9rem; font-variant-numeric: tabular-nums; line-height: 1; }
+  .tally .l { font-size: .82rem; color: var(--ink-mute); margin-top: .35rem; }
+  .n.crit { color: var(--crit); } .n.warn { color: var(--warn); } .n.ok { color: var(--ok); }
+
+  /* ---- data table ---- */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 34rem; }
+  th, td { text-align: left; padding: .6rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-mute); font-weight: 500; background: var(--surface-2);
+    position: sticky; top: 0;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dim { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); }
+
+  /* ---- findings register ---- */
+  .reg { border: 1px solid var(--rule-strong); border-bottom: 0; }
+  .item { border-bottom: 1px solid var(--rule-strong); background: var(--surface); display: grid; grid-template-columns: 6.5rem 1fr; }
+  .item-id {
+    padding: 1.1rem .9rem; border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: .5rem; align-items: flex-start;
+  }
+  .id { font-family: var(--mono); font-size: .82rem; letter-spacing: .06em; color: var(--ink-mute); }
+  .chip {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .18rem .42rem; border: 1px solid currentColor; white-space: nowrap;
+  }
+  .chip.crit { color: var(--crit); background: var(--crit-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.info { color: var(--accent); background: var(--accent-soft); }
+  .item-body { padding: 1.1rem 1.25rem; }
+  .item-body h3 { margin: 0 0 .45rem; font-size: 1rem; letter-spacing: -.01em; text-wrap: balance; }
+  .item-body p { margin: 0 0 .6rem; font-size: .93rem; color: var(--ink-2); }
+  .item-body p:last-child { margin-bottom: 0; }
+  .src {
+    font-family: var(--mono); font-size: .72rem; color: var(--ink-mute);
+    border-top: 1px dotted var(--rule-strong); padding-top: .5rem; margin-top: .7rem;
+  }
+  .ask { border-left: 2px solid var(--accent); padding-left: .8rem; color: var(--ink); font-size: .9rem; }
+  .ask b { font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: .15rem; }
+
+  ul.plain { margin: 0; padding-left: 1.1rem; }
+  ul.plain li { margin-bottom: .4rem; font-size: .93rem; color: var(--ink-2); }
+  ul.plain li:last-child { margin-bottom: 0; }
+
+  .callout { border: 1px solid var(--rule-strong); background: var(--surface-2); padding: 1.1rem 1.25rem; font-size: .93rem; color: var(--ink-2); }
+  .callout strong { color: var(--ink); }
+
+  footer { margin-top: 4rem; border-top: 1px solid var(--rule-strong); padding-top: 1rem; font-family: var(--mono); font-size: .72rem; color: var(--ink-mute); }
+
+  @media (max-width: 34rem) {
+    .item { grid-template-columns: 1fr; }
+    .item-id { flex-direction: row; align-items: center; border-right: 0; border-bottom: 1px solid var(--rule); padding: .7rem .9rem; }
+    .meta div { border-right: 0; border-bottom: 1px solid var(--rule); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="sheet">
+    <div class="sheet-top">
+      <div class="eyebrow">Drawing review &middot; comment register</div>
+      <h1>Contractor set for the 3.95 &times; 25 m tube house</h1>
+      <p class="standfirst">Five issued sheets checked against the project brief, the pipeline's codified geometry rules, and today's lift research. Every dimension quoted here was measured off the PDF vector geometry, not read from the labels alone.</p>
+    </div>
+    <dl class="meta">
+      <div><dt>Reviewed</dt><dd>2026-08-12</dd></div>
+      <div><dt>Sheets</dt><dd>5</dd></div>
+      <div><dt>Findings</dt><dd>13</dd></div>
+      <div><dt>Blocking</dt><dd>4</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span> Verdict</h2>
+    <div class="rule"></div>
+    <div class="tally">
+      <div><div class="n crit">4</div><div class="l">Blocking &mdash; resolve before permit or construction</div></div>
+      <div><div class="n warn">5</div><div class="l">Important &mdash; resolve before tender</div></div>
+      <div><div class="n">4</div><div class="l">Drawing quality &mdash; reissue</div></div>
+      <div><div class="n ok">6</div><div class="l">Checks passed</div></div>
+    </div>
+    <p class="sect-note" style="margin-top:1.25rem">The geometry is sound. The core stacks exactly on all seven levels, the stair is generously wide, risers are gentle, and the lift shaft is <em>larger</em> than the brief asked for &mdash; it resolves the tightest constraint identified in today's lift research. What is not sound is the fit to the brief and the completeness of the package: the mixed-use programme has silently become a single-family house, the light well has been capped with glass, the setback geometry is unresolved against a skewed boundary, and there is no title block on any sheet.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span> What the set actually shows</h2>
+    <p class="sect-note">Established by measurement so the findings below rest on numbers rather than impressions. Scale was calibrated two independent ways (plot width and building depth) and agreed to within 0.1%.</p>
+    <div class="rule"></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Sheet</th><th>Contents</th><th class="num">Levels shown</th></tr></thead>
+        <tbody>
+          <tr><td class="num">MB 1-LUNG</td><td>Mặt bằng tầng 1 + mặt bằng lửng</td><td class="num">±0.000, +3.800</td></tr>
+          <tr><td class="num">MB 2-3-4</td><td>Mặt bằng tầng 2, 3 + tầng 4</td><td class="num">+7.000, +10.400, +13.800</td></tr>
+          <tr><td class="num">MB 5-MAI</td><td>Mặt bằng tầng 5 + sân thượng</td><td class="num">+17.200, +20.600</td></tr>
+          <tr><td class="num">MB MAI-MD</td><td>Mặt bằng mái + mặt đứng chính</td><td class="num">+23.800, +25.800</td></tr>
+          <tr><td class="num">MC A-A</td><td>Mặt cắt A-A</td><td class="num">all</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tw" style="margin-top:1.5rem">
+      <table>
+        <thead><tr><th>Measured item</th><th class="num">Value</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Plot width</td><td class="num">3950&ndash;3960 mm</td><td>Tapers; front and rear boundaries both skewed ~7.2°</td></tr>
+          <tr><td>Plot depth</td><td class="num">25 000 mm</td><td>Built envelope 20 000 mm; front yard 3000, rear yard 2500&ndash;2000</td></tr>
+          <tr><td>Storey heights</td><td class="num">3800 / 3200 / 3400 &times;4 / 3200</td><td>Ground→lửng is the tall one; terrace→roof 3200 + 2000 plant</td></tr>
+          <tr><td>Party walls</td><td class="num">~100 mm</td><td>Clear internal width 3753 mm</td></tr>
+          <tr><td>Stair band</td><td class="num">3200 mm deep</td><td>U-return about a solid central newel ~1425 &times; 671 mm</td></tr>
+          <tr><td>Stair flight width</td><td class="num">1154 mm</td><td>Two flights; well between them 697 mm</td></tr>
+          <tr><td>Treads / going</td><td class="num">21 treads @ ~250 mm</td><td>~6 straight per flight, ~8 winders turning 180°</td></tr>
+          <tr><td>Lift shaft (clear)</td><td class="num">~1500 &times; 1600 mm</td><td>2.4 m² &mdash; in the 1800 mm structural band</td></tr>
+          <tr><td>Lift plant on roof</td><td class="num">2000 &times; 1900 mm</td><td>"Ô kỹ thuật thang máy", 2000 mm high above +23.800</td></tr>
+          <tr><td>Light well, typical floor</td><td class="num">2200 &times; 1300 mm</td><td>Beside the stair</td></tr>
+          <tr><td>Roof openings</td><td class="num">1700 &times; 1800 mm</td><td>Labelled <em>ô kính lấy sáng</em> &mdash; glazed; plus a separate open <em>ô lấy sáng</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span> Blocking findings</h2>
+    <p class="sect-note">These change the building or stop the permit application. Each carries the evidence it was derived from.</p>
+    <div class="rule"></div>
+    <div class="reg">
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-01</span><span class="chip crit">Blocking</span></div>
+        <div class="item-body">
+          <h3>The mixed-use programme has become a single-family house</h3>
+          <p>The brief specifies leased commercial space on the ground and first floors &mdash; a garage-fronted retail/office bay plus a lease studio &mdash; stacked below three private family floors, with <em>a lockable family lobby at Floor 2 restricting the shared stair and lift core to residents beyond that point</em>.</p>
+          <p>The issued set has none of this. Tầng 1 is garage, living room and kitchen/dining; lửng is a family room; tầng 2&ndash;5 are bedrooms with a P.THỜ on tầng 5. There is no lease tenancy, no separate entrance, and no lockable lobby anywhere in the core. Access separation cannot be retrofitted later without re-planning the core.</p>
+          <div class="ask"><b>Ask</b>If the client dropped the lease floors, confirm it in writing and reissue the brief &mdash; the current brief and the current drawings describe two different buildings. If they did not, this set needs re-planning, not mark-ups.</div>
+          <div class="src">Source: brief narrative + requirement 7 · MB 1-LUNG, MB 2-3-4, MB 5-MAI</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-02</span><span class="chip crit">Blocking</span></div>
+        <div class="item-body">
+          <h3>The core light well is capped with glass, defeating the stack effect</h3>
+          <p>The brief's light well is <em>open to the sky from the ground floor to the roof terrace</em>, and the stated reason is ventilation as much as daylight: it "drives stack-effect ventilation, drawing warm air up and out through the open roof void" in a hot-humid climate.</p>
+          <p>The roof plan labels the 1700 &times; 1800 mm opening over the core <span class="dim">ô kính lấy sáng</span> &mdash; a <em>glazed</em> light opening. Glass admits the daylight but closes the exhaust path, which is the half of the well that does the cooling. A second, smaller <span class="dim">ô lấy sáng</span> appears to remain open, so some stack path may survive, but the main core void does not.</p>
+          <div class="ask"><b>Ask</b>Confirm whether the glazing is fixed or operable, and how the well exhausts. An openable/louvred rooflight or a raised lantern with side vents keeps both the rain exclusion and the stack effect.</div>
+          <div class="src">Source: brief narrative ¶2 · MB MAI-MD roof plan annotation</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-03</span><span class="chip crit">Blocking</span></div>
+        <div class="item-body">
+          <h3>Orthogonal building against a skewed boundary &mdash; rear setback unresolved</h3>
+          <p>Both the road boundary (<span class="dim">ranh lộ giới</span>) and the rear boundary run at roughly 7.2° to the party walls, but the building is set out orthogonally. The yards therefore taper: the front yard runs 3000 mm down to 2500 mm, and the rear yard from 2500 mm down to <span class="dim">2000 mm</span> at the east party wall.</p>
+          <p>On the ground-floor plan the dashed <span class="dim">ranh khoảng lùi sau</span> line crosses the building's rear wall around mid-width, so the eastern portion of that wall sits on the wrong side of the drawn setback line &mdash; on my measurement by roughly 0.2&ndash;0.4 m at the party wall, tapering to compliant at the west. The same crossing occurs at the front, where the setback line passes through the garage door opening.</p>
+          <p>No dimension anywhere in the set gives the clearance measured perpendicular to the actual boundary at its tightest point, so the drawings cannot be checked against the permit condition as issued.</p>
+          <div class="ask"><b>Ask</b>Dimension the minimum front and rear clearances perpendicular to the surveyed boundary, and state the required setback. If the rear yard minimum is 2.0 m, the east corner has zero tolerance &mdash; a survey error or a site-setting-out error in that direction is an immediate breach.</div>
+          <div class="src">Source: MB 1-LUNG · boundary slope measured at 0.1255 (7.15°) across the 3950 mm width</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-04</span><span class="chip crit">Blocking</span></div>
+        <div class="item-body">
+          <h3>No title block, no north point, on any sheet</h3>
+          <p>None of the five sheets carries a title block: no project name, address, client, design firm, drawing number, revision, date, scale confirmation, or signature. A permit set (hồ sơ xin phép xây dựng) will not be accepted in this state, and there is no way to tell which revision anyone is holding.</p>
+          <p>No plan carries a north point either. The brief explicitly flags this as open &mdash; "facade orientation is not yet fixed to a real site; confirm solar orientation before finalizing shading design for the street-facing glazing" &mdash; and without north on the drawings that question cannot even be asked, let alone closed.</p>
+          <div class="ask"><b>Ask</b>Reissue with a full title block and revision table on every sheet, and a north point on every plan.</div>
+          <div class="src">Source: all five sheets · brief requirement 6</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span> Important findings</h2>
+    <p class="sect-note">Not permit blockers, but each will cost money or rework if it reaches site unresolved.</p>
+    <div class="rule"></div>
+    <div class="reg">
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-05</span><span class="chip warn">Important</span></div>
+        <div class="item-body">
+          <h3>The roof plant room contradicts the recommended machine-room-less lift</h3>
+          <p>Today's lift research recommended a traction MRL from a global brand with a Vietnamese entity &mdash; KONE MonoSpace Home or Otis Gen2 Life &mdash; specifically because the machine sits inside the hoistway and needs <em>no machine room</em>. The contractor has drawn a dedicated <span class="dim">ô kỹ thuật thang máy</span> of 2000 &times; 1900 mm standing 2000 mm above the roof slab, which is what a machine-room lift needs.</p>
+          <p>Two consequences. If an MRL is selected, that 3.8 m² structure is largely redundant and the building top could come down from +25.800. If it is retained, it must be checked against the permitted height and storey count, because rooftop plant frequently counts toward both.</p>
+          <div class="ask"><b>Ask</b>State the intended lift technology on the drawings, then size the overrun to that product rather than to a generic machine room.</div>
+          <div class="src">Source: MB MAI-MD, MC A-A · research/2026-08-12_tubehouse-lift-comparison.md</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-06</span><span class="chip warn">Important</span></div>
+        <div class="item-body">
+          <h3>No lift pit or overhead dimensioned</h3>
+          <p>The research named per-product pit depth and top-landing overhead as the single biggest unverifiable data gap, and the one thing every supplier quote must state. The section shows neither: there is no pit at the base of the shaft and no overhead dimension at the top landing.</p>
+          <div class="ask"><b>Ask</b>Add pit depth and overhead to the section, taken from the actual product's shaft drawing. This is the item most likely to force a structural change late.</div>
+          <div class="src">Source: MC A-A · research synthesis, "Before shortlisting, get 3&ndash;5 written quotes"</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-07</span><span class="chip warn">Important</span></div>
+        <div class="item-body">
+          <h3>One stair block copy-pasted across three different storey heights</h3>
+          <p>The identical 21-tread stair is drawn on every floor plan, but the storeys it serves are <span class="dim">3800</span>, <span class="dim">3200</span> and <span class="dim">3400</span> mm. Those cannot all be climbed by the same 21 treads at the same riser: 22 risers gives 172.7 mm on the ground flight, 145.5 mm at lửng and 154.5 mm on the typical floors.</p>
+          <p>All three are safely under the 190 mm maximum the pipeline enforces, so nothing here is dangerous &mdash; but the set never states which it is, so the builder will decide on site, and a 27 mm riser difference between adjacent flights is exactly the kind of inconsistency that causes trips.</p>
+          <div class="ask"><b>Ask</b>Issue a stair setting-out detail per storey: riser count, riser height, going, and total run.</div>
+          <div class="src">Source: MB 1-LUNG, MB 2-3-4, MB 5-MAI (identical blocks) vs level table on MC A-A</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-08</span><span class="chip warn">Important</span></div>
+        <div class="item-body">
+          <h3>Winder geometry undimensioned at the narrow end</h3>
+          <p>The 180° turn is made with roughly eight winders radiating from the two right-hand corners of the central newel. Treads that fan off a corner taper toward zero going at their inner end. The walking line further out is likely fine, but nothing in the set dimensions either the narrow-end going or the going at the walking line.</p>
+          <p>The straight treads measure ~250 mm going against a 145&ndash;173 mm riser, giving 2R+G ≈ 559 mm &mdash; inside the comfortable band but at its lower edge, so the winders have no margin to give away.</p>
+          <div class="ask"><b>Ask</b>Dimension the winders at the narrow end and at the walking line, and confirm both against the stair standard being applied. This is the most safety-relevant detail in the package.</div>
+          <div class="src">Source: MB 2-3-4 stair, measured at 16&times; from the vector geometry</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-09</span><span class="chip warn">Important</span></div>
+        <div class="item-body">
+          <h3>Height and storey count need checking against the local plan</h3>
+          <p>Seven levels plus rooftop plant on a 3.95 m frontage reaches <span class="dim">+25.800</span>. Whether that is permitted depends entirely on the lot's road width and the local quy hoạch, which I cannot verify from this package &mdash; but on a plot this narrow it is the largest single permit risk in the set, and nothing in the drawings addresses it.</p>
+          <div class="ask"><b>Ask</b>Confirm the permitted storey count and height for this lot's road width, in writing, before any structural design proceeds.</div>
+          <div class="src">Source: MB MAI-MD elevation, MC A-A level table</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span> Drawing quality</h2>
+    <p class="sect-note">Reissue items. None changes the building; all of them cost the reader time or invite a measuring error.</p>
+    <div class="rule"></div>
+    <div class="reg">
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-10</span><span class="chip info">Reissue</span></div>
+        <div class="item-body">
+          <h3>Sheets are labelled 1:100 but plot at about 1:122</h3>
+          <p>Every sheet carries <span class="dim">TL : 1/100</span>. Measured on the issued A4 PDFs, the 3950 mm plot width occupies 91.8 pt and the 20 900 mm depth occupies 485.6 pt &mdash; both give ~43.0 mm per point, against 35.28 for a true 1:100. The drawings are internally consistent; it is the paper scale that is wrong, most likely a fit-to-page export from a larger sheet.</p>
+          <div class="ask"><b>Ask</b>Reissue at true scale, or supply the DWG. Until then nobody should scale off these PDFs &mdash; a measured dimension will read about 18% short.</div>
+          <div class="src">Source: two independent calibrations, MB 1-LUNG and MB 2-3-4</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-11</span><span class="chip info">Reissue</span></div>
+        <div class="item-body">
+          <h3>Section A-A is plotted rotated 90°</h3>
+          <p>The section sheet reads sideways in every PDF viewer &mdash; the title block text and all level tags run vertically. It has to be rotated by hand before it can be read or marked up.</p>
+          <div class="src">Source: MC A-A</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-12</span><span class="chip info">Reissue</span></div>
+        <div class="item-body">
+          <h3>Only one section and one elevation</h3>
+          <p>The set has a single long section (A-A) and the front elevation. For a seven-level house on a skewed plot there is no rear elevation and no cross-section, so the lô gia and rear yard relationships, and the light-well edges, are never drawn in the vertical plane.</p>
+          <div class="ask"><b>Ask</b>Add a cross-section through the core and light well, and the rear elevation.</div>
+          <div class="src">Source: sheet register</div>
+        </div>
+      </article>
+
+      <article class="item">
+        <div class="item-id"><span class="id">C-13</span><span class="chip info">Reissue</span></div>
+        <div class="item-body">
+          <h3>Brief items not covered by this package</h3>
+          <p>Three brief requirements have no counterpart in the set: light-well drainage at its ground-floor base and waterproofing at every floor edge abutting it; a vertical services riser for electrical, plumbing and data alongside the core, accessible from each floor; and condensation-controlled operable glazing where rooms face the well. These normally live in later detail packages, so this is a coverage note rather than a defect &mdash; but the services riser in particular affects the core plan and should be located now, not later.</p>
+          <div class="src">Source: brief requirements 2, 3, 5</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span> What passes</h2>
+    <p class="sect-note">Checked against the geometry rules the pipeline enforces in <span class="dim">checks.py</span> and <span class="dim">stairs.py</span>, plus the brief's own targets.</p>
+    <div class="rule"></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Check</th><th class="num">Requirement</th><th class="num">Measured</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Stair flight width</td><td class="num">≥ 900 mm</td><td class="num">1154 mm</td><td>Generous for the typology</td></tr>
+          <tr><td>Maximum riser</td><td class="num">≤ 190 mm</td><td class="num">172.7 mm worst case</td><td>Comfortable on every flight</td></tr>
+          <tr><td>Shaft stacking</td><td class="num">identical footprint</td><td class="num">exact, 7 levels</td><td>Stair and lift align on every plan</td></tr>
+          <tr><td>Floor support</td><td class="num">≥ 80% over below</td><td class="num">full</td><td>Orthogonal stack, no cantilevered rooms</td></tr>
+          <tr><td>Habitable daylight</td><td class="num">window per room</td><td class="num">satisfied</td><td>Ban công front, lô gia rear, wells mid-plan</td></tr>
+          <tr><td>Lift shaft area</td><td class="num">brief asked ~1.2 &times; 1.5 m</td><td class="num">~1.5 &times; 1.6 m</td><td>Exceeds brief; clears the ~1.5 m² market minimum</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sect-note" style="margin-top:1.25rem">The section and the front elevation agree exactly on every level tag from ±0.000 to +25.800 &mdash; worth saying, because level disagreement between section and elevation is the most common coordination fault in sets like this, and it is not present here.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span> One thing to update on our side</h2>
+    <div class="rule"></div>
+    <div class="callout">
+      <p style="margin-top:0">The lift research finished this morning was written against a <strong>1000 &times; 1400 mm (1.4 m²)</strong> shaft taken from <span class="dim">designs/tubehouse-dream.json</span>, and its central conclusion was that <em>space is the deciding constraint</em> &mdash; that the shaft sat at the lower bound of Vietnam's home-lift segment, below one installer's ~1.5 m² practical minimum.</p>
+      <p style="margin-bottom:0">The contractor's shaft is <strong>~1500 &times; 1600 mm (2.4 m²)</strong>. That premise no longer holds: the tightest constraint in the study is relieved, the viable product list widens, and the local-assembled traction tier becomes a genuine option rather than a squeeze. The stop count also changed &mdash; the brief's five levels are seven stops here, including the roof terrace. Both belong in a revision to that brief before it is used to solicit quotes.</p>
+    </div>
+  </section>
+
+  <footer>
+    Measured from PDF vector geometry · scale calibrated at 43.0 mm/pt · reviewed against spec/briefs/tubehouse-dream.json, src/homedesign/checks.py, src/homedesign/stairs.py, research/2026-08-12_tubehouse-lift-comparison.md
+  </footer>
+
+</div>
