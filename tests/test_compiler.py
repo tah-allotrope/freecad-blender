@@ -354,3 +354,56 @@ def test_interior_centre_partition_bounded_inset_half():
     assert i.y == 100.0
     assert i.w == 4000.0 - 100.0 - 50.0
     assert i.d == 4000.0 - 100.0 - 100.0
+
+
+def _balcony_spec():
+    """A bedroom with a balcony on its south edge: the shared boundary becomes
+    a partition wall, while the balcony's three free edges become exterior
+    walls owned by the balcony room."""
+    return {
+        "meta": {"name": "balcony-owner", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 5500},
+        "storeys": [
+            {
+                "level": 0, "name": "G", "height_mm": 3000,
+                "rooms": [
+                    {"id": "bed", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                    {"id": "balc", "type": "balcony", "rect": {"x": 0, "y": 4000, "w": 4000, "d": 1500}},
+                ],
+                "openings": [],
+            }
+        ],
+    }
+
+
+def test_balcony_exterior_wall_carries_its_room_id():
+    model = compile_spec(_balcony_spec())
+    walls = model.storeys[0].walls
+    south = next(
+        w for w in walls
+        if w.orientation == "horizontal" and abs(w.y + w.thickness / 2 - 5500) < 1
+    )
+    assert south.kind == "exterior"
+    assert south.room_id == "balc"
+
+
+def test_partition_wall_has_no_room_id():
+    model = compile_spec(_balcony_spec())
+    walls = model.storeys[0].walls
+    shared = next(
+        w for w in walls
+        if w.orientation == "horizontal" and abs(w.y + w.thickness / 2 - 4000) < 1
+    )
+    assert shared.kind == "partition"
+    assert shared.room_id is None
+
+
+def test_existing_designs_still_compile_with_wall_room_id():
+    for name in ("demo-3br-2storey.json", "tubehouse-mini.json"):
+        model = compile_spec(load_example(name))
+        for storey in model.storeys:
+            ids = {r.id for r in storey.rooms}
+            for w in storey.walls:
+                assert w.room_id is None or w.room_id in ids, (
+                    f"{name}: wall {w.id} room_id {w.room_id!r} not a room on level {storey.level}"
+                )

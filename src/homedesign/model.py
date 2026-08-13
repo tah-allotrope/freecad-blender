@@ -52,6 +52,7 @@ class Wall:
     kind: Kind
     storey_level: int
     orientation: Literal["horizontal", "vertical"]
+    room_id: Optional[str] = None  # owning room id for an exterior wall, else None
 
 
 @dataclass

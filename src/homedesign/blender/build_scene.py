@@ -56,7 +56,18 @@ def new_collection(name):
 def build_walls(storey, style, structure):
     base_z = storey["base_z"] / 1000
     height = storey["height_mm"] / 1000
+    room_types = {r["id"]: r["type"] for r in storey["rooms"]}
+    opening_wall_ids = {o["wall_id"] for o in storey["openings"]}
     for wall in storey["walls"]:
+        # A balcony's own open edges (exterior walls it alone owns, with no
+        # opening on them) get a 1100mm parapet later in
+        # _add_balcony_parapets instead of a full-height wall.
+        if (
+            wall.get("room_id")
+            and room_types.get(wall["room_id"]) == "balcony"
+            and wall["id"] not in opening_wall_ids
+        ):
+            continue
         x, y = wall["x"] / 1000, wall["y"] / 1000
         w, h = wall["w"] / 1000, wall["h"] / 1000
         mat_key = "wall_exterior" if wall["kind"] == "exterior" else "wall_partition"

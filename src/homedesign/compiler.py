@@ -292,6 +292,7 @@ def _derive_walls(rooms: list[Room], plot_w: float, plot_d: float, level: int,
                     kind=kind,
                     storey_level=level,
                     orientation=orientation,
+                    room_id=covering[0] if len(covering) == 1 else None,
                 )
             )
     return walls
