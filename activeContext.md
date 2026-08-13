@@ -16,11 +16,18 @@ unconditionally and `_add_balcony_parapets()` only added a 1100mm railing on top
 Fixed at the root: `Wall` gained an owning `room_id` (populated in
 `_derive_walls` for `exterior` walls, `None` for partitions), and `build_walls()`
 now skips any exterior wall whose `room_id` is a `balcony`-typed room that
-carries no opening. Verified geometrically that the set of balcony-owned walls
-equals `open_edges()` (the parapet edges) for every balcony in both real designs,
-with zero openings lost. Both `tubehouse-dream` and `contractor-as-drawn`
-galleries rebuilt at `final` quality and republished; `fidelity.md` findings (e)
-and (f) marked resolved. Tests: **134 passed** (131 + 3 new in `test_compiler.py`).
+carries no opening. Verified geometrically (the set of balcony-owned walls
+matches `open_edges()` for every balcony in both real designs) and visually
+(rebuilt renders show real glazing and open, railed edges). One exception,
+confirmed by re-checking rather than assumed: `tubehouse-dream`'s `balcony_f2`
+and `balcony_f3` each carry a window authored directly on their own outer wall
+rather than the partition to the bedroom, so that one edge on each correctly
+stays a full wall (the suppression's own safety condition) while the other two
+open up — every other balcony/terrace in both designs, including
+`contractor-as-drawn`'s six, opens fully. Both `tubehouse-dream` and
+`contractor-as-drawn` galleries rebuilt at `final` quality and republished;
+`fidelity.md` findings (e) and (f) marked resolved. Tests: **134 passed**
+(131 + 3 new in `test_compiler.py`).
 
 ## Prior Task Plan (plans/2026-08-13-contractor-scheme-3d-render-plan.md)
 

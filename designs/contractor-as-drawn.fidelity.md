@@ -88,10 +88,24 @@ onto them (see (f) below). **Yes — visibly changes the exterior renders.**
 > (populated during `_derive_walls`; `None` for partition walls), and
 > `build_scene.py::build_walls()` skips any exterior wall whose `room_id` is a
 > `balcony`-typed room and that carries no opening — `_add_balcony_parapets()`
-> then places the 1100mm parapet on exactly those edges (verified: the set of
-> balcony-owned walls equals `open_edges()` for every balcony in both real
-> designs, and none of them carries an opening). Balconies and terraces now
-> render open with a railing, not as sealed boxes.
+> then places the 1100mm parapet on exactly those edges. Verified two ways:
+> geometrically (the set of balcony-owned walls matches `open_edges()` for
+> every balcony in both real designs) and visually (the rebuilt renders —
+> `output/png/contractor-as-drawn_exterior_front.png`,
+> `_san_thuong.png` — show real glazing and an open, railed edge with sky
+> above, not a sealed room). **One correction to how this was first recorded:**
+> in `designs/contractor-as-drawn.json` all six balcony/terrace instances have
+> zero openings on their own owned walls, so all three free edges of each open
+> up. In `designs/tubehouse-dream.json`, `balcony_f2` and `balcony_f3` each
+> carry a window authored directly on their own exterior wall
+> (`F2_W023`, `F3_W025`) rather than on the partition wall to the bedroom
+> behind — the suppression check correctly leaves that one edge as a full wall
+> (its safety condition, "no opening on this wall," is false there) and only
+> the other two edges of those two balconies get a parapet.
+> `tubehouse-dream`'s `terrace_f4` has no such opening and opens fully, like
+> every contractor-as-drawn balcony. This is the fix's safety guard working as
+> designed, not a defect — but the two balconies are partially, not fully,
+> open, which an earlier version of this note overstated.
 
 ### (f) Front-facing daylight is modelled as bedroom-to-balcony glazing, not street-facing windows
 Each front bedroom/altar room (`ngu_truoc_*`, `tho_f5`) gets a door + a 1400mm
