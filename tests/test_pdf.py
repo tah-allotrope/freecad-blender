@@ -118,3 +118,57 @@ def test_render_brief_html_includes_elevation_and_section_pages():
     for heading in ("North Elevation", "South Elevation", "East Elevation", "West Elevation",
                     "Long Section", "Cross Section"):
         assert heading in html
+
+
+def _write_real_png(path):
+    try:
+        from PIL import Image
+    except ImportError:
+        pytest.skip("Pillow unavailable")
+    Image.new("RGB", (12, 12), (255, 0, 0)).save(path)
+
+
+def _stale_setup(tmp_path, hashes):
+    """One real PNG per hash with a matching render sidecar; returns paths."""
+    from homedesign.model import write_render_sidecar
+
+    paths = []
+    for i, h in enumerate(hashes):
+        p = tmp_path / f"img{i}.png"
+        _write_real_png(p)
+        write_render_sidecar(p, h, f"view{i}", "final")
+        paths.append(p)
+    return paths
+
+
+def test_gallery_stale_badge_is_per_image_on_mixed_page(tmp_path):
+    stale, fresh = _stale_setup(tmp_path, ["999999", "abc123"])
+    html = pdf._gallery_pages([stale, fresh], embed_images=False, img_dir=tmp_path, current_hash="abc123")
+    assert html.count(">STALE<") == 1
+    # The single badge sits inside the same <figure> as the stale image.
+    figure = html[html.index("<figure>"): html.index("</figure>") + len("</figure>")]
+    assert stale.name in figure
+    assert ">STALE<" in figure
+
+
+def test_gallery_stale_badge_counts_every_stale_image(tmp_path):
+    a, b = _stale_setup(tmp_path, ["999999", "999999"])
+    html = pdf._gallery_pages([a, b], embed_images=False, img_dir=tmp_path, current_hash="abc123")
+    assert html.count(">STALE<") == 2
+
+
+def test_gallery_stale_badge_absent_when_all_fresh(tmp_path):
+    a, b = _stale_setup(tmp_path, ["abc123", "abc123"])
+    html = pdf._gallery_pages([a, b], embed_images=False, img_dir=tmp_path, current_hash="abc123")
+    assert ">STALE<" not in html
+
+
+def test_render_brief_html_escapes_brief_title():
+    model = compile_spec(load_example("tubehouse-mini.json"))
+    brief = _brief()
+    brief["title"] = "Nhà & Sân"
+    html = pdf.render_brief_html(model, brief, REPO_ROOT / "output",
+                                 EXAMPLES / "tubehouse-mini.json")
+    assert "Nhà &amp; Sân" in html
+    assert "Nhà & Sân" not in html
+    assert "<svg" in html

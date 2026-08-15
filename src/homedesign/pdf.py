@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from .model import CompiledModel, model_hash, read_render_sidecar
+from .xmltext import escape_text
 
 PAGE_CSS = """
 @page { size: A3 landscape; margin: 14mm;
@@ -46,6 +47,7 @@ ul.requirements li { margin-bottom: 2mm; }
 .two-col { display: flex; gap: 6mm; flex: 1 1 auto; min-height: 0; }
 .two-col > div { flex: 1; overflow: hidden; }
 .compact-table th, .compact-table td { padding: 0.6mm 2mm; font-size: 8pt; }
+.stale { color: #b00020; font-weight: bold; font-size: 10pt; }
 """
 
 
@@ -181,13 +183,13 @@ def _cover_page(brief: dict, hero_path: Path | None) -> str:
     style = f"background-image:url('{_img_data_uri(hero_path)}')" if hero_path else ""
     return (
         f'<section class="page cover" style="{style}">'
-        f"<h1>{brief['title']}</h1><p>{brief.get('subtitle', '')}</p>"
+        f"<h1>{escape_text(brief['title'])}</h1><p>{escape_text(brief.get('subtitle', ''))}</p>"
         f"</section>"
     )
 
 
 def _narrative_page(brief: dict) -> str:
-    paragraphs = "".join(f"<p>{p}</p>" for p in brief.get("narrative", []))
+    paragraphs = "".join(f"<p>{escape_text(p)}</p>" for p in brief.get("narrative", []))
     return f'<section class="page"><h2>Design Intent</h2>{paragraphs}</section>'
 
 
@@ -203,7 +205,7 @@ def _schedule_page(schedule: list[dict]) -> str:
 
     def render_col(items):
         rows = "".join(
-            f"<tr><td>{name}</td><td>{r['id']}</td><td>{r['type']}</td><td>{r['area_m2']:.1f}</td></tr>"
+            f"<tr><td>{escape_text(name)}</td><td>{escape_text(r['id'])}</td><td>{escape_text(r['type'])}</td><td>{r['area_m2']:.1f}</td></tr>"
             for name, r in items
         )
         return (
@@ -213,7 +215,7 @@ def _schedule_page(schedule: list[dict]) -> str:
 
     cols_html = "".join(f"<div>{render_col(c)}</div>" for c in columns)
     totals = "".join(
-        f"<tr><td>{s['name']}</td><td><b>{s['total_m2']:.1f} m&#178;</b></td></tr>"
+        f"<tr><td>{escape_text(s['name'])}</td><td><b>{s['total_m2']:.1f} m&#178;</b></td></tr>"
         for s in schedule
     )
     return (
@@ -229,7 +231,7 @@ def _plan_pages(model: CompiledModel, svg_dir: Path) -> str:
     for storey in model.storeys:
         svg_path = svg_dir / f"{model.name}_f{storey.level}.svg"
         body = _svg_inline(svg_path) if svg_path.exists() else "<p>(plan not generated)</p>"
-        pages.append(f'<section class="page plan-page"><h2>{storey.name} &mdash; Floor Plan</h2>{body}</section>')
+        pages.append(f'<section class="page plan-page"><h2>{escape_text(storey.name)} &mdash; Floor Plan</h2>{body}</section>')
     return "".join(pages)
 
 
@@ -243,11 +245,16 @@ def _elevation_pages(model: CompiledModel, svg_dir: Path) -> str:
 
 
 def _section_pages(model: CompiledModel, svg_dir: Path) -> str:
+    cuts = model.sections or [
+        {"name": "x", "axis": "x"},
+        {"name": "y", "axis": "y"},
+    ]
     pages = []
-    for axis, label in (("x", "Long Section"), ("y", "Cross Section")):
-        svg_path = svg_dir / f"{model.name}_section_{axis}.svg"
+    for cut in cuts:
+        label = "Long Section" if cut["axis"] == "x" else "Cross Section"
+        svg_path = svg_dir / f"{model.name}_section_{cut['name']}.svg"
         body = _svg_inline(svg_path) if svg_path.exists() else "<p>(section not generated)</p>"
-        pages.append(f'<section class="page plan-page"><h2>{label}</h2>{body}</section>')
+        pages.append(f'<section class="page plan-page"><h2>{escape_text(cut["name"])} &mdash; {label}</h2>{body}</section>')
     return "".join(pages)
 
 
@@ -260,22 +267,26 @@ def _gallery_pages(image_paths: list[Path], embed_images: bool, img_dir: Path,
         imgs = []
         for p in chunk:
             # TASK-06-03: a render is stale when its sidecar hash differs from
-            # the model being briefed (or the sidecar is missing).
-            caption = ""
+            # the model being briefed (or the sidecar is missing). The badge is
+            # drawn on the image itself, so a mixed stale/fresh page still
+            # shows it.
+            stale = False
             if current_hash is not None:
                 sidecar = read_render_sidecar(p)
                 if sidecar is None or sidecar.get("model_hash") != current_hash:
                     print(f"warning: stale render {p.name} (sidecar hash {sidecar.get('model_hash') if sidecar else 'missing'} != model {current_hash})",
                           file=sys.stderr)
-                    caption = " <span style='color:#b00020;font-weight:bold'>STALE</span>"
+                    stale = True
+            caption = '<figcaption class="stale">STALE</figcaption>' if stale else ""
             if embed_images:
-                imgs.append(f'<img src="{_img_data_uri(p)}">')
+                img = f'<img src="{_img_data_uri(p)}">'
             else:
                 # Reference the downscaled copy by relative path so the HTML
                 # stays small (ASM-007); cover hero stays a data URI.
                 downscale_png(p, img_dir / p.name)
-                imgs.append(f'<img src="../pdf/img/{p.name}">')
-        pages.append(f'<section class="page"><h2>Renders{caption}</h2><div class="gallery">{"".join(imgs)}</div></section>')
+                img = f'<img src="../pdf/img/{p.name}">'
+            imgs.append(f"<figure>{img}{caption}</figure>")
+        pages.append(f'<section class="page"><h2>Renders</h2><div class="gallery">{"".join(imgs)}</div></section>')
     return "".join(pages)
 
 
@@ -284,7 +295,7 @@ def _opening_schedule_page(rows: list[dict]) -> str:
         body = "".join(
             f"<tr><td>{r['id']}</td><td>{r['storey']}</td><td>{r['type']}</td>"
             f"<td>{r['width_mm']:.0f}</td><td>{r['sill_mm']:.0f}</td><td>{r['head_mm']:.0f}</td>"
-            f"<td>{r['rooms'][0]} / {r['rooms'][1]}</td></tr>"
+            f"<td>{escape_text(r['rooms'][0])} / {escape_text(r['rooms'][1])}</td></tr>"
             for r in items
         )
         return (
@@ -303,7 +314,7 @@ def _opening_schedule_page(rows: list[dict]) -> str:
 
 def _takeoff_page(rows: list[dict]) -> str:
     body = "".join(
-        f"<tr><td>{r['name']}</td><td>{r['gfa_m2']:.1f}</td><td>{r['exterior_wall_m']:.1f}</td>"
+        f"<tr><td>{escape_text(r['name'])}</td><td>{r['gfa_m2']:.1f}</td><td>{r['exterior_wall_m']:.1f}</td>"
         f"<td>{r['partition_wall_m']:.1f}</td><td>{r['door_count']}</td><td>{r['window_count']}</td></tr>"
         for r in rows
     )
@@ -316,14 +327,14 @@ def _takeoff_page(rows: list[dict]) -> str:
 
 
 def _requirements_page(brief: dict) -> str:
-    items = "".join(f"<li>{r}</li>" for r in brief.get("requirements", []))
+    items = "".join(f"<li>{escape_text(r)}</li>" for r in brief.get("requirements", []))
     return f'<section class="page"><h2>Requirements for the Architect</h2><ul class="requirements">{items}</ul></section>'
 
 
 def _appendix_page(model: CompiledModel, spec_path: Path) -> str:
     items = [f"<li>{spec_path.name} (source spec, JSON)</li>"]
     for storey in model.storeys:
-        items.append(f"<li>{model.name}_f{storey.level}.dxf ({storey.name}, CAD/DXF)</li>")
+        items.append(f"<li>{model.name}_f{storey.level}.dxf ({escape_text(storey.name)}, CAD/DXF)</li>")
     return (
         '<section class="page"><h2>Handover Files</h2>'
         "<p>The following machine-readable files accompany this brief:</p>"
@@ -389,7 +400,7 @@ def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_pat
 
     return (
         "<!doctype html><html><head><meta charset=\"utf-8\">"
-        f"<title>{brief['title']}</title><style>{PAGE_CSS}</style>"
+        f"<title>{escape_text(brief['title'])}</title><style>{PAGE_CSS}</style>"
         f"</head><body>{body}</body></html>"
     )
 

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Final Report :: Drawing Truth and a Construction-Grade Set</title>
+  <meta name="color-scheme" content="dark light">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    async function initMermaid() {
+      const blocks = document.querySelectorAll('.mermaid');
+      if (!blocks.length) { return; }
+      mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose',
+        themeVariables: { primaryColor: '#f3ead9', primaryTextColor: '#1f1912', primaryBorderColor: '#9d6b37',
+          lineColor: '#3b6f76', secondaryColor: '#efe4d0', tertiaryColor: '#ffffff', background: '#fbf7f1',
+          mainBkg: '#fbf7f1', nodeBorder: '#9d6b37', clusterBkg: '#f7efdf', clusterBorder: '#3b6f76',
+          edgeLabelBackground: '#fbf7f1' } });
+      await mermaid.run({ nodes: blocks });
+    }
+    const run = () => initMermaid().catch((error) => console.error('Mermaid render failed', error));
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run, { once: true }); }
+    else { run(); }
+  </script>
+  <style>
+    :root {
+      --paper: #fbf7f1; --paper-strong: #fffdf9; --ink: #1f1912; --ink-soft: #5f564c;
+      --line: #dccdb6; --line-strong: #bfa37d; --accent: #9d6b37; --accent-soft: #efe4d0;
+      --accent-2: #3b6f76; --shadow: 0 18px 40px rgba(49, 33, 16, 0.08);
+      --radius-lg: 24px; --radius-md: 18px; --radius-sm: 12px; --page-width: 1040px;
+      --display-font: Georgia, "Times New Roman", serif;
+      --body-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono-font: "Cascadia Code", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--ink);
+      background: radial-gradient(circle at top left, rgba(157,107,55,0.09), transparent 26%),
+                  radial-gradient(circle at 88% 10%, rgba(59,111,118,0.08), transparent 22%),
+                  linear-gradient(180deg, #f7f1e7 0%, #fbf7f1 28%, #f6efe5 100%);
+      font-family: var(--body-font); line-height: 1.65; letter-spacing: 0.01em; }
+    a { color: var(--accent-2); }
+    code, pre, .technical, .meta-chip, .section-index, .eyebrow, .stat-label, .stat-value, .mermaid { font-family: var(--mono-font); }
+    .page-shell { width: min(var(--page-width), calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .hero { padding: 34px; border: 1px solid rgba(159,123,79,0.28); border-radius: 30px;
+      background: linear-gradient(135deg, rgba(157,107,55,0.1), transparent 34%),
+                  linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.86)), var(--paper-strong);
+      box-shadow: var(--shadow); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr); gap: 24px; align-items: end; }
+    .eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+    .title { margin: 0; max-width: 14ch; font-family: var(--display-font); font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 0.95; letter-spacing: -0.04em; text-wrap: balance; }
+    .lede { margin: 18px 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1rem; }
+    .takeaway { margin-top: 22px; padding: 18px 20px; border-left: 4px solid var(--accent-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: rgba(59,111,118,0.08); color: #20373a; font-size: 1.02rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card, .section, .subcard, .empty-state { border: 1px solid rgba(95,72,46,0.12); background: rgba(255,253,249,0.88); box-shadow: var(--shadow); }
+    .meta-card { padding: 16px 18px; border-radius: var(--radius-md); }
+    .meta-label { color: var(--ink-soft); font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .meta-chip { margin-top: 8px; color: var(--accent); font-size: 1rem; font-weight: 700; word-break: break-word; }
+    .section { margin-top: 22px; padding: 24px; border-radius: var(--radius-lg); break-inside: avoid; page-break-inside: avoid; }
+    .section-header { display: flex; justify-content: space-between; gap: 12px 18px; align-items: end; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .section-index { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+    .section-title { margin: 0; font-family: var(--display-font); font-size: clamp(1.45rem, 2vw, 2rem); line-height: 1.05; }
+    .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { display: grid; gap: 16px; }
+    .summary-grid, .dual-grid, .phase-grid, .appendix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .subcard { padding: 18px; border-radius: var(--radius-md); break-inside: avoid; page-break-inside: avoid; }
+    .subcard h3, .subcard h4 { margin: 0 0 10px; font-size: 1rem; line-height: 1.2; }
+    .subcard p:first-child, .subcard ul:first-child, .subcard ol:first-child { margin-top: 0; }
+    .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px; }
+    .stat { padding: 14px 16px; border: 1px solid rgba(59,111,118,0.16); border-radius: var(--radius-sm); background: rgba(59,111,118,0.06); break-inside: avoid; page-break-inside: avoid; }
+    .stat-label { color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .stat-value { margin-top: 8px; color: var(--accent-2); font-size: 1.18rem; font-weight: 700; }
+    .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,0.54); break-inside: avoid; page-break-inside: avoid; }
+    .diagram-frame { overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; overscroll-behavior-y: contain; max-height: min(70vh, 720px); }
+    .chart-frame, .viz-frame { overflow: hidden; }
+    .mermaid { width: 100%; max-width: 100%; min-width: 0; color: var(--ink); }
+    .mermaid svg { display: block; width: auto !important; min-width: 100%; max-width: none !important; height: auto !important; }
+    .diagram-frame.compact-diagram { padding: 12px; max-height: min(62vh, 560px); }
+    .diagram-frame.compact-diagram .mermaid { min-width: 900px; }
+    .chart-frame canvas, .technical-frame > canvas, .viz-frame canvas, canvas.report-chart { display: block; width: 100% !important; max-width: 100%; height: 300px !important; min-height: 300px; max-height: 300px; }
+    .technical-frame table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .technical-frame th, .technical-frame td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .technical-frame th { color: var(--accent); font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    p:last-child, li:last-child { margin-bottom: 0; }
+    .footer-note { margin-top: 18px; color: rgba(95,86,76,0.74); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; }
+    @media (max-width: 920px) { .hero-grid, .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { grid-template-columns: 1fr; } .title { max-width: none; } }
+    @media (max-width: 640px) { .page-shell { width: min(100vw - 20px, var(--page-width)); padding-top: 16px; padding-bottom: 36px; } .hero, .section { padding: 18px; border-radius: 20px; } .title { font-size: clamp(2.1rem, 12vw, 3.2rem); } }
+    @media print {
+      :root { --paper: #ffffff; --paper-strong: #ffffff; --ink: #111111; --ink-soft: #444444; --line: #d6d1c8; }
+      @page { size: A4; margin: 14mm; }
+      body { background: #ffffff; }
+      .page-shell { width: 100%; max-width: none; padding: 0; }
+      .hero, .meta-card, .section, .subcard, .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame, .empty-state, .stat { background: #ffffff; box-shadow: none; }
+      .hero, .section { margin-top: 0; margin-bottom: 10mm; }
+      .diagram-frame { overflow: visible; max-height: none; }
+      .diagram-frame.compact-diagram .mermaid { min-width: 0; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" id="title-hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Final Report / Drawing Truth, Voids &amp; a Construction-Grade Set</p>
+          <h1 class="title">The 2D Half Stops Lying</h1>
+          <p class="lede">
+            Six phases that repaired the blank, unlabelled 2D drawings of the homedesign pipeline, taught
+            the spec to say "void", replaced 101 boolean modifiers with deterministic rectangle subtraction,
+            and finished the path from compiled design to a hash-verified deliverable.
+          </p>
+          <div class="takeaway">
+            Three reproduced defects — dropped room names, blank north/south elevations, a last-image-wins
+            staleness badge — are fixed at the root, and the flagship <code>contractor-as-drawn</code> now
+            declares its double-height void and rooftop plant room instead of faking them.
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="meta-label">Project</div><div class="meta-chip">homedesign — drawing set</div></div>
+          <div class="meta-card"><div class="meta-label">Repository</div><div class="meta-chip">freecad-blender</div></div>
+          <div class="meta-card"><div class="meta-label">Date</div><div class="meta-chip">2026-08-15</div></div>
+          <div class="meta-card"><div class="meta-label">Plan</div><div class="meta-chip">2026-08-14-homedesign-drawing-truth-and-voids-plan.md</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="executive-summary">
+      <div class="section-header">
+        <div><div class="section-index">01 / Executive Summary</div><h2 class="section-title">Executive Summary</h2></div>
+      </div>
+      <div class="summary-grid">
+        <div class="subcard">
+          <h3>What was wrong</h3>
+          <p>The renders were trustworthy but the drawings were not: every room's authored name was dropped
+          by the compiler, the north and south elevations of the flagship design were empty sheets, and the
+          PDF's <code>STALE</code> badge was computed per image but rendered per page.</p>
+        </div>
+        <div class="subcard">
+          <h3>What was built</h3>
+          <p>Six phases: room names + XML-safe writers + per-image staleness; a real orthographic elevation
+          projection; declared floor voids, rooftop structures and four new room types; boolean-free wall
+          geometry; dimension chains, numeric levels and spec-driven section cuts; and the full deliverable
+          path (<code>brief --init</code>, <code>--out</code>, <code>publish</code>, <code>site.north_deg</code>).</p>
+        </div>
+        <div class="subcard">
+          <h3>Headline result</h3>
+          <p><strong>204 passing tests</strong> (up from 134), <code>ruff</code> clean, skill mirror in sync.
+          The contractor's north elevation went from a bare outline to a ~37&nbsp;KB facade with walls,
+          openings and parapets; the mezzanine void is declared, not faked.</p>
+        </div>
+        <div class="subcard">
+          <h3>The honest caveat</h3>
+          <p>The plan's furniture-coverage target (55/62) is unachievable: stairwell and elevator shafts are
+          unfurnished by design, capping the flagship at 47/61. Measured coverage is 35/61 — a real gain from
+          19/62, recorded rather than hidden.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="background-objective">
+      <div class="section-header">
+        <div><div class="section-index">02 / Background &amp; Objective</div><h2 class="section-title">Background &amp; Objective</h2></div>
+      </div>
+      <div class="narrative">
+        <p>The third-pass brainstorm (<code>research/2026-08-14-homedesign-third-pass-brainstorm.md</code>) framed
+        the problem precisely: the 3D half of the pipeline had become trustworthy, but the 2D half — the half an
+        architect and contractor build from — was silently producing blank, unlabelled drawings, and nothing in
+        134 tests noticed. The flagship's own fidelity ledger named the ceiling: the spec could not say "void",
+        so a fake <code>SÀN GIẢ</code> room was authored to pass a checker.</p>
+        <p>The objective was the six-phase plan: land room names safely, project real elevations, let the spec
+        declare voids and rooftop structures, build walls without booleans, dimension the drawings, and remove
+        the manual steps between a compiled design and a shippable deliverable.</p>
+      </div>
+    </section>
+
+    <section class="section" id="inputs-scope">
+      <div class="section-header">
+        <div><div class="section-index">03 / Inputs &amp; Scope</div><h2 class="section-title">Inputs &amp; Scope</h2></div>
+      </div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>Inputs</h3><ul>
+          <li><code>plans/2026-08-14-homedesign-drawing-truth-and-voids-plan.md</code> — the six-phase plan.</li>
+          <li><code>research/2026-08-14-homedesign-third-pass-brainstorm.md</code> — the reproduced defects.</li>
+          <li><code>designs/contractor-as-drawn.fidelity.md</code> — the departure ledger (h)/(i).</li>
+          <li>Two shipped designs and three fixture specs, 134 passing tests at baseline.</li>
+        </ul></div>
+        <div class="subcard"><h3>In scope</h3><ul>
+          <li>Room-name propagation + XML escaping + per-image staleness.</li>
+          <li>Elevation projection rewrite; declared voids / structures / room types.</li>
+          <li>Boolean-free walls; dimension chains; section positions; deliverable path.</li>
+        </ul></div>
+        <div class="subcard"><h3>Out of scope</h3><ul>
+          <li>Curved/non-orthogonal geometry, split levels, IFC export.</li>
+          <li>Textures, UVs, HDRI, a downloaded asset library, GPU rendering.</li>
+          <li>Changing the Blender version or render-engine selection; redesigning either house.</li>
+        </ul></div>
+        <div class="subcard"><h3>Decisions</h3><ul>
+          <li>Elevations rewritten, not patched (the coplanarity definition was wrong, not the tolerance).</li>
+          <li>Voids belong on the storey (<code>storeys[].voids[]</code>), not as a room type.</li>
+          <li>Legacy EEVEE stays pinned; <code>bpy</code> tests are optional, never in CI.</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="methodology">
+      <div class="section-header">
+        <div><div class="section-index">04 / Methodology</div><h2 class="section-title">Methodology</h2></div>
+      </div>
+      <div class="narrative">
+        <p>The plan was executed phase-by-phase, each verified to its own exit criteria before the next began.
+        <strong>PHASE-01</strong> propagated <code>rooms[].name</code> through both compiler branches and added a
+        single <code>xml.sax.saxutils.escape</code> helper used by every SVG/HTML text site. <strong>PHASE-02</strong>
+        replaced the plot-coplanarity wall filter with a true orthographic projection (all walls, openings,
+        parapets, treads, roof polygons, painter-sorted). <strong>PHASE-03</strong> grew the schema (<code>voids</code>,
+        <code>structures</code>, four room types) and re-authored the flagship. <strong>PHASE-04</strong> moved wall
+        geometry into pure <code>rects.subtract_rects</code> and deleted the boolean solver. <strong>PHASE-05</strong>
+        added dimension chains and numeric levels. <strong>PHASE-06</strong> added <code>brief</code>, <code>--out</code>,
+        <code>publish</code> and <code>north_deg</code>, plus furniture for the empty room types.</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">Tests</div><div class="stat-value">204 passed</div></div>
+        <div class="stat"><div class="stat-label">Phases</div><div class="stat-value">6 / 6</div></div>
+        <div class="stat"><div class="stat-label">North elevation</div><div class="stat-value">~37 KB (was blank)</div></div>
+        <div class="stat"><div class="stat-label">Boolean modifiers</div><div class="stat-value">0 (was 101/build)</div></div>
+        <div class="stat"><div class="stat-label">Flagship preview build</div><div class="stat-value">470 s</div></div>
+        <div class="stat"><div class="stat-label">Flagship final gallery</div><div class="stat-value">~25 min</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="phase-analysis">
+      <div class="section-header">
+        <div><div class="section-index">05 / Phase-by-Phase Analysis</div><h2 class="section-title">Phase-by-Phase Analysis</h2></div>
+      </div>
+      <div class="phase-grid">
+        <div class="subcard"><h3>PHASE-01 · Drawing truth</h3><p>Room names now reach plans, sections, DXF TEXT and the
+        PDF schedule; every text site is XML-safe; <code>STALE</code> badges per image; <code>roof</code> requires
+        <code>type</code>; dead CLI code removed.</p></div>
+        <div class="subcard"><h3>PHASE-02 · Real elevations</h3><p><code>build_elevation</code> is a painter-sorted
+        orthographic projection. All four sides of the flagship carry walls and openings; the north facade is no
+        longer an empty rectangle.</p></div>
+        <div class="subcard"><h3>PHASE-03 · Voids &amp; structures</h3><p><code>storeys[].voids[]</code> and
+        <code>roof.structures[]</code> added; <code>check_room_support</code> counts declared voids as supported;
+        <code>SÀN GIẢ</code> removed and the plant room declared.</p></div>
+        <div class="subcard"><h3>PHASE-04 · No booleans</h3><p><code>wall_face_fragments</code> emits one box per
+        subtracted fragment; the EXACT boolean solver is gone; wall geometry is unit-tested outside Blender for the
+        first time.</p></div>
+        <div class="subcard"><h3>PHASE-05 · Dimensions</h3><p>Per-storey dimension chains (SVG + DXF), numeric level
+        labels, overall height, opening head annotations, spec-driven section cuts, and no more false "Scale 1:100".</p></div>
+        <div class="subcard"><h3>PHASE-06 · Deliverable path</h3><p><code>brief --init</code>, <code>--out</code>,
+        hash-verified <code>publish</code>, <code>site.north_deg</code> (sun + north arrow), and furniture for the
+        empty room types with per-kind materials.</p></div>
+      </div>
+      <div class="diagram-frame compact-diagram" style="margin-top:16px">
+        <pre class="mermaid">
+flowchart LR
+  A["blank, unlabelled 2D set<br/>134 tests"] --> B["PHASE-01<br/>names · XML · per-image STALE"]
+  B --> C["PHASE-02<br/>orthographic elevations"]
+  C --> D["PHASE-03<br/>voids · structures · room types"]
+  D --> E["PHASE-04<br/>wall_face_fragments (no booleans)"]
+  E --> F["PHASE-05<br/>dimension chains · sections"]
+  F --> G["PHASE-06<br/>brief · --out · publish · north_deg"]
+  G --> H["204 tests · fresh flagship gallery"]
+        </pre>
+      </div>
+    </section>
+
+    <section class="section" id="findings-recommendation">
+      <div class="section-header">
+        <div><div class="section-index">06 / Findings &amp; Recommendation</div><h2 class="section-title">Findings &amp; Recommendation</h2></div>
+      </div>
+      <div class="narrative">
+        <h3>The defects were real, and each is now regression-pinned.</h3>
+        <ul>
+          <li><strong>Dropped names</strong> — <code>compile_spec</code> now returns <code>BẾP &amp; ĂN</code>, and a
+          test with an <code>&amp;</code>-bearing name proves the SVG still parses.</li>
+          <li><strong>Blank elevations</strong> — the north/south elevation test fails on the old code and passes now,
+          because the plane test was replaced by a projection over every wall.</li>
+          <li><strong>Last-image-wins STALE</strong> — a mixed stale/fresh page now shows exactly one per-image badge.</li>
+          <li><strong>The "void" ceiling</strong> — the spec can declare a beam-spanned opening; the checker is stricter,
+          not weaker, and the fake <code>SÀN GIẢ</code> room is gone.</li>
+        </ul>
+        <h3>Recorded deviations from the plan's own targets</h3>
+        <p>Three plan targets were internally inconsistent and are recorded rather than hidden: two pre-existing
+        elevation tests were updated to match the (correct) new behaviour; the dimension-chain example assumed a
+        ground floor without the lift lobby split; and the furniture-coverage target exceeded what the shaft rooms
+        make possible.</p>
+        <h3>Recommendation</h3>
+        <p>Ship it. The 2D set is now as trustworthy as the renders. Treat the remaining gap — <code>blender/</code>
+        furniture coverage and the plan's own <code>verify</code> subcommand suggestion — as the next pass.</p>
+      </div>
+      <div class="viz-frame" style="margin-top:16px">
+        <canvas id="testsChart"></canvas>
+      </div>
+    </section>
+
+    <section class="section" id="risks-open-questions">
+      <div class="section-header">
+        <div><div class="section-index">07 / Risks / Open Questions</div><h2 class="section-title">Risks / Open Questions</h2></div>
+      </div>
+      <div class="dual-grid">
+        <div class="subcard"><h3>Risks</h3><ul>
+          <li><strong>Elevation bloat:</strong> projecting every wall grows the SVG; the PDF inliner was left with
+          headroom and the brief HTML stayed within budget.</li>
+          <li><strong>Hash churn:</strong> PHASE-03/05 change the flagship model hash, so old renders are stale until
+          the final re-render + <code>publish</code> — completed this pass.</li>
+          <li><strong>Blender-side tests:</strong> they run only where <code>bpy</code> is installed; CI skips them by
+          design.</li>
+        </ul></div>
+        <div class="subcard"><h3>Open questions</h3><ul>
+          <li>Should the light well be modelled as a true multi-level shaft (it is currently only renamed, not cut)?</li>
+          <li>Should a <code>homedesign verify</code> subcommand promote the hand-run invariants into the tool?</li>
+          <li>Should furniture coverage extend to stairwell/elevator (the 14 rooms that cap the target)?</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="appendices-evidence">
+      <div class="section-header">
+        <div><div class="section-index">08 / Appendices / Evidence Notes</div><h2 class="section-title">Appendices / Evidence Notes</h2></div>
+      </div>
+      <div class="appendix-grid">
+        <div class="subcard"><h3>Evidence of completion</h3><ul>
+          <li><code>python -m pytest tests -q</code> → 204 passed; <code>ruff check src tests</code> → clean;
+          <code>sync_skill --check</code> → ok.</li>
+          <li><code>homedesign plans designs/contractor-as-drawn.json</code> → north elevation ~37&nbsp;KB, all SVGs parse.</li>
+          <li><code>homedesign publish designs/contractor-as-drawn.json</code> → exits 0 after the fresh <code>final</code> render.</li>
+          <li><code>grep -c void_fill designs/contractor-as-drawn.json</code> → 0.</li>
+        </ul></div>
+        <div class="subcard"><h3>Files</h3><ul>
+          <li><code>src/homedesign/</code> — <code>xmltext.py</code>, <code>constants.py</code>, <code>brief.py</code>, <code>publish.py</code> new; compiler/checks/elevation/plan2d/pdf/placement/rects rewritten.</li>
+          <li><code>src/homedesign/blender/</code> — boolean-free <code>build_walls</code>, roof structures, per-kind furniture materials.</li>
+          <li><code>spec/homespec.schema.json</code> — voids, structures, sections, north_deg, four room types.</li>
+          <li><code>tests/</code> — 204 tests incl. <code>test_wall_fragments.py</code>, <code>test_blender_geometry.py</code>, <code>test_publish.py</code>.</li>
+        </ul></div>
+        <div class="subcard"><h3>Glossary</h3><ul>
+          <li><strong>SÀN GIẢ</strong> — the removed "false floor" placeholder room.</li>
+          <li><strong>Ô THÔNG TẦNG</strong> — the declared double-height mezzanine void.</li>
+          <li><strong>Ô KỸ THUẬT THANG MÁY</strong> — the rooftop lift plant room, now a <code>roof.structures[]</code> entry.</li>
+        </ul></div>
+      </div>
+      <div class="footer-note">designed for html first, printable without reconstruction</div>
+    </section>
+  </main>
+  <script>
+    (function() {
+      document.querySelectorAll('canvas').forEach((canvas) => {
+        canvas.classList.add('report-chart');
+        const parent = canvas.parentElement;
+        if (parent && parent.classList.contains('technical-frame') && !parent.classList.contains('chart-frame')) {
+          parent.classList.add('chart-frame');
+        }
+      });
+    })();
+    if (window.Chart) {
+      Chart.defaults.devicePixelRatio = 1;
+      Chart.defaults.animation = false;
+      Chart.defaults.resizeDelay = 150;
+      Chart.defaults.normalized = true;
+      Chart.defaults.maintainAspectRatio = false;
+      Chart.defaults.responsive = true;
+    }
+    (function() {
+      function bootstrap() {
+        if (!window.Chart) { return; }
+        var el = document.getElementById('testsChart');
+        if (!el) { return; }
+        new Chart(el, {
+          type: 'bar',
+          data: {
+            labels: ['Baseline', 'PHASE-01', 'PHASE-02', 'PHASE-03', 'PHASE-04', 'PHASE-05', 'PHASE-06'],
+            datasets: [{
+              label: 'Passing tests (cumulative per phase)',
+              data: [134, 145, 157, 167, 178, 189, 204],
+              backgroundColor: ['#9d6b37', '#3b6f76', '#3b6f76', '#3b6f76', '#3b6f76', '#3b6f76', '#3b6f76'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false, normalized: true, resizeDelay: 150,
+            plugins: { legend: { display: false } },
+            scales: { y: { title: { display: true, text: 'tests' }, beginAtZero: true } }
+          }
+        });
+      }
+      if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrap, { once: true }); }
+      else { bootstrap(); }
+    })();
+  </script>
+</body>
+</html>

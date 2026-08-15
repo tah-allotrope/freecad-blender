@@ -70,3 +70,22 @@ def open_edges(rect, others, eps: float = 1.0) -> set[str]:
 
 def _span_overlap(a: float, b: float, c: float, d: float) -> bool:
     return a < d and c < b
+
+
+def wall_face_fragments(
+    span_mm: float,
+    height_mm: float,
+    openings: list[tuple[float, float, float, float]],
+) -> list[tuple[float, float, float, float]]:
+    """The solid fragments of a wall face (S4), as `(offset_mm, z_mm, width_mm,
+    height_mm)` tuples in face coordinates, where the first axis runs along the
+    wall span and the second is vertical. Each opening is given as
+    `(offset_mm, sill_mm, width_mm, head_minus_sill_mm)`.
+
+    This is exactly `subtract_rects` over the wall's 2D face, so a wall with
+    openings becomes up to four boxes per opening (under-sill band, over-head
+    band and the two jamb piers) -- deterministic, artifact-free, no booleans.
+    """
+    if not openings:
+        return [(0.0, 0.0, span_mm, height_mm)]
+    return subtract_rects(0.0, 0.0, span_mm, height_mm, list(openings))

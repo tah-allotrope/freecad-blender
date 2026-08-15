@@ -1,4 +1,4 @@
-"""CLI: python -m homedesign <compile|plans|build> <spec.json> [--final] [--floor N]"""
+"""CLI: python -m homedesign <compile|plans|build|render|pdf|brief|publish> <spec.json> [--profile ...]"""
 from __future__ import annotations
 
 import argparse
@@ -14,6 +14,9 @@ from .validate import validate_compiled, validate_schema
 from . import plan2d
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+DEFAULT_OUT = REPO_ROOT / "output"
+DEFAULT_DELIVERABLES = REPO_ROOT / "deliverables"
 
 
 def _write_model_json(model, out_dir: Path) -> Path:
@@ -75,15 +78,18 @@ def _handle_errors(errors, args) -> int | None:
     return 1 if errors_out else None
 
 
+def _add_out(parser):
+    parser.add_argument("--out", default=DEFAULT_OUT, type=Path,
+                        help="output directory (default: output/)")
+
+
 def cmd_compile(args) -> int:
     spec_path = Path(args.spec)
     model, errors = _validate_and_compile(spec_path)
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    out_dir = REPO_ROOT / "output" / "compiled"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = _write_model_json(model, REPO_ROOT / "output")
+    out_path = _write_model_json(model, args.out)
     if not args.json:
         print(str(out_path))
     return 0
@@ -95,7 +101,7 @@ def cmd_plans(args) -> int:
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    paths = plan2d.write_plans(model, REPO_ROOT / "output")
+    paths = plan2d.write_plans(model, args.out)
     if not args.json:
         for p in paths:
             print(str(p))
@@ -110,7 +116,7 @@ def cmd_build(args) -> int:
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    out_dir = REPO_ROOT / "output"
+    out_dir = args.out
     plan_paths = plan2d.write_plans(model, out_dir)
     if not args.json:
         for p in plan_paths:
@@ -135,13 +141,13 @@ def cmd_pdf(args) -> int:
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    out_dir = REPO_ROOT / "output"
+    out_dir = args.out
 
     svg_dir = out_dir / "svg"
     needs_drawings = not all((svg_dir / f"{model.name}_f{s.level}.svg").exists() for s in model.storeys)
     if not needs_drawings:
         needs_drawings = not (svg_dir / f"{model.name}_elev_north.svg").exists() \
-            or not (svg_dir / f"{model.name}_section_x.svg").exists()
+            or not any(svg_dir.glob(f"{model.name}_section_*.svg"))
     if needs_drawings:
         plan2d.write_plans(model, out_dir)
 
@@ -166,7 +172,7 @@ def cmd_render(args) -> int:
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    out_dir = REPO_ROOT / "output"
+    out_dir = args.out
 
     model_path = _write_model_json(model, out_dir)
 
@@ -187,6 +193,44 @@ def cmd_render(args) -> int:
     return 0
 
 
+def cmd_brief(args) -> int:
+    from .brief import scaffold_brief
+
+    spec_path = Path(args.spec)
+    model, errors = _validate_and_compile(spec_path)
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
+    brief_path = Path(args.brief) if args.brief else REPO_ROOT / "spec" / "briefs" / f"{model.name}.json"
+    if brief_path.exists() and not args.force:
+        print(f"refusing to overwrite existing brief: {brief_path} (use --force)", file=sys.stderr)
+        return 1
+    brief_path.parent.mkdir(parents=True, exist_ok=True)
+    brief_path.write_text(json.dumps(scaffold_brief(model), indent=2, ensure_ascii=False), encoding="utf-8")
+    if not args.json:
+        print(str(brief_path))
+    return 0
+
+
+def cmd_publish(args) -> int:
+    from .publish import publish
+
+    spec_path = Path(args.spec)
+    model, errors = _validate_and_compile(spec_path)
+    code = _handle_errors(errors, args)
+    if code is not None:
+        return code
+    try:
+        paths = publish(model, args.out, args.deliverables, force=args.force)
+    except RuntimeError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    if not args.json:
+        for p in paths:
+            print(str(p))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="homedesign")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -199,10 +243,12 @@ def main(argv=None) -> int:
 
     p_compile = sub.add_parser("compile", parents=[json_parent], help="validate + compile a spec to a model JSON")
     p_compile.add_argument("spec")
+    _add_out(p_compile)
     p_compile.set_defaults(func=cmd_compile)
 
     p_plans = sub.add_parser("plans", parents=[json_parent], help="generate 2D SVG/DXF plans")
     p_plans.add_argument("spec")
+    _add_out(p_plans)
     p_plans.set_defaults(func=cmd_plans)
 
     p_build = sub.add_parser("build", parents=[json_parent], help="full build: plans + Blender scene + render")
@@ -212,7 +258,7 @@ def main(argv=None) -> int:
                          help="render profile; overrides --final")
     p_build.add_argument("--gltf", action="store_true",
                          help="also export a GLB and a self-contained web viewer")
-    p_build.add_argument("--floor", type=int, default=None)
+    _add_out(p_build)
     p_build.set_defaults(func=cmd_build)
 
     p_render = sub.add_parser("render", parents=[json_parent], help="render views of an already-built model (reuses the .blend)")
@@ -222,6 +268,7 @@ def main(argv=None) -> int:
     p_render.add_argument("--profile", default="preview", choices=["preview", "final", "cycles"])
     p_render.add_argument("--skip-existing", action="store_true", help="skip views whose PNG exists")
     p_render.add_argument("--detach", action="store_true", help="launch detached and return immediately")
+    _add_out(p_render)
     p_render.set_defaults(func=cmd_render)
 
     p_pdf = sub.add_parser("pdf", parents=[json_parent], help="assemble the architect-brief PDF")
@@ -232,7 +279,23 @@ def main(argv=None) -> int:
                        help="embed gallery images as base64 data URIs (self-contained HTML; large)")
     p_pdf.add_argument("--require-fresh", action="store_true",
                        help="fail (exit 1) if any gallery render is stale vs the current model")
+    _add_out(p_pdf)
     p_pdf.set_defaults(func=cmd_pdf)
+
+    p_brief = sub.add_parser("brief", parents=[json_parent], help="scaffold a brief copy file")
+    p_brief.add_argument("spec")
+    p_brief.add_argument("--init", action="store_true", help="scaffold the brief copy")
+    p_brief.add_argument("--brief", default=None, help="output path (default: spec/briefs/<name>.json)")
+    p_brief.add_argument("--force", action="store_true", help="overwrite an existing brief")
+    p_brief.set_defaults(func=cmd_brief)
+
+    p_publish = sub.add_parser("publish", parents=[json_parent], help="copy artifacts into deliverables/ after hash verification")
+    p_publish.add_argument("spec")
+    _add_out(p_publish)
+    p_publish.add_argument("--deliverables", default=DEFAULT_DELIVERABLES, type=Path,
+                           help="deliverables directory (default: deliverables/)")
+    p_publish.add_argument("--force", action="store_true", help="publish even when renders are stale")
+    p_publish.set_defaults(func=cmd_publish)
 
     args = parser.parse_args(argv)
     return args.func(args)

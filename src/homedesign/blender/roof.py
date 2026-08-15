@@ -4,12 +4,13 @@ import math
 import bmesh
 import bpy
 
+from homedesign.constants import FLAT_ROOF_THICKNESS_MM
 from homedesign.rects import subtract_rects
 
 from .geom import make_box
 from .materials import get_material
 
-FLAT_THICKNESS = 0.2
+FLAT_THICKNESS = FLAT_ROOF_THICKNESS_MM / 1000
 
 
 def build_roof(roof_mm, style, collection):

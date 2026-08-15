@@ -28,6 +28,35 @@
      ],
      "default": "modern-minimal"
     },
+    "sections": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "axis",
+       "position_mm"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "type": "string",
+        "minLength": 1
+       },
+       "axis": {
+        "type": "string",
+        "enum": [
+         "x",
+         "y"
+        ]
+       },
+       "position_mm": {
+        "type": "number",
+        "minimum": 0
+       }
+      }
+     }
+    },
     "views": {
      "type": "array",
      "items": {
@@ -113,6 +142,13 @@
      ],
      "default": "centre",
      "description": "How exterior walls sit relative to the room edge: 'centre' straddles it (today's geometry); 'inside' lies wholly on the room side so the outer face lands on the plot line."
+    },
+    "north_deg": {
+     "type": "number",
+     "minimum": 0,
+     "exclusiveMaximum": 360,
+     "default": 0,
+     "description": "Compass bearing of north in degrees clockwise from model -y toward model +x; rotates the sun rig and the plan north arrow."
     }
    }
   },
@@ -142,6 +178,9 @@
      },
      "roof": {
       "type": "object",
+      "required": [
+       "type"
+      ],
       "additionalProperties": false,
       "properties": {
        "type": {
@@ -221,6 +260,79 @@
           }
          }
         }
+       },
+       "structures": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "x",
+          "y",
+          "w",
+          "d",
+          "height_mm"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "x": {
+           "type": "number",
+           "minimum": 0
+          },
+          "y": {
+           "type": "number",
+           "minimum": 0
+          },
+          "w": {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          "d": {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          "height_mm": {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          "name": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     },
+     "voids": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "x",
+        "y",
+        "w",
+        "d"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "x": {
+         "type": "number",
+         "minimum": 0
+        },
+        "y": {
+         "type": "number",
+         "minimum": 0
+        },
+        "w": {
+         "type": "number",
+         "exclusiveMinimum": 0
+        },
+        "d": {
+         "type": "number",
+         "exclusiveMinimum": 0
+        },
+        "reason": {
+         "type": "string"
+        }
        }
       }
      },
@@ -286,7 +398,11 @@
           "balcony",
           "office",
           "storage",
-          "elevator"
+          "elevator",
+          "terrace",
+          "wc",
+          "utility",
+          "courtyard"
          ]
         },
         "rect": {

@@ -96,6 +96,7 @@ class Roof:
     d: float
     base_z: float
     voids: list[Rect] = field(default_factory=list)
+    structures: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -117,6 +118,8 @@ class Storey:
     stairs: Optional[Stairs] = None
     roof: Optional[Roof] = None
     floor_voids: list[Rect] = field(default_factory=list)
+    authored_voids: list[Rect] = field(default_factory=list)
+    authored_void_reasons: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -129,6 +132,8 @@ class CompiledModel:
     views: list[View] = field(default_factory=list)
     context: dict = field(default_factory=dict)
     wall_alignment: str = "centre"  # "centre" or "inside" (S5)
+    sections: list[dict] = field(default_factory=list)
+    north_deg: float = 0.0
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -162,6 +167,7 @@ class CompiledModel:
             if s.get("roof"):
                 roof_data = dict(s["roof"])
                 roof_data["voids"] = [Rect(**v) for v in roof_data.get("voids", [])]
+                roof_data["structures"] = roof_data.get("structures", [])
                 roof = Roof(**roof_data)
             storeys.append(
                 Storey(
@@ -175,6 +181,8 @@ class CompiledModel:
                     stairs=stairs,
                     roof=roof,
                     floor_voids=[Rect(**v) for v in s.get("floor_voids", [])],
+                    authored_voids=[Rect(**v) for v in s.get("authored_voids", [])],
+                    authored_void_reasons=list(s.get("authored_void_reasons", [])),
                 )
             )
         views = [View(**v) for v in data.get("views", [])]
@@ -187,6 +195,8 @@ class CompiledModel:
             views=views,
             context=data.get("context", {}),
             wall_alignment=data.get("wall_alignment", "centre"),
+            sections=list(data.get("sections", [])),
+            north_deg=data.get("north_deg", 0.0),
         )
 
 

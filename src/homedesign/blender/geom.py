@@ -51,14 +51,3 @@ def make_hinged_box(name, x, y, z, w, d, h, hinge_x, hinge_y, angle_rad, collect
     if material:
         obj.data.materials.append(material)
     return obj
-
-
-def boolean_difference(target, cutter, collection):
-    mod = target.modifiers.new(name="cut", type="BOOLEAN")
-    mod.operation = "DIFFERENCE"
-    mod.object = cutter
-    mod.solver = "EXACT"
-    bpy.context.view_layer.objects.active = target
-    bpy.ops.object.modifier_apply(modifier=mod.name)
-    collection.objects.unlink(cutter) if cutter.name in collection.objects else None
-    bpy.data.objects.remove(cutter, do_unlink=True)

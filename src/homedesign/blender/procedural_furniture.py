@@ -6,7 +6,7 @@ Runs inside Blender.
 import math
 
 from .geom import make_box, make_hinged_box
-from .materials import get_material
+from .materials import furniture_material_key, get_material
 
 
 class _Placer:
@@ -43,7 +43,7 @@ def _placer_for(item, x, y):
 def build_item(item, room_x, room_y, base_z, style, collection):
     """item is a placement.FurnitureItem (room-local meters); room_x/room_y
     offset it into world space; base_z is the storey floor elevation (m)."""
-    mat = get_material(style, "furniture")
+    mat = get_material(style, furniture_material_key(item.kind))
     x = room_x + item.x
     y = room_y + item.y
     z = base_z
@@ -102,6 +102,22 @@ def _build_wc(item, x, y, z, mat, collection, place):
     return None
 
 
+def _build_shelving(item, x, y, z, mat, collection, place):
+    return place.box(f"shelving_{x:.2f}_{y:.2f}", x, y, z, item.w, item.d, item.h, collection, mat)
+
+
+def _build_console(item, x, y, z, mat, collection, place):
+    return place.box(f"console_{x:.2f}_{y:.2f}", x, y, z, item.w, item.d, item.h, collection, mat)
+
+
+def _build_car(item, x, y, z, mat, collection, place):
+    return place.box(f"car_{x:.2f}_{y:.2f}", x, y, z, item.w, item.d, item.h, collection, mat)
+
+
+def _build_planter(item, x, y, z, mat, collection, place):
+    return place.box(f"planter_{x:.2f}_{y:.2f}", x, y, z, item.w, item.d, item.h, collection, mat)
+
+
 _BUILDERS = {
     "bed": _build_bed,
     "sofa": _build_sofa,
@@ -111,4 +127,8 @@ _BUILDERS = {
     "chair": _build_chair,
     "kitchen_run": _build_kitchen_run,
     "wc": _build_wc,
+    "shelving": _build_shelving,
+    "console": _build_console,
+    "car": _build_car,
+    "planter": _build_planter,
 }

@@ -101,3 +101,74 @@ def test_unsupported_room_flagged():
     from homedesign.checks import check_room_support
     errors = check_room_support(model)
     assert any(e.code == "room_unsupported" for e in errors)
+
+
+def _void_supported_spec(with_void=True):
+    spec = {
+        "meta": {"name": "t", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 8000},
+        "storeys": [
+            {
+                "level": 0, "name": "G", "height_mm": 3000,
+                "rooms": [
+                    # Only tiles the front 4000mm; y 4000-8000 is a declared void.
+                    {"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                ],
+                "openings": [],
+            },
+            {
+                "level": 1, "name": "F1", "height_mm": 3000,
+                "rooms": [
+                    {"id": "c", "type": "bedroom", "rect": {"x": 0, "y": 4000, "w": 4000, "d": 4000}},
+                ],
+                "openings": [],
+            },
+        ],
+    }
+    if with_void:
+        spec["storeys"][0]["voids"] = [{"x": 0, "y": 4000, "w": 4000, "d": 4000}]
+    return spec
+
+
+def test_declared_void_supports_room_above():
+    from homedesign.checks import check_room_support
+
+    model = compile_spec(_void_supported_spec(with_void=True))
+    assert check_room_support(model) == []
+
+
+def test_removing_declared_void_flags_unsupported_room():
+    from homedesign.checks import check_room_support
+
+    model = compile_spec(_void_supported_spec(with_void=False))
+    errors = check_room_support(model)
+    assert len([e for e in errors if e.code == "room_unsupported"]) == 1
+    assert "0%" in errors[0].message
+
+
+def test_large_void_span_is_a_warning():
+    from homedesign.checks import check_void_spans
+
+    spec = _void_supported_spec(with_void=True)
+    spec["storeys"][0]["voids"] = [{"x": 0, "y": 0, "w": 7000, "d": 7000}]
+    spec["storeys"][0]["rooms"] = [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 8000, "d": 8000}}]
+    spec["site"]["plot_width_mm"] = 8000
+    spec["site"]["plot_depth_mm"] = 8000
+    # The upper room now sits over the (declared) void; give it a supported area
+    # so room_support is not the thing under test.
+    model = compile_spec(spec)
+    errors = check_void_spans(model)
+    assert any(e.code == "void_span_large" and e.severity == "warning" for e in errors)
+
+
+def test_void_dedupes_with_elevator_footprint():
+    spec = _void_supported_spec(with_void=True)
+    spec["storeys"][0]["rooms"].append(
+        {"id": "lift", "type": "elevator", "rect": {"x": 0, "y": 4000, "w": 4000, "d": 4000}}
+    )
+    model = compile_spec(spec)
+    storey = model.storeys[0]
+    assert len(storey.authored_voids) == 1
+    # The authored void coincides with the elevator footprint, so the merged
+    # floor_voids collapses to one rectangle.
+    assert len(storey.floor_voids) == 1

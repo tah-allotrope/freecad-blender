@@ -20,13 +20,14 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from homedesign.blender import furnish, joinery, railings, roof as roof_mod  # noqa: E402
-from homedesign.blender.geom import boolean_difference, make_box  # noqa: E402
+from homedesign.blender.geom import make_box  # noqa: E402
 from homedesign.blender.materials import floor_material_key, get_material  # noqa: E402
+from homedesign.constants import FLOOR_SLAB_THICKNESS_MM, FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES  # noqa: E402
 from homedesign.model import Rect  # noqa: E402
-from homedesign.rects import open_edges, subtract_rects  # noqa: E402
+from homedesign.rects import open_edges, subtract_rects, wall_face_fragments  # noqa: E402
 from homedesign.render_profiles import RENDER_PROFILES  # noqa: E402
 
-FLOOR_SLAB_THICKNESS = 0.05
+FLOOR_SLAB_THICKNESS = FLOOR_SLAB_THICKNESS_MM / 1000
 NEIGHBOUR_WIDTH_MM = 3000.0
 
 
@@ -55,7 +56,6 @@ def new_collection(name):
 
 def build_walls(storey, style, structure):
     base_z = storey["base_z"] / 1000
-    height = storey["height_mm"] / 1000
     room_types = {r["id"]: r["type"] for r in storey["rooms"]}
     opening_wall_ids = {o["wall_id"] for o in storey["openings"]}
     for wall in storey["walls"]:
@@ -64,31 +64,38 @@ def build_walls(storey, style, structure):
         # _add_balcony_parapets instead of a full-height wall.
         if (
             wall.get("room_id")
-            and room_types.get(wall["room_id"]) == "balcony"
+            and room_types.get(wall["room_id"]) in OPEN_ROOM_TYPES
             and wall["id"] not in opening_wall_ids
         ):
             continue
-        x, y = wall["x"] / 1000, wall["y"] / 1000
-        w, h = wall["w"] / 1000, wall["h"] / 1000
+
         mat_key = "wall_exterior" if wall["kind"] == "exterior" else "wall_partition"
         mat = get_material(style, mat_key)
-        wall_obj = make_box(f"wall_{wall['id']}", x, y, base_z, w, h, height, structure, mat)
 
-        openings = [o for o in storey["openings"] if o["wall_id"] == wall["id"]]
-        for opening in openings:
-            sill = opening["sill_mm"] / 1000
-            head = opening["head_mm"] / 1000
-            width = opening["width_mm"] / 1000
-            thickness = wall["thickness"] / 1000
-            pad = 0.02
+        # Build the wall face by pure rectangle subtraction (S4): openings are
+        # holes in (span, height) space, each fragment becomes one solid box.
+        span = wall["h"] if wall["orientation"] == "vertical" else wall["w"]
+        holes = [
+            (o["offset_mm"], o["sill_mm"], o["width_mm"], o["head_mm"] - o["sill_mm"])
+            for o in storey["openings"]
+            if o["wall_id"] == wall["id"]
+        ]
+        fragments = wall_face_fragments(span, storey["height_mm"], holes)
+        for i, (fs, ft, fw, fh) in enumerate(fragments):
             if wall["orientation"] == "vertical":
-                cx, cy = x - pad, y + opening["offset_mm"] / 1000
-                cw, cd = thickness + 2 * pad, width
+                bx, by = wall["x"] / 1000, (wall["y"] + fs) / 1000
+                bw, bd = wall["thickness"] / 1000, fw / 1000
             else:
-                cx, cy = x + opening["offset_mm"] / 1000, y - pad
-                cw, cd = width, thickness + 2 * pad
-            cutter = make_box(f"cut_{opening['id']}", cx, cy, base_z + sill, cw, cd, head - sill, structure)
-            boolean_difference(wall_obj, cutter, structure)
+                bx, by = (wall["x"] + fs) / 1000, wall["y"] / 1000
+                bw, bd = fw / 1000, wall["thickness"] / 1000
+            make_box(
+                f"wall_{wall['id']}_{i}", bx, by, base_z + ft / 1000, bw, bd, fh / 1000,
+                structure, mat,
+            )
+
+        for opening in storey["openings"]:
+            if opening["wall_id"] != wall["id"]:
+                continue
             joinery.build_opening_furniture(opening, wall, base_z, style, structure)
 
 
@@ -129,7 +136,7 @@ def _add_balcony_parapets(storey, style, structure):
     base_z = storey["base_z"] / 1000
     mat = get_material(style, "wall_exterior")
     for i, (room, rect) in enumerate(zip(rooms, rects)):
-        if room["type"] != "balcony":
+        if room["type"] not in OPEN_ROOM_TYPES:
             continue
         others = [rt for j, rt in enumerate(rects) if j != i]
         sides = open_edges(rect, others)
@@ -229,7 +236,7 @@ def _add_top_storey_ceilings(storey, style, structure):
     voids_mm = [(v["x"], v["y"], v["w"], v["d"]) for v in storey.get("floor_voids", [])]
     mat = get_material(style, "wall_partition")
     for room in storey["rooms"]:
-        if room["type"] == "balcony":
+        if room["type"] in OPEN_ROOM_TYPES:
             continue
         r = room["rect"]
         if coverage is not None and _rect_covered(r, coverage):
@@ -238,6 +245,17 @@ def _add_top_storey_ceilings(storey, style, structure):
         for i, (fx, fy, fw, fd) in enumerate(fragments):
             x, y, w, d = fx / 1000, fy / 1000, fw / 1000, fd / 1000
             make_box(f"ceiling_{room['id']}_{i}", x, y, ceil_z, w, d, FLOOR_SLAB_THICKNESS, structure, mat)
+
+
+def _build_roof_structures(roof, style, structure):
+    """Rooftop plant/equipment structures standing on top of a flat roof."""
+    mat = get_material(style, "roof")
+    base_z = roof["base_z"] / 1000 + FLAT_ROOF_THICKNESS_MM / 1000
+    for i, st in enumerate(roof.get("structures", [])):
+        make_box(
+            f"structure_{i}", st["x"] / 1000, st["y"] / 1000, base_z,
+            st["w"] / 1000, st["d"] / 1000, st["height_mm"] / 1000, structure, mat,
+        )
 
 
 def _neighbours_enabled(model) -> bool:
@@ -282,7 +300,7 @@ def build_environment(model, structure):
     sun_data = bpy.data.lights.new("Sun", type="SUN")
     sun_data.energy = 2.0
     sun = bpy.data.objects.new("Sun", sun_data)
-    sun.rotation_euler = (math.radians(55), 0, math.radians(35))
+    sun.rotation_euler = (math.radians(55), 0, math.radians(35 + model.get("north_deg", 0.0)))
     bpy.context.scene.collection.objects.link(sun)
 
     # Kept weak and far off the front facade -- at higher energy this light
@@ -560,6 +578,7 @@ def main():
             build_floors_and_stairs(storey, style, structure, topmost=(i == len(model["storeys"]) - 1))
             if storey.get("roof"):
                 roof_mod.build_roof(storey["roof"], style, structure)
+                _build_roof_structures(storey["roof"], style, structure)
             furnish.furnish_storey(storey, style, furniture)
 
         build_environment(model, structure)

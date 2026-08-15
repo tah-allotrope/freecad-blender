@@ -10,6 +10,7 @@ from pathlib import Path
 import ezdxf
 
 from .model import CompiledModel, Storey
+from .xmltext import escape_text
 
 MM_PER_PX = 10.0  # SVG viewport scale: 1px = 10mm
 MARGIN_MM = 1000.0
@@ -19,6 +20,7 @@ ROOM_FILL = {
     "living": "#e3e8cf", "dining": "#e3e8cf", "hall": "#eeeeee",
     "stairwell": "#d9d9d9", "garage": "#c9c9c9", "balcony": "#d9e8d0",
     "office": "#e0e0d0", "storage": "#dcdcdc", "elevator": "#c9c9d9",
+    "terrace": "#d9e8d0", "wc": "#cfe3e8", "utility": "#dcdcdc", "courtyard": "#e8f0e0",
 }
 
 
@@ -60,6 +62,11 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
              f'viewBox="0 0 {width_px:.0f} {depth_px:.0f}" '
              f'preserveAspectRatio="xMidYMid meet" font-family="sans-serif">']
     parts.append(f'<rect x="0" y="0" width="{width_px:.0f}" height="{depth_px:.0f}" fill="white"/>')
+    parts.append(
+        '<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" '
+        'patternUnits="userSpaceOnUse">'
+        '<line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>'
+    )
 
     for room in storey.rooms:
         fill = ROOM_FILL.get(room.type, "#f0f0f0")
@@ -69,11 +76,11 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
                      f'fill="{fill}" stroke="none"/>')
         cx, cy = x + w / 2, y + d / 2
         area_sqm = (room.rect.w / 1000) * (room.rect.d / 1000)
-        label = room.name or room.id
+        label = escape_text(room.name or room.id)
         parts.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="12" text-anchor="middle" fill="#333">'
                      f'{label}</text>')
         parts.append(f'<text x="{cx:.1f}" y="{cy + 14:.1f}" font-size="10" text-anchor="middle" fill="#666">'
-                     f'{area_sqm:.1f} m&#178;</text>')
+                     f'{escape_text(f"{area_sqm:.1f} m")}&#178;</text>')
 
     for wall in storey.walls:
         x, y = _mm_to_px(wall.x), _mm_to_px(wall.y)
@@ -86,6 +93,17 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
         if wall is None:
             continue
         parts.append(_svg_opening(wall, opening))
+
+    # Declared floor voids: diagonal-hatched with an optional reason label.
+    for void, reason in zip(storey.authored_voids, storey.authored_void_reasons):
+        x, y = _mm_to_px(void.x), _mm_to_px(void.y)
+        w, d = void.w / MM_PER_PX, void.d / MM_PER_PX
+        parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
+                     f'fill="url(#voidhatch)" stroke="#888" stroke-width="0.8"/>')
+        if reason:
+            cx, cy = x + w / 2, y + d / 2
+            parts.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="10" text-anchor="middle" '
+                         f'fill="#555">{escape_text(reason)}</text>')
 
     if storey.stairs:
         for t in storey.stairs.treads:
@@ -100,15 +118,22 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     parts.append(_dim_line(_mm_to_px(0), depth_px - 20, _mm_to_px(model.plot_width_mm), depth_px - 20,
                            f"{model.plot_width_mm/1000:.1f} m", vertical=False))
 
+    # Per-storey dimension chains: one above the plan and one to its left, at
+    # every distinct room-boundary coordinate (room edges = where walls sit).
+    h_coords = sorted({c for r in storey.rooms for c in (r.rect.x, r.rect.x2)})
+    v_coords = sorted({c for r in storey.rooms for c in (r.rect.y, r.rect.y2)})
+    parts.append(_dimension_chain(h_coords, "h", 40.0, model.plot_width_mm))
+    parts.append(_dimension_chain(v_coords, "v", 40.0, model.plot_depth_mm))
+
     # Graphic furniture of the drawing (TASK-06-04): north arrow top-left,
     # scale bar bottom-left, title block bottom-right.
-    parts.append(_north_arrow())
+    parts.append(_north_arrow(model.north_deg))
     parts.append(_scale_bar(depth_px))
     parts.append(_title_block(width_px, depth_px, [
         model.name,
         storey.name or f"Storey {storey.level}",
         f"Plot {model.plot_width_mm / 1000:.1f} m x {model.plot_depth_mm / 1000:.1f} m",
-        "Scale 1:100 @ A3",
+        "Scale: use the graphic bar",
     ]))
 
     parts.append("</svg>")
@@ -164,11 +189,13 @@ def _svg_door_horizontal(x, y, width):
     return leaf + arc
 
 
-def _north_arrow() -> str:
-    """North points toward -y (up-screen) per the repo cardinal convention."""
+def _north_arrow(north_deg: float = 0.0) -> str:
+    """North points toward -y (up-screen) by default; rotated by the declared
+    `site.north_deg` compass bearing."""
     cx, cy = 70.0, 60.0
+    rot = f" rotate({north_deg:.1f})" if north_deg else ""
     return (
-        f'<g transform="translate({cx},{cy})">'
+        f'<g transform="translate({cx},{cy}){rot}">'
         f'<path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/>'
         f'<text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text>'
         f'</g>'
@@ -202,12 +229,13 @@ def _title_block(width_px: float, height_px: float, lines: list[str]) -> str:
     y0 = height_px - bh - 40.0
     parts = [f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="white" stroke="#222" stroke-width="1.2"/>']
     for i, line in enumerate(lines):
-        parts.append(f'<text x="{x0 + 12:.1f}" y="{y0 + 22 + i * 20:.1f}" font-size="11" fill="#222">{line}</text>')
+        parts.append(f'<text x="{x0 + 12:.1f}" y="{y0 + 22 + i * 20:.1f}" font-size="11" fill="#222">{escape_text(line)}</text>')
     return "\n".join(parts)
 
 
 def _dim_line(x1, y1, x2, y2, label, vertical) -> str:
     line = f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#000" stroke-width="0.5"/>'
+    label = escape_text(label)
     if vertical:
         text = f'<text x="{x1-4:.1f}" y="{(y1+y2)/2:.1f}" font-size="10" text-anchor="middle" ' \
                f'transform="rotate(-90 {x1-4:.1f} {(y1+y2)/2:.1f})">{label}</text>'
@@ -225,10 +253,95 @@ def _dxf_pt(x_mm: float, y_mm: float, plot_depth_mm: float) -> tuple[float, floa
     return (x_mm, plot_depth_mm - y_mm)
 
 
+def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent_mm: float) -> str:
+    """SVG fragment for one dimension chain: a run line, a tick at each
+    coordinate, and a millimetre integer label centred between consecutive
+    coordinates. `axis` is `"h"` (drawn above the plan) or `"v"` (drawn to its
+    left); `offset_px` is the distance from the plan edge; `extent_mm` is the
+    overall plot dimension along that axis (used for the degenerate empty case).
+    """
+    margin_px = MARGIN_MM / MM_PER_PX
+
+    def to_px(v: float) -> float:
+        return (v + MARGIN_MM) / MM_PER_PX
+
+    parts: list[str] = []
+    if len(coords_mm) < 2:
+        # Degenerate input: only the overall dimension, no ticks.
+        if axis == "h":
+            y = margin_px - offset_px
+            parts.append(f'<text x="{to_px(extent_mm / 2):.1f}" y="{y - 4:.1f}" '
+                         f'font-size="10" text-anchor="middle">{int(round(extent_mm))}</text>')
+        else:
+            x = margin_px - offset_px
+            parts.append(f'<text x="{x - 4:.1f}" y="{to_px(extent_mm / 2):.1f}" font-size="10" '
+                         f'text-anchor="middle" transform="rotate(-90 {x - 4:.1f} {to_px(extent_mm / 2):.1f})">'
+                         f'{int(round(extent_mm))}</text>')
+        return "\n".join(parts)
+
+    start, end = coords_mm[0], coords_mm[-1]
+    if axis == "h":
+        y = margin_px - offset_px
+        parts.append(f'<rect x="{to_px(start):.1f}" y="{y - 0.25:.1f}" '
+                     f'width="{to_px(end) - to_px(start):.1f}" height="0.5" fill="#000"/>')
+        for v in coords_mm:
+            parts.append(f'<line x1="{to_px(v):.1f}" y1="{y - 3:.1f}" x2="{to_px(v):.1f}" '
+                         f'y2="{y + 3:.1f}" stroke="#000" stroke-width="0.5"/>')
+        for a, b in zip(coords_mm, coords_mm[1:]):
+            mid = (a + b) / 2
+            parts.append(f'<text x="{to_px(mid):.1f}" y="{y - 6:.1f}" font-size="10" '
+                         f'text-anchor="middle">{int(round(b - a))}</text>')
+    else:
+        x = margin_px - offset_px
+        parts.append(f'<rect x="{x - 0.25:.1f}" y="{to_px(start):.1f}" '
+                     f'width="0.5" height="{to_px(end) - to_px(start):.1f}" fill="#000"/>')
+        for v in coords_mm:
+            parts.append(f'<line x1="{x - 3:.1f}" y1="{to_px(v):.1f}" x2="{x + 3:.1f}" '
+                         f'y2="{to_px(v):.1f}" stroke="#000" stroke-width="0.5"/>')
+        for a, b in zip(coords_mm, coords_mm[1:]):
+            mid = (a + b) / 2
+            parts.append(f'<text x="{x - 6:.1f}" y="{to_px(mid):.1f}" font-size="10" '
+                         f'text-anchor="middle" transform="rotate(-90 {x - 6:.1f} {to_px(mid):.1f})">'
+                         f'{int(round(b - a))}</text>')
+    return "\n".join(parts)
+
+
+def _dxf_dimension_chain(msp, coords, axis, offset_mm, plot_depth):
+    """Replicate one dimension chain onto the DXF `DIMS` layer."""
+    if len(coords) < 2:
+        return
+    if axis == "h":
+        y = -offset_mm
+        msp.add_line(_dxf_pt(coords[0], y, plot_depth), _dxf_pt(coords[-1], y, plot_depth),
+                     dxfattribs={"layer": "DIMS"})
+        for v in coords:
+            msp.add_line(_dxf_pt(v, 0.0, plot_depth), _dxf_pt(v, y, plot_depth),
+                         dxfattribs={"layer": "DIMS"})
+        for a, b in zip(coords, coords[1:]):
+            mid = (a + b) / 2
+            mx, my = _dxf_pt(mid, y, plot_depth)
+            msp.add_text(str(int(round(b - a))), dxfattribs={"layer": "DIMS", "height": 150}).set_placement(
+                (mx, my + 150), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER
+            )
+    else:
+        x = -offset_mm
+        msp.add_line(_dxf_pt(x, coords[0], plot_depth), _dxf_pt(x, coords[-1], plot_depth),
+                     dxfattribs={"layer": "DIMS"})
+        for v in coords:
+            msp.add_line(_dxf_pt(0.0, v, plot_depth), _dxf_pt(x, v, plot_depth),
+                         dxfattribs={"layer": "DIMS"})
+        for a, b in zip(coords, coords[1:]):
+            mid = (a + b) / 2
+            mx, my = _dxf_pt(x, mid, plot_depth)
+            msp.add_text(str(int(round(b - a))), dxfattribs={"layer": "DIMS", "height": 150}).set_placement(
+                (mx - 150, my), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER
+            )
+
+
 def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
     doc = ezdxf.new("R2010")
     doc.units = ezdxf.units.MM
-    for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2), ("DIMS", 8)]:
+    for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2), ("DIMS", 8), ("VOIDS", 4)]:
         doc.layers.add(layer, color=color)
     msp = doc.modelspace()
     plot_depth = model.plot_depth_mm
@@ -285,6 +398,18 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
         label = room.name or room.id
         msp.add_text(label, dxfattribs={"layer": "TEXT", "height": 150}).set_placement(
             (cx_f, cy_f), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
+
+    for void in storey.authored_voids:
+        pts = [_dxf_pt(void.x, void.y, plot_depth),
+               _dxf_pt(void.x + void.w, void.y, plot_depth),
+               _dxf_pt(void.x + void.w, void.y + void.d, plot_depth),
+               _dxf_pt(void.x, void.y + void.d, plot_depth)]
+        msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "VOIDS"})
+
+    h_coords = sorted({c for r in storey.rooms for c in (r.rect.x, r.rect.x2)})
+    v_coords = sorted({c for r in storey.rooms for c in (r.rect.y, r.rect.y2)})
+    _dxf_dimension_chain(msp, h_coords, "h", 500.0, plot_depth)
+    _dxf_dimension_chain(msp, v_coords, "v", 500.0, plot_depth)
 
     if storey.stairs:
         for t in storey.stairs.treads:

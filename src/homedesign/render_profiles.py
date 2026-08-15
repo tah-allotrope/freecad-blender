@@ -1,8 +1,9 @@
 """Render engine profiles (pure data -- no `bpy` import, unit-testable).
 
-`final` promotes EEVEE Next (ray-traced) as the full-quality path on the CPU
-only hardware this tool targets (CON-001); Cycles remains the explicit
-`cycles` opt-in for hero shots.
+`final` is a 256-sample legacy-EEVEE render at 1920x1080; its `raytracing: True`
+flag degrades to a harmless no-op under Blender 4.1's legacy EEVEE (which has no
+such toggle). `cycles` remains an explicit CPU-only opt-in for hero shots
+(CON-001).
 """
 from __future__ import annotations
 

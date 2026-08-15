@@ -95,8 +95,51 @@ def test_svg_has_north_arrow_scale_bar_title_block(tmp_path):
     plan2d.write_plans(model, tmp_path)
     svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text()
     assert ">N</text>" in svg_text
-    assert "Scale 1:100 @ A3" in svg_text
+    assert "Scale: use the graphic bar" in svg_text
     assert ">m</text>" in svg_text  # scale bar unit
+
+
+def test_dimension_chain_segments_and_ticks():
+    frag = plan2d._dimension_chain([0.0, 3005.0, 3960.0], "h", 40.0, 3960.0)
+    assert ">3005<" in frag
+    assert ">955<" in frag
+    assert frag.count("<line") == 3
+
+
+def test_dimension_chain_empty_degenerate():
+    frag = plan2d._dimension_chain([], "h", 40.0, 3960.0)
+    assert ">3960<" in frag
+    assert frag.count("<line") == 0
+
+
+def test_contractor_plan_dimensions_in_svg_and_dxf(tmp_path):
+    spec = json.loads((REPO_ROOT / "designs" / "contractor-as-drawn.json").read_text(encoding="utf-8"))
+    model = compile_spec(spec)
+    plan2d.write_plans(model, tmp_path)
+    f0 = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    # Millimetre dimension labels for real room widths: the 955mm stair
+    # corridor and the 1960mm lift lobby.
+    assert ">955<" in f0
+    assert ">1960<" in f0
+    doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
+    dims = [e for e in doc.modelspace() if e.dxf.layer == "DIMS"]
+    assert len(dims) >= 4
+
+
+def test_plans_do_not_print_false_scale(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    for svg in (tmp_path / "svg").glob("*.svg"):
+        assert "Scale 1:100" not in svg.read_text(encoding="utf-8")
+
+
+def test_north_arrow_rotates_with_north_deg(tmp_path):
+    spec = json.loads((EXAMPLES / "demo-3br-2storey.json").read_text())
+    spec["site"]["north_deg"] = 90
+    model = compile_spec(spec)
+    plan2d.write_plans(model, tmp_path)
+    svg = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "rotate(90" in svg
 
 
 def test_dxf_pt_flips_y():
@@ -131,3 +174,65 @@ def test_dxf_has_door_arcs(tmp_path):
     msp = doc.modelspace()
     arcs = [e for e in msp if e.dxftype() == "ARC"]
     assert arcs
+
+
+def _named_model():
+    spec = {
+        "meta": {"name": "named-rooms", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 4000},
+        "storeys": [
+            {
+                "level": 0, "name": "Ground", "height_mm": 3000,
+                "rooms": [
+                    {"id": "a", "type": "living", "name": "A & B <x>", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+                ],
+            }
+        ],
+    }
+    return compile_spec(spec)
+
+
+def test_escape_text_helper():
+    from homedesign.xmltext import escape_text
+
+    assert escape_text("BẾP & ĂN") == "BẾP &amp; ĂN"
+    assert escape_text(None) == ""
+    assert escape_text('a<b>"c"') == "a&lt;b&gt;&quot;c&quot;"
+
+
+def test_svg_with_special_char_names_still_parses(tmp_path):
+    import xml.etree.ElementTree as ET
+
+    model = _named_model()
+    plan2d.write_plans(model, tmp_path)
+    for svg in (tmp_path / "svg").glob("*.svg"):
+        ET.fromstring(svg.read_text(encoding="utf-8"))
+    ground = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "A &amp; B &lt;x&gt;" in ground
+
+
+def test_room_names_reach_svg_and_dxf_text(tmp_path):
+    spec = json.loads((EXAMPLES / "demo-3br-2storey.json").read_text())
+    for storey in spec["storeys"]:
+        for room in storey["rooms"]:
+            room["name"] = f"Room {room['id']}"
+    model = compile_spec(spec)
+    plan2d.write_plans(model, tmp_path)
+    ground = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    for room in model.storeys[0].rooms:
+        assert f"Room {room.id}" in ground
+    doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
+    texts = [e.dxf.text for e in doc.modelspace() if e.dxftype() == "TEXT"]
+    for room in model.storeys[0].rooms:
+        assert f"Room {room.id}" in texts
+
+
+def test_declared_void_hatches_svg_and_dxf(tmp_path):
+    spec = json.loads((EXAMPLES / "courtyard-fixture.json").read_text())
+    model = compile_spec(spec)
+    plan2d.write_plans(model, tmp_path)
+    ground = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "url(#voidhatch)" in ground
+    doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
+    assert "VOIDS" in doc.layers
+    assert any(e.dxf.layer == "VOIDS" for e in doc.modelspace())

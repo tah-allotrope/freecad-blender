@@ -2,6 +2,18 @@
   "meta": {
     "name": "contractor-as-drawn",
     "style": "modern-minimal",
+    "sections": [
+      {
+        "name": "long",
+        "axis": "x",
+        "position_mm": 1500
+      },
+      {
+        "name": "cross_bed",
+        "axis": "y",
+        "position_mm": 6900
+      }
+    ],
     "views": [
       {
         "name": "exterior_front",
@@ -52,7 +64,7 @@
         "room_id": "bep_an"
       },
       {
-        "name": "gieng_troi",
+        "name": "hanh_lang_thang",
         "kind": "room",
         "room_id": "hall_stair"
       },
@@ -151,7 +163,7 @@
         },
         {
           "id": "wc_gf",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -301,17 +313,6 @@
       },
       "rooms": [
         {
-          "id": "void_fill",
-          "type": "storage",
-          "name": "SÀN GIẢ (Ô THÔNG TẦNG THEO BẢN VẾ)",
-          "rect": {
-            "x": 0,
-            "y": 3500,
-            "w": 3960,
-            "d": 8800
-          }
-        },
-        {
           "id": "stairwell",
           "type": "stairwell",
           "name": "THANG",
@@ -368,22 +369,6 @@
         }
       ],
       "openings": [
-        {
-          "type": "door",
-          "between": [
-            "void_fill",
-            "stairwell"
-          ],
-          "width_mm": 900
-        },
-        {
-          "type": "door",
-          "between": [
-            "void_fill",
-            "hall_stair"
-          ],
-          "width_mm": 900
-        },
         {
           "type": "door",
           "between": [
@@ -449,6 +434,15 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "voids": [
+        {
+          "x": 0,
+          "y": 3500,
+          "w": 3960,
+          "d": 8800,
+          "reason": "Ô THÔNG TẦNG (double-height void per drawing)"
+        }
       ]
     },
     {
@@ -485,7 +479,7 @@
         },
         {
           "id": "wc_truoc_f2",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -562,7 +556,7 @@
         },
         {
           "id": "wc_sau_f2",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -767,7 +761,7 @@
         },
         {
           "id": "wc_truoc_f3",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -844,7 +838,7 @@
         },
         {
           "id": "wc_sau_f3",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -1049,7 +1043,7 @@
         },
         {
           "id": "wc_truoc_f4",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -1126,7 +1120,7 @@
         },
         {
           "id": "wc_sau_f4",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -1386,7 +1380,7 @@
         },
         {
           "id": "wc_sau_f5",
-          "type": "bathroom",
+          "type": "wc",
           "name": "WC",
           "rect": {
             "x": 0,
@@ -1537,7 +1531,7 @@
       "rooms": [
         {
           "id": "san_thuong_truoc",
-          "type": "balcony",
+          "type": "terrace",
           "name": "SÂN THƯỢNG",
           "rect": {
             "x": 0,
@@ -1592,7 +1586,7 @@
         },
         {
           "id": "san_thuong_sau",
-          "type": "balcony",
+          "type": "terrace",
           "name": "SÂN THƯỢNG",
           "rect": {
             "x": 0,
@@ -1691,6 +1685,16 @@
             "y": 12300,
             "w": 3005,
             "d": 4000
+          }
+        ],
+        "structures": [
+          {
+            "x": 1960,
+            "y": 16300,
+            "w": 2000,
+            "d": 1800,
+            "height_mm": 2000,
+            "name": "Ô KỸ THUẬT THANG MÁY"
           }
         ]
       }

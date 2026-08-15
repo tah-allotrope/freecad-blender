@@ -407,3 +407,110 @@ def test_existing_designs_still_compile_with_wall_room_id():
                 assert w.room_id is None or w.room_id in ids, (
                     f"{name}: wall {w.id} room_id {w.room_id!r} not a room on level {storey.level}"
                 )
+
+
+def _named_room_spec(use_relative=False):
+    spec = {
+        "meta": {"name": "names", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 8000, "plot_depth_mm": 4000},
+        "storeys": [
+            {
+                "level": 0, "name": "Ground", "height_mm": 3000,
+                "rooms": [],
+                "openings": [],
+            }
+        ],
+    }
+    if use_relative:
+        spec["storeys"][0]["rooms"] = [
+            {"id": "living", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+            {"id": "bep_an", "type": "kitchen", "name": "BẾP & ĂN",
+             "relative": {"adjacent_to": "living", "side": "east", "w": 4000, "d": 4000}},
+        ]
+    else:
+        spec["storeys"][0]["rooms"] = [
+            {"id": "bep_an", "type": "kitchen", "name": "BẾP & ĂN",
+             "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}},
+            {"id": "anon", "type": "storage", "rect": {"x": 4000, "y": 0, "w": 4000, "d": 4000}},
+        ]
+    return spec
+
+
+def test_room_name_propagates_from_rect_branch():
+    model = compile_spec(_named_room_spec())
+    room = next(r for r in model.storeys[0].rooms if r.id == "bep_an")
+    assert room.name == "BẾP & ĂN"
+    assert room.id == "bep_an"
+
+
+def test_room_name_propagates_from_relative_branch():
+    model = compile_spec(_named_room_spec(use_relative=True))
+    room = next(r for r in model.storeys[0].rooms if r.id == "bep_an")
+    assert room.name == "BẾP & ĂN"
+
+
+def test_room_without_name_has_none():
+    model = compile_spec(_named_room_spec())
+    room = next(r for r in model.storeys[0].rooms if r.id == "anon")
+    assert room.name is None
+
+
+def test_contractor_declares_void_not_fake_room():
+    from homedesign.validate import validate_compiled
+
+    spec = json.loads((REPO_ROOT / "designs" / "contractor-as-drawn.json").read_text(encoding="utf-8"))
+    model = compile_spec(spec)
+    assert all(r.id != "void_fill" for s in model.storeys for r in s.rooms)
+    storey1 = model.storeys[1]
+    assert len(storey1.authored_voids) == 1
+    v = storey1.authored_voids[0]
+    assert (v.w, v.d) == (3960, 8800)
+    assert validate_compiled(model) == []
+
+
+def test_contractor_roof_structures_compile():
+    spec = json.loads((REPO_ROOT / "designs" / "contractor-as-drawn.json").read_text(encoding="utf-8"))
+    model = compile_spec(spec)
+    roof = model.storeys[6].roof
+    assert roof is not None
+    assert len(roof.structures) == 1
+    assert roof.structures[0]["height_mm"] == 2000
+
+
+def _sections_spec(position_mm):
+    spec = {
+        "meta": {"name": "sec", "style": "modern-minimal", "sections": [
+            {"name": "long", "axis": "x", "position_mm": position_mm},
+        ]},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 4000},
+        "storeys": [
+            {"level": 0, "name": "G", "height_mm": 3000,
+             "rooms": [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 4000}}],
+             "openings": []},
+        ],
+    }
+    return spec
+
+
+def test_sections_populate_model():
+    model = compile_spec(_sections_spec(1500))
+    assert model.sections == [{"name": "long", "axis": "x", "position_mm": 1500}]
+
+
+def test_section_out_of_plot_rejected():
+    with pytest.raises(SpecValidationError) as exc:
+        compile_spec(_sections_spec(99999))
+    assert any(e.code == "section_out_of_plot" for e in exc.value.errors)
+
+
+def test_north_deg_defaults_to_zero():
+    spec = _sections_spec(1500)
+    model = compile_spec(spec)
+    assert model.north_deg == 0.0
+
+
+def test_north_deg_parses():
+    spec = _sections_spec(1500)
+    spec["site"]["north_deg"] = 90
+    model = compile_spec(spec)
+    assert model.north_deg == 90.0

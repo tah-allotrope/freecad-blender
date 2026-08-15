@@ -38,6 +38,12 @@ narrower ~1700mm glazed insert within a larger unglazed roof is not reproduced,
 so the render shows more open sky above the stair than the drawing's glazing
 would let through.**
 
+The `meta.views` entry formerly named `gieng_troi` ("light well") actually
+pointed at `hall_stair` — a 955mm corridor with a floor slab on every level,
+not a light well. **No light well is modelled, and no floor plate is cut**:
+the view is renamed `hanh_lang_thang` ("stair corridor") so no artifact claims
+a light well exists.
+
 ### (c) No lift shaft is labelled on any floor plan — this model infers one
 **This is the largest change from rev.1 and the most important thing to read
 in this file.** All three residential floor-plan sheets (`MB 1-LUNG`,
@@ -145,36 +151,33 @@ The lửng (level 1) plan shows the zone over the garage and living room
 slab", used identically for the open sân thượng zones on the roof sheets.
 This model leaves that footprint untiled on level 1, matching the drawing.
 
-**But** `checks.check_room_support` (`src/homedesign/checks.py`, out of
-scope to change) requires every room on a level ≥1 to be ≥80% covered by a
-room on the level directly below — it has no way to represent a beam-spanned
-double-height opening. Levels 2–4's front bedroom and balcony sit directly
-above this void and would fail that check with 0% coverage. **A placeholder
-`storage`-typed room named "SÀN GIẢ (Ô THÔNG TẦNG THEO BẢN VẼ)" ("false floor
-— the double-height opening per the drawing") fills the void on level 1 only
-so the model compiles.** It is not a real room, has no furniture significance,
-and is deliberately named to flag itself as a tool workaround if anyone reads
-the room schedule. **Yes — this is the model's single largest concession to
-the schema: the real building has an open, light-filled double-height space
-here (the drawing's own reason for showing it at all), and this render shows
-an enclosed mezzanine floor instead.** If the schema is ever extended to
-support multi-storey voids (noted in the repo's own `2026-08-04` brainstorm as
-a known gap — "no split levels"), this is the first place to revisit.
+**Resolved (2026-08-14).** The spec now declares the double-height opening
+directly: `storeys[1].voids = [{x:0, y:3500, w:3960, d:8800, reason:"Ô THÔNG
+TẦNG (double-height void per drawing)"}]`. `checks.check_room_support` counts an
+authored void on the storey below as supported-by-design (a beam-spanned
+opening), so the former `SÀN GIẢ` placeholder room is gone and the mezzanine
+floor slab is genuinely open here rather than an enclosed room. The render now
+shows the light-filled double-height space the drawing exists to communicate.
 
 ### (i) Rooftop plant room modelled as an enclosed shaft continuation, not a separate structure
 `Ô KỸ THUẬT THANG MÁY` stands 2000mm above the roof slab (+23.800 → +25.800) —
-a structure on top of the roof, which the schema cannot represent (there is no
-level above the topmost roof). This model represents it by roofing over the
-elevator shaft's own footprint at level 6 (no void there, unlike the
-stairwell) rather than authoring a separate storage volume, as rev.1 did with
-a mismatched, non-stacking footprint. **No change to the render's reading
-beyond (c)'s existing uncertainty about the shaft.**
+a structure on top of the roof, which the schema could not previously represent
+(there is no level above the topmost roof).
+
+**Resolved (2026-08-14).** The spec now declares it as
+`storeys[6].roof.structures = [{x:1960, y:16300, w:2000, d:1800,
+height_mm:2000, name:"Ô KỸ THUẬT THANG MÁY"}]`, a box standing on the roof slab
+and rendered with the roof material in both the 3D scene and the elevations.
 
 ### (j) No lift pit or overhead
 Unchanged from rev.1: the section shows neither, and the schema has no
 construct for either. **No — nothing is depicted either way.**
 
-## Enum / type approximations (CON-004, closed 12-value room-type enum)
+## Enum / type approximations (CON-004, room-type enum grown to 16 values 2026-08-14)
+
+The enum gained `terrace`, `wc`, `utility` and `courtyard` on 2026-08-14 to
+reduce the approximation below; the altar room (`P.THỜ`) and combined
+kitchen+dining remain `living` and `kitchen` respectively by design.
 
 | label on sheet | model `type` | note |
 |---|---|---|
@@ -183,13 +186,14 @@ construct for either. **No — nothing is depicted either way.**
 | `P.SINH HOẠT` | living | mezzanine family room |
 | `P.THỜ` | living | no altar-room enum value |
 | `BẾP` + `P.ĂN` (labelled as one room, "P. ĂN + BẾP") | kitchen | combined kitchen+dining, single room, matching the sheet's own single label |
-| `WC` | bathroom | |
+| `WC` | wc | was `bathroom`; retyped 2026-08-14 when the enum grew a `wc` value |
 | `NƠI ĐỂ XE` | garage | |
 | `HÀNH LANG` (unlabelled circulation, this model's own subdivision) | hall | |
 | `THANG` | stairwell | |
 | `THANG MÁY` (inferred, see (c)) | elevator | |
-| `BAN CÔNG` / `SÂN THƯỢNG` | balcony | auto parapets, see (e) |
-| `Ô KỸ THUẬT THANG MÁY` | (no separate room — see (i)) | |
+| `BAN CÔNG` | balcony | auto parapets, see (e) |
+| `SÂN THƯỢNG` | terrace | retyped 2026-08-14 when the enum grew a `terrace` value; open edge with parapet, floor_default |
+| `Ô KỸ THUẬT THANG MÁY` | (roof `structures[]` entry — see (i)) | |
 
 ## Programme summary (corrected)
 

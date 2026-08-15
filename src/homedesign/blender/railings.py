@@ -4,12 +4,19 @@ All geometry is a `make_box` composition (CON-004): parapets are 1100mm high
 panels inside the balcony rect (their outer face on the rect edge), and stair
 balustrades are per-tread rail panels that follow the flight slope.
 """
+from homedesign.constants import (
+    BALUSTRADE_HEIGHT_MM,
+    PARAPET_HEIGHT_MM,
+    PARAPET_THICKNESS_MM,
+    RAIL_THICKNESS_MM,
+)
+
 from .geom import make_box
 
-PARAPET_HEIGHT_M = 1.1
-PARAPET_THICKNESS_M = 0.1
-BALUSTRADE_HEIGHT_M = 0.9
-RAIL_THICKNESS_M = 0.06
+PARAPET_HEIGHT_M = PARAPET_HEIGHT_MM / 1000
+PARAPET_THICKNESS_M = PARAPET_THICKNESS_MM / 1000
+BALUSTRADE_HEIGHT_M = BALUSTRADE_HEIGHT_MM / 1000
+RAIL_THICKNESS_M = RAIL_THICKNESS_MM / 1000
 
 
 def build_parapet(rect_mm, top_z_m, sides, height_m, thickness_m, collection, material):

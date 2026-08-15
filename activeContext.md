@@ -4,7 +4,76 @@
 - **Workspace:** `freecad-blender`
 - **Objective:** `/homedesign` — turn a natural-language home idea into validated 2D floor plans (SVG/DXF), elevations and sections, furnished 3D renders (legacy EEVEE/Cycles), an interactive GLB web viewer and an A3 architect brief, via a compiled high-level spec, built entirely in Python + Blender (no FreeCAD).
 
-## Current Task Plan (plans/2026-08-14-balcony-parapet-render-fix-plan.md)
+## Current Task Plan (plans/2026-08-14-homedesign-drawing-truth-and-voids-plan.md)
+
+All six phases complete. Summary:
+
+- **PHASE-01 Drawing truth:** `compiler._resolve_rooms` now passes `name` into
+  both `Room(...)` branches; a new `xmltext.escape_text` helper (wrapping
+  `xml.sax.saxutils.escape` with quote entities) guards every SVG/HTML text
+  site in `plan2d`, `elevation` and `pdf`; the PDF `STALE` badge moved from the
+  page heading to a per-image `<figcaption>`; `roof` now requires `type` in the
+  schema; dead `--floor` arg and dead `cmd_compile` lines removed;
+  `render_profiles.py` docstring corrected.
+- **PHASE-02 Real elevations:** `elevation.build_elevation` rewritten as a true
+  orthographic projection (new `constants.py` + `_view_axes`/`_project_box`/
+  `_roof_primitives`), painter-sorted by depth, emitting walls, openings,
+  balcony parapets, stair treads, roof polygons (flat/gable/shed) and roof
+  structures. The north/south elevations of `contractor-as-drawn` — previously
+  blank — now carry walls, openings and parapets (north sheet is ~37 KB, was a
+  bare outline).
+- **PHASE-03 Declared voids / structures / room types:** schema gained
+  `storeys[].voids[]`, `roof.structures[]`, `site.north_deg` and `meta.sections`;
+  room-type enum grew `terrace`, `wc`, `utility`, `courtyard`. `Storey` gained
+  `authored_voids` (+ `authored_void_reasons`), `Roof` gained `structures`.
+  `check_room_support` counts authored voids as beam-supported; new
+  `check_void_spans` warns on >6000 mm spans. `contractor-as-drawn` re-authored:
+  `void_fill` removed, the mezzanine void declared, `wc_*`→`wc`,
+  `san_thuong_*`→`terrace`, the lift plant room as a roof structure, the
+  `gieng_troi` view renamed `hanh_lang_thang`; fidelity.md (h)/(i) marked
+  resolved.
+- **PHASE-04 Walls without booleans:** `rects.wall_face_fragments` + a rewritten
+  `build_walls` emit one box per subtracted fragment; `geom.boolean_difference`
+  deleted; `bpy==4.1.0` optional extra; `tests/test_blender_geometry.py` (4
+  invariants, `importorskip`-guarded) and `tests/test_wall_fragments.py` added.
+  Preview build of the flagship: **470 s** (boolean-free, correct openings).
+- **PHASE-05 Construction-set annotation:** `plan2d._dimension_chain` +
+  DXF `DIMS` replication; elevation level labels carry `+z` metres; overall
+  height dimension; opening head annotations on sections; `meta.sections`
+  drives `write_sections`/`_section_pages`; title blocks now say
+  "Scale: use the graphic bar" (no false 1:100).
+- **PHASE-06 Deliverable path:** `brief --init`, `--out` on every subcommand,
+  `publish` with hash verification (`publish.py`/`brief.py`), `site.north_deg`
+  rotating the sun and the north arrow, furniture planners for
+  `hall`/`storage`/`utility`/`garage`/`balcony`/`terrace`/`wc`, per-kind
+  furniture materials (`furniture_material_key` + upholstery/cabinetry/
+  porcelain/vehicle palettes).
+
+**Test counts:** 134 → 204 passing (`ruff` clean, skill mirror in sync).
+
+**Final render & publish:** the re-authored flagship re-rendered at `final`
+quality + `--gltf` (12 views, ~25 min wall-clock; model hash `e89f7998dfc8`),
+the A3 brief built under `--require-fresh` (exit 0), and `homedesign publish`
+copied `png/`, `gltf/`, `viewer/` and `pdf/` into `deliverables/contractor-as-drawn/`
+— every render sidecar matches the current model, so the deliverable is
+hash-verified fresh. The stale `gieng_troi` render was removed (view renamed
+`hanh_lang_thang`).
+
+**Deviations from the plan's written targets (recorded, not hidden):**
+- `test_north_elevation_has_a_wall_per_storey_and_full_height` and
+  `test_east_elevation_uses_model_y_axis` were updated: the former now measures
+  the *wall* stack (the flat roof sits above the storey height), the latter
+  asserts the ground line spans plot *depth* (full projection emits walls that
+  legitimately overhang the canvas under centre alignment).
+- The plan's dimension-chain example (`>3005<`) assumed the ground floor had no
+  `hall_elev`/`elevator` split at x=1960; the real chain emits `>1960<` and
+  `>955<`, so the integration test asserts those.
+- The plan's furniture-coverage target (55/62) is unachievable: stairwell and
+  elevator shafts are unfurnished by design (14 of 61 rooms), capping the
+  flagship at 47. Measured after PHASE-06: **35/61** `contractor-as-drawn`,
+  **24/41** `tubehouse-dream` (up from 19/62 and 16/41).
+
+## Prior Task Plan (plans/2026-08-14-balcony-parapet-render-fix-plan.md)
 
 Completed in full. Summary:
 

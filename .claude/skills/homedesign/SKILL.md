@@ -30,14 +30,27 @@ Cheat sheet:
   When absent, neighbouring party-wall massing is built only when
   `plot_width_mm <= 6000` (the sandwiched-urban-lot case); the front camera
   shoots from the street side, which never gets a neighbour block.
+- `site.north_deg` (optional, `0..360`, default `0`) — the compass bearing of
+  north, clockwise from model `-y` toward `+x`. It rotates the sun rig in
+  renders and the north arrow on plans, so shadows and orientation reflect a
+  real bearing instead of the model default.
 - `storeys[]` — each has `level` (0-based), `height_mm`, `rooms[]`,
-  `openings[]`, optional `stairs` (`{room, direction}`), optional `roof`
-  (`{type: flat|gable|shed, pitch_deg, overhang_mm, rect?, voids?}` — only put
-  a roof on the top storey). `rect` overrides the default full-plot span (use
-  it for a partial roof, e.g. a rooftop terrace left open); `voids` (array of
-  `{x,y,w,d}`, `type: flat` only) punches open-to-sky holes in the roof —
-  the standard way to keep a mid-plan light well open at every level, since
-  rooms simply aren't tiled over that footprint on any storey.
+  `openings[]`, optional `stairs` (`{room, direction, mode?}`), optional `roof`
+  (`{type: flat|gable|shed, pitch_deg, overhang_mm, rect?, voids?,
+  structures?}` — only put a roof on the top storey), and optional `voids`
+  (array of `{x,y,w,d, reason?}`) declaring a beam-spanned opening in that
+  storey's floor slab. `rect` overrides the roof's default full-plot span (use
+  it for a partial roof, e.g. a rooftop terrace left open); roof `voids`
+  (array of `{x,y,w,d}`, `type: flat` only) punches open-to-sky holes in the
+  roof; `structures` (array of `{x,y,w,d,height_mm,name?}`) places a box on
+  top of the roof slab (e.g. a lift plant room).
+- **Declare floor voids, don't leave footprints untiled.** A light well, a
+  double-height mezzanine opening, or any open shaft is authored as a
+  `storeys[].voids[]` rectangle on each storey it passes through — this models
+  the open floor slabs, lets `check_room_support` treat the span as
+  beam-supported instead of unsupported, and hatches it on the plan. Leaving a
+  footprint merely untiled forfeits the wall/floor/section geometry around the
+  shaft.
 - `meta.views` (optional) — a named camera gallery: each entry is
   `{name, kind: exterior_front|exterior_aerial|room, room_id?}` (`room_id`
   required when `kind: room`). Renders land at
@@ -46,7 +59,13 @@ Cheat sheet:
 - `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
   at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`
   placement solved against an already-placed room. Room `type` includes
-  `elevator` for a lift shaft (no furniture is placed in it).
+  `elevator` for a lift shaft (no furniture is placed in it), plus the newer
+  `terrace` (open roof terrace, like `balcony` but with a `floor_default`
+  finish), `wc` (water closet — a `bathroom` without the shower), `utility`
+  and `courtyard` (open to the sky). The optional
+  `name` string is the human-readable label: it now appears on the plan SVGs,
+  the section room labels, the DXF TEXT entities and the PDF room schedule
+  (falling back to the room `id` when absent).
 - `stairs` — `{room, direction, mode?}` where `mode` is one of
   `auto|straight|u_return|none` (default `auto`). The generator sizes treads
   from the storey height (Blondel relation: `600 <= 2R + G <= 640`, going
@@ -93,6 +112,11 @@ Cheat sheet:
    view — previews check layout, not lighting; the engines differ on glass
    and window openings, so never chase EEVEE artifacts). It prints every
    artifact path, ending with `blender build: <N>s`.
+
+   The four elevations are true orthographic projections of the whole
+   building — every wall, opening, balcony parapet, stair tread and roof is
+   projected and painter-sorted front-to-back — not just the walls touching
+   the plot boundary, so a set-back facade still reads correctly.
 2b. **Re-render without rebuilding.** Once a `.blend` exists, iterate on
    views without redoing geometry:
    ```
@@ -178,6 +202,16 @@ Every render carries a sidecar naming the model that produced it; `pdf` warns
 (`stale render: <view>`) and stamps `STALE` in the caption when a gallery image
 predates the model. Pass `--require-fresh` to make a stale image a hard error
 instead — always use it before handing a brief to anyone.
+
+**Scaffold the brief copy** with `homedesign brief --init designs/<slug>.json`
+(writes `spec/briefs/<slug>.json` with title/subtitle derived from the model
+plus placeholder narrative/requirements; add `--force` to overwrite). **Every
+subcommand accepts `--out <dir>`** to target a different output directory than
+`output/`. **Publish** a hash-verified deliverable with
+`homedesign publish designs/<slug>.json` — it compiles, verifies every render's
+sidecar matches the current model hash, and copies `png/`, `gltf/`, `viewer/`
+and `pdf/` into `deliverables/<slug>/` (fails on any stale file; `--force`
+overrides).
 
 ## Known limitations (by design, not bugs)
 

@@ -7,10 +7,9 @@ enforce it everywhere (CLI compile, tests, CI).
 """
 from __future__ import annotations
 
+from .constants import HABITABLE_TYPES
 from .errors import SpecError
 from .model import CompiledModel
-
-HABITABLE_TYPES = {"bedroom", "living", "kitchen", "dining", "office"}
 
 
 def check_door_reachability(model: CompiledModel) -> list[SpecError]:
@@ -129,7 +128,10 @@ def check_room_support(model: CompiledModel) -> list[SpecError]:
     for lvl in levels[1:]:
         storey = by_level[lvl]
         below = by_level[levels[levels.index(lvl) - 1]]
-        below_rects = [r.rect for r in below.rooms]
+        # A declared void on the storey below is supported by design (S3), so it
+        # counts toward the coverage of rooms above it; only *authored* voids
+        # count, never the derived stairwell/elevator shafts.
+        below_rects = [r.rect for r in below.rooms] + list(below.authored_voids)
         for room in storey.rooms:
             area = room.rect.w * room.rect.d
             if area <= 0:
@@ -144,6 +146,28 @@ def check_room_support(model: CompiledModel) -> list[SpecError]:
                             f"room '{room.id}' on storey {lvl} is only {covered / area:.0%} "
                             "covered by the floor below (< 80%); the floor would be unsupported"
                         ),
+                    )
+                )
+    return errors
+
+
+def check_void_spans(model: CompiledModel) -> list[SpecError]:
+    """Warn when an authored floor void's shorter plan dimension is implausibly
+    large to be beam-spanned (ASM-004). Advisory only -- never blocks a build."""
+    errors: list[SpecError] = []
+    for storey in model.storeys:
+        for v in storey.authored_voids:
+            if min(v.w, v.d) > 6000:
+                errors.append(
+                    SpecError(
+                        code="void_span_large",
+                        path=f"storeys[{storey.level}].voids",
+                        message=(
+                            f"void {v.w:.0f}x{v.d:.0f}mm on storey {storey.level} has a "
+                            f"{min(v.w, v.d):.0f}mm clear span, above the 6000mm beam-span "
+                            "assumption; confirm the structure"
+                        ),
+                        severity="warning",
                     )
                 )
     return errors
@@ -276,6 +300,7 @@ RULES: list[tuple[str, callable]] = [
     ("door_reachability", check_door_reachability),
     ("habitable_daylight", check_habitable_daylight),
     ("room_support", check_room_support),
+    ("void_spans", check_void_spans),
     ("shaft_stacking", check_shaft_stacking),
     ("walls_within_plot", check_walls_within_plot),
 ]

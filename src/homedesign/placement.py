@@ -31,12 +31,22 @@ def plan_room(room_type: str, w_m: float, d_m: float) -> list[FurnitureItem]:
         return _plan_bedroom(w_m, d_m)
     if room_type == "bathroom":
         return _plan_bathroom(w_m, d_m)
+    if room_type == "wc":
+        return _plan_wc(w_m, d_m)
     if room_type == "kitchen":
         return _plan_kitchen(w_m, d_m)
     if room_type in ("living", "dining"):
         return _plan_living(w_m, d_m)
     if room_type == "office":
         return _plan_office(w_m, d_m)
+    if room_type == "hall":
+        return _plan_hall(w_m, d_m)
+    if room_type in ("storage", "utility"):
+        return _plan_shelving(w_m, d_m)
+    if room_type == "garage":
+        return _plan_garage(w_m, d_m)
+    if room_type in ("balcony", "terrace"):
+        return _plan_outdoor(w_m, d_m)
     return []
 
 
@@ -92,3 +102,45 @@ def _plan_living(w: float, d: float) -> list[FurnitureItem]:
 
 def _plan_office(w: float, d: float) -> list[FurnitureItem]:
     return [FurnitureItem("desk", 0.2, 0.2, 0, 0, min(1.4, w - 0.4), 0.7, 0.75)]
+
+
+def _plan_wc(w: float, d: float) -> list[FurnitureItem]:
+    """A `wc` room: the bathroom's WC and basin, without the shower."""
+    wc_d = min(0.6, d)
+    items = [FurnitureItem("wc", 0.2, d - wc_d, 0, 0, 0.4, wc_d, 0.4)]
+    if w > 1.5:
+        items.append(FurnitureItem("basin", w - 0.6, 0.1, 0, 0, 0.5, 0.4, 0.85))
+    return items
+
+
+def _plan_hall(w: float, d: float) -> list[FurnitureItem]:
+    if w < 1.2:
+        return []
+    if d >= w:
+        return [FurnitureItem("console", 0.1, 0.1, 0, 0, 0.35, max(0.5, d - 0.2), 0.85)]
+    return [FurnitureItem("console", 0.1, 0.1, 0, 0, max(0.5, w - 0.2), 0.35, 0.85)]
+
+
+def _plan_shelving(w: float, d: float) -> list[FurnitureItem]:
+    if d >= w:
+        return [FurnitureItem("shelving", 0.1, 0.1, 0, 0, 0.6, max(0.5, d - 0.2), 2.0)]
+    return [FurnitureItem("shelving", 0.1, 0.1, 0, 0, max(0.5, w - 0.2), 0.6, 2.0)]
+
+
+def _plan_garage(w: float, d: float) -> list[FurnitureItem]:
+    car_l, car_w, car_h = 4.5, 1.8, 1.4
+    if max(w, d) < car_l or min(w, d) < car_w:
+        return []
+    if d >= w:
+        return [FurnitureItem("car", (w - car_w) / 2, (d - car_l) / 2, 0, 0, car_w, car_l, car_h)]
+    return [FurnitureItem("car", (w - car_l) / 2, (d - car_w) / 2, 0, 0, car_l, car_w, car_h)]
+
+
+def _plan_outdoor(w: float, d: float) -> list[FurnitureItem]:
+    if w < 1.5 or d < 1.5:
+        return []
+    return [
+        FurnitureItem("chair", 0.2, 0.2, 0, 0, 0.45, 0.45, 0.9),
+        FurnitureItem("chair", w - 0.65, d - 0.65, 0, 0, 0.45, 0.45, 0.9),
+        FurnitureItem("planter", (w - 0.5) / 2, (d - 0.5) / 2, 0, 0, 0.5, 0.5, 0.5),
+    ]

@@ -14,6 +14,10 @@ PALETTES = {
         "glass": {"base_color": (0.8, 0.9, 0.95, 1.0), "roughness": 0.05, "metallic": 0.0, "transmission": 1.0},
         "door_leaf": {"base_color": (0.35, 0.25, 0.18, 1.0), "roughness": 0.5, "metallic": 0.0},
         "furniture": {"base_color": (0.68, 0.55, 0.4, 1.0), "roughness": 0.5, "metallic": 0.0},
+        "upholstery": {"base_color": (0.42, 0.44, 0.48, 1.0), "roughness": 0.8, "metallic": 0.0},
+        "cabinetry": {"base_color": (0.30, 0.32, 0.34, 1.0), "roughness": 0.5, "metallic": 0.0},
+        "porcelain": {"base_color": (0.94, 0.95, 0.96, 1.0), "roughness": 0.1, "metallic": 0.0},
+        "vehicle": {"base_color": (0.18, 0.20, 0.26, 1.0), "roughness": 0.3, "metallic": 0.5},
         "ground": {"base_color": (0.35, 0.4, 0.3, 1.0), "roughness": 0.9, "metallic": 0.0},
         "neighbour": {"base_color": (0.55, 0.55, 0.56, 1.0), "roughness": 0.9, "metallic": 0.0},
         "street": {"base_color": (0.24, 0.25, 0.27, 1.0), "roughness": 0.95, "metallic": 0.0},
@@ -47,8 +51,37 @@ ROOM_FLOOR_KEY = {
     "bathroom": "floor_bathroom",
     "kitchen": "floor_kitchen",
     "garage": "floor_garage",
+    "wc": "floor_bathroom",
+    "utility": "floor_garage",
+    "courtyard": "floor_garage",
+    "terrace": "floor_default",
 }
 
 
 def floor_material_key(room_type: str) -> str:
     return ROOM_FLOOR_KEY.get(room_type, "floor_default")
+
+
+FURNITURE_MATERIAL_KEY = {
+    "bed": "upholstery",
+    "sofa": "upholstery",
+    "dining_table": "furniture",
+    "coffee_table": "furniture",
+    "desk": "furniture",
+    "chair": "furniture",
+    "wardrobe": "furniture",
+    "shelving": "furniture",
+    "console": "furniture",
+    "kitchen_run": "cabinetry",
+    "wc": "porcelain",
+    "basin": "porcelain",
+    "shower": "porcelain",
+    "fridge": "frame",
+    "car": "vehicle",
+    "planter": "ground",
+}
+
+
+def furniture_material_key(kind: str) -> str:
+    """The palette key for a furniture kind, falling back to `furniture`."""
+    return FURNITURE_MATERIAL_KEY.get(kind, "furniture")

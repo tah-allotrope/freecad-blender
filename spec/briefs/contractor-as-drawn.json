@@ -1,0 +1,14 @@
+{
+  "title": "Contractor As Drawn",
+  "subtitle": "7 storeys, 528 m² on a 3.96 × 25.00 m plot",
+  "narrative": [
+    "A seven-storey Vietnamese tube house (trệt / lửng / tầng 2–5 / sân thượng) reconstructed from the contractor's own drawing set on a 3,960 × 25,000 mm plot, with the drawn core — a 3,005 mm U-return stair, a 1,500 × 1,600 lift and a light well — repeated identically on every level.",
+    "The ground floor runs garage → living room (P.KHÁCH) → stair core → WC → combined kitchen + dining (BẾP & ĂN); the mezzanine opens a double-height void over the garage and living room (declared as a storey void, not a fake room) with the family room (P.SINH HOẠT) at the rear; floors 2–4 repeat two bedrooms (one front with ensuite and balcony, one rear); floor 5 carries the altar room (P.THỜ); the roof terrace (SÂN THƯỢNG) opens front and rear with the lift plant room (Ô KỸ THUẬT THANG MÁY) standing on the roof slab.",
+    "All departures from the drawing are ledgered in designs/contractor-as-drawn.fidelity.md: the stair shaft is enlarged to 3,005 × 4,000 mm to hold a Blondel-compliant U-return, the lift shaft is inferred (no shaft is labelled on the floor plans), and the roof glazing is represented by an open roof void over the stair rather than glass."
+  ],
+  "requirements": [
+    "Confirm the inferred lift shaft (2,000 × 1,800 mm, byte-identical on all levels) against the unlabelled walled void on the drawing.",
+    "Confirm the enlarged stair shaft (3,005 × 4,000 mm) — the drawn 3,005 × 3,200 shaft cannot hold a U-return at the 3,800 mm storey height.",
+    "Confirm the reconstructed programme room-by-room against the sheets (see designs/contractor-as-drawn.measurements.md)."
+  ]
+}

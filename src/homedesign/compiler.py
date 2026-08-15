@@ -74,6 +74,8 @@ def compile_spec(spec: dict) -> CompiledModel:
                 openings=openings,
                 stairs=stairs,
                 roof=roof,
+                authored_voids=[Rect(x=v["x"], y=v["y"], w=v["w"], d=v["d"]) for v in s.get("voids", [])],
+                authored_void_reasons=[v.get("reason", "") for v in s.get("voids", [])],
             )
         )
         base_z += height
@@ -82,6 +84,23 @@ def compile_spec(spec: dict) -> CompiledModel:
 
     all_room_ids = {r.id for s in storeys for r in s.rooms}
     views = _resolve_views(spec["meta"].get("views", []), all_room_ids, errors)
+
+    sections = spec["meta"].get("sections", [])
+    for idx, sec in enumerate(sections):
+        axis = sec["axis"]
+        position = float(sec["position_mm"])
+        limit = plot_w if axis == "x" else plot_d
+        if position > limit:
+            errors.append(
+                SpecError(
+                    code="section_out_of_plot",
+                    path=f"meta.sections[{idx}]",
+                    message=(
+                        f"section '{sec['name']}' position {position:.0f}mm exceeds the "
+                        f"{limit:.0f}mm plot {axis}-extent"
+                    ),
+                )
+            )
 
     if errors:
         raise SpecValidationError(errors)
@@ -95,6 +114,8 @@ def compile_spec(spec: dict) -> CompiledModel:
         views=views,
         context=spec["site"].get("context", {}),
         wall_alignment=wall_alignment,
+        sections=sections,
+        north_deg=spec["site"].get("north_deg", 0.0),
     )
 
 
@@ -125,7 +146,7 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
         still_pending = []
         for r in pending:
             if "rect" in r:
-                resolved[r["id"]] = Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]))
+                resolved[r["id"]] = Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]), name=r.get("name"))
                 continue
             rel = r["relative"]
             anchor = resolved.get(rel["adjacent_to"])
@@ -133,7 +154,7 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
                 still_pending.append(r)
                 continue
             resolved[r["id"]] = Room(
-                id=r["id"], type=r["type"], rect=_place_relative(anchor.rect, rel)
+                id=r["id"], type=r["type"], rect=_place_relative(anchor.rect, rel), name=r.get("name")
             )
         pending = still_pending
 
@@ -530,7 +551,9 @@ def _derive_floor_voids(storeys: list[Storey]) -> None:
     levels = sorted(by_level)
     for idx, level in enumerate(levels):
         storey = by_level[level]
-        rects: list[Rect] = []
+        # Authored voids (S3): a beam-spanned opening declared on this storey,
+        # seeded before the derived stairwell/elevator voids.
+        rects: list[Rect] = list(storey.authored_voids)
         if idx > 0:
             prev = by_level[levels[idx - 1]]
             prev_has_stairs = prev.stairs is not None
@@ -570,4 +593,5 @@ def _derive_roof(roof_spec, plot_w, plot_d, level, base_z) -> Roof | None:
         d=base_rect["d"] + 2 * overhang,
         base_z=base_z,
         voids=voids,
+        structures=roof_spec.get("structures", []),
     )

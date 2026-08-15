@@ -42,6 +42,9 @@ homedesign build  designs/<slug>.json                # compile + plans/elevation
 homedesign render designs/<slug>.json --view exterior --view interior [--profile final|cycles] [--skip-existing]
 homedesign build  designs/<slug>.json --gltf         # also export a GLB + self-contained web viewer
 homedesign pdf    designs/<slug>.json --require-fresh   # architect-brief PDF (A3 landscape); fails on stale renders
+homedesign brief  designs/<slug>.json --init [--force]  # scaffold spec/briefs/<slug>.json
+homedesign publish designs/<slug>.json [--force]        # hash-verified copy into deliverables/<slug>/
+# every subcommand accepts --out <dir> to override the output/ directory
 ```
 
 ## Render engine (do not change without reading this)
@@ -81,6 +84,14 @@ homedesign pdf    designs/<slug>.json --require-fresh   # architect-brief PDF (A
   (EEVEE preview).
 - If Blender is unavailable locally, report that runtime limitation clearly
   instead of guessing.
+
+## Blender-side tests
+- `tests/test_blender_geometry.py` requires the `bpy` PyPI wheel (roughly
+  1 GB). Install it with `python -m pip install -e ".[dev,bpy]"` to enable
+  those tests; without `bpy` they skip cleanly (`pytest.importorskip`).
+- CI deliberately does **not** install `bpy` (the wheel would dominate the
+  workflow), so the full suite must pass with the Blender tests skipped.
+  `python -m pytest tests -q -rs` shows the `SKIPPED` lines.
 
 ## Progressive Docs
 - Workflow/status details: `activeContext.md`, `plans/`

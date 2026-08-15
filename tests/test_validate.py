@@ -111,3 +111,26 @@ def test_contractor_as_drawn_passes_geometric_validation():
     # The as-drawn scheme is authored to tile cleanly and stack its core, so
     # every registry item here must be a warning, never an error.
     assert all(e.severity == "warning" for e in errors), f"contractor-as-drawn: {errors}"
+
+
+def test_schema_rejects_roof_without_type():
+    spec = load_example("demo-3br-2storey.json")
+    spec["storeys"][1]["roof"] = {"pitch_deg": 20}
+    errors = validate_schema(spec)
+    assert errors
+    assert errors[0].code == "schema_error"
+    assert "'type'" in errors[0].message
+
+
+def test_schema_accepts_new_room_types():
+    spec = load_example("tubehouse-mini.json")
+    spec["storeys"][0]["rooms"][0]["type"] = "terrace"
+    assert validate_schema(spec) == []
+
+
+def test_schema_rejects_unknown_room_type():
+    spec = load_example("tubehouse-mini.json")
+    spec["storeys"][0]["rooms"][0]["type"] = "playroom"
+    errors = validate_schema(spec)
+    assert errors
+    assert any(e.code == "schema_error" for e in errors)
