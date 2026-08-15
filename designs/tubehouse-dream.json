@@ -51,7 +51,10 @@
   "site": {
     "plot_width_mm": 4000,
     "plot_depth_mm": 25000,
-    "wall_alignment": "inside"
+    "wall_alignment": "inside",
+    "context": {
+      "neighbours": false
+    }
   },
   "storeys": [
     {

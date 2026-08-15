@@ -288,7 +288,8 @@ def build_environment(model, structure):
     plot_w, plot_d = model["plot_width_mm"] / 1000, model["plot_depth_mm"] / 1000
     pad = 15.0
     make_box("ground", -pad, -pad, -0.3, plot_w + 2 * pad, plot_d + 2 * pad, 0.3, structure, ground_mat)
-    _add_neighbour_massing(model, structure)
+    if _neighbours_enabled(model):
+        _add_neighbour_massing(model, structure)
 
     world = bpy.data.worlds.new("World")
     bpy.context.scene.world = world

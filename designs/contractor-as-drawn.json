@@ -80,7 +80,7 @@
     "plot_depth_mm": 25000,
     "wall_alignment": "inside",
     "context": {
-      "neighbours": true,
+      "neighbours": false,
       "street_depth_mm": 6000
     }
   },
