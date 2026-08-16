@@ -15,6 +15,10 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 _ASSETS = Path(__file__).resolve().parent / "assets"
@@ -25,15 +29,65 @@ def _read_asset(name: str) -> str:
     return (_ASSETS / name).read_text(encoding="utf-8")
 
 
+def optimize_glb(glb_path: Path) -> bool:
+    """Best-effort in-place glTF optimization (dedup + weld + quantize) via
+    the `@gltf-transform/cli` npm package, typically 2-3x smaller with no
+    visible loss on this project's box-heavy architectural geometry --
+    quantized attributes need no extra decoder at load time (unlike Draco/
+    meshopt), so it's a strict win for load time everywhere this GLB is
+    embedded. Returns True if it ran, False if skipped (no npx on PATH, or
+    the tool failed) -- callers should treat False as a no-op, not an error,
+    since Node is not a hard dependency of this project.
+    """
+    if shutil.which("npx") is None:
+        return False
+    glb_path = Path(glb_path)
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            a, b, c = Path(td) / "a.glb", Path(td) / "b.glb", Path(td) / "c.glb"
+            for cmd, src, dst in (
+                ("dedup", glb_path, a),
+                ("weld", a, b),
+                ("quantize", b, c),
+            ):
+                subprocess.run(
+                    ["npx", "--yes", "@gltf-transform/cli", cmd, str(src), str(dst)],
+                    check=True, capture_output=True, timeout=180,
+                    # npx resolves to npx.CMD on Windows; CreateProcess can't
+                    # exec a .CMD directly without going through cmd.exe.
+                    shell=(os.name == "nt"),
+                )
+            shutil.copy2(c, glb_path)
+        return True
+    except Exception:
+        return False
+
+
+_B64_CHUNK_CHARS = 2000
+
+
 def _load_call(glb: Path, viewer_dir: Path) -> str:
     """JS that fetches/decodes the GLB and hands it to `loader.parse`."""
     if glb.exists() and glb.stat().st_size <= INLINE_GLB_LIMIT_BYTES:
-        b64 = base64.b64encode(glb.read_bytes()).decode("ascii")
+        # base64url, not standard base64: bisection against Claude Artifacts'
+        # publish pipeline showed real (high-entropy) embedded data goes
+        # blank past a few hundred KB, and swapping the '+'/'/' alphabet
+        # characters for '-'/'_' measurably raises that ceiling (confirmed:
+        # 100KB of real data failed with standard base64, passed identically
+        # encoded as base64url). Chunking into short string literals (vs.
+        # one multi-MB token) also helps. Neither trick is free of a ceiling
+        # for very large models -- this is a best-effort mitigation of an
+        # undocumented, unconfirmed platform behavior, not a guaranteed fix.
+        # Plain local/file:// use is unaffected either way.
+        b64url = base64.urlsafe_b64encode(glb.read_bytes()).decode("ascii")
+        chunks = [b64url[i : i + _B64_CHUNK_CHARS] for i in range(0, len(b64url), _B64_CHUNK_CHARS)]
+        b64_literal = "[" + ",\n".join(f"'{c}'" for c in chunks) + "].join('')"
         # Decode to an ArrayBuffer, not a string: GLTFLoader.parse treats a JS
         # string as glTF-JSON text, so passing atob()'s binary string made it
         # JSON.parse("glTF…") and fail — the viewer rendered nothing.
         return (
-            f"var _b64='{b64}';"
+            f"var _b64={b64_literal};"
+            "_b64=_b64.replace(/-/g,'+').replace(/_/g,'/');"
             "var _bin=atob(_b64);"
             "var _buf=new Uint8Array(_bin.length);"
             "for(var _i=0;_i<_bin.length;_i++){_buf[_i]=_bin.charCodeAt(_i);}"

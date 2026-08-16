@@ -604,7 +604,13 @@ def main():
         )
         print(f"gltf: {glb_path}")
         sys.stdout.flush()
-        from homedesign.viewer import write_floor_viewer, write_viewer
+        from homedesign.viewer import optimize_glb, write_floor_viewer, write_viewer
+        before = glb_path.stat().st_size
+        if optimize_glb(glb_path):
+            print(f"glb optimize: {before} -> {glb_path.stat().st_size} bytes")
+        else:
+            print("glb optimize: skipped (npx not available or gltf-transform failed)")
+        sys.stdout.flush()
         write_viewer(model["name"], glb_path, out_dir)
         floors_path = write_floor_viewer(model["name"], glb_path, model["storeys"], out_dir / "svg", out_dir)
         if floors_path is None:
