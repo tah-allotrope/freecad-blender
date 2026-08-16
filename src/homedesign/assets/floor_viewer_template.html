@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1f26">
+<title>homedesign &mdash; __TITLE__ by floor</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: #1c1f26;
+               font-family: "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  #tabs { flex: 0 0 auto; display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px;
+          background: #14161b; border-bottom: 1px solid rgba(255,255,255,0.08); box-sizing: border-box;
+          -webkit-overflow-scrolling: touch; }
+  #tabs button { flex: 0 0 auto; padding: 8px 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.15);
+                 background: transparent; color: #b7bbc4; font: inherit; font-size: 13px; letter-spacing: 0.02em;
+                 cursor: pointer; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+  #tabs button.active { background: #d8dbe0; color: #14161b; border-color: #d8dbe0; font-weight: 600; }
+
+  #main { flex: 1 1 auto; display: flex; min-height: 0; }
+  @media (max-width: 860px) { #main { flex-direction: column; } }
+
+  #plan-pane { flex: 0 0 360px; box-sizing: border-box; padding: 16px; background: #1c1f26; }
+  @media (max-width: 860px) { #plan-pane { flex: 0 0 38vh; width: 100%; } }
+  .plan { display: none; width: 100%; height: 100%; }
+  .plan.active { display: block; }
+  .plan-sheet { width: 100%; height: 100%; background: #fff; border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.4); overflow: hidden; padding: 10px; box-sizing: border-box; }
+  .plan-sheet svg { display: block; width: 100%; height: 100%; }
+
+  #viewer-pane { flex: 1 1 auto; position: relative; min-width: 0; min-height: 0; background: #1c1f26; }
+  #viewer { display: block; width: 100%; height: 100%; touch-action: none; outline: none;
+            -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #hud { position: absolute; left: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); color: #d8dbe0;
+         font-size: 13px; letter-spacing: 0.03em; opacity: 0.85; background: rgba(10,12,16,0.55);
+         padding: 8px 14px; border-radius: 8px; pointer-events: none; max-width: calc(100% - 120px);
+         box-sizing: border-box; }
+  #reset-btn { position: absolute; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom));
+               padding: 11px 18px; min-height: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.25);
+               background: rgba(10,12,16,0.55); color: #d8dbe0; font: inherit; font-size: 13px;
+               letter-spacing: 0.03em; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #reset-btn:active { background: rgba(40,44,52,0.85); }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; gap: 14px; color: #d8dbe0; background: rgba(20,22,28,0.94);
+             font-size: 14px; text-align: center; padding: 24px; box-sizing: border-box; transition: opacity 0.25s; }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  #overlay .title { font-size: 16px; font-weight: 600; }
+  #overlay .hint { opacity: 0.65; max-width: 320px; line-height: 1.4; }
+  .spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(216,219,224,0.25);
+             border-top-color: #d8dbe0; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="tabs">__FLOOR_TABS__</div>
+  <div id="main">
+    <div id="plan-pane">__FLOOR_PLANS__</div>
+    <div id="viewer-pane">
+      <canvas id="viewer"></canvas>
+      <div id="overlay">
+        <div class="spinner" id="overlay-spinner"></div>
+        <div class="title" id="overlay-title">Loading __TITLE__&hellip;</div>
+        <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
+      </div>
+      <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; tap a spot to step closer &middot; pick a floor above</div>
+      <button id="reset-btn" type="button">Reset view</button>
+    </div>
+  </div>
+</div>
+<script>__THREE_JS__</script>
+<script>__GLTF_LOADER__</script>
+<script>__ORBIT_CONTROLS__</script>
+<script>
+(function () {
+  var FLOOR_BANDS = __FLOOR_BANDS_JSON__;
+
+  var overlay = document.getElementById('overlay');
+  var overlayTitle = document.getElementById('overlay-title');
+  var overlayHint = document.getElementById('overlay-hint');
+  var overlaySpinner = document.getElementById('overlay-spinner');
+  var hud = document.getElementById('hud');
+  var resetBtn = document.getElementById('reset-btn');
+  var canvas = document.getElementById('viewer');
+  var viewerPane = document.getElementById('viewer-pane');
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll('#tabs button'));
+  var planPanels = Array.prototype.slice.call(document.querySelectorAll('.plan'));
+
+  function showMessage(title, hint) {
+    overlaySpinner.style.display = 'none';
+    overlayTitle.textContent = title;
+    overlayHint.textContent = hint;
+    overlay.classList.remove('hidden');
+  }
+
+  function hasWebGL() {
+    try {
+      var c = document.createElement('canvas');
+      return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  if (!hasWebGL()) {
+    showMessage("This browser can't display 3D models",
+      'Open this page in Chrome, Safari or Edge instead of an in-app browser (e.g. Zalo, Messenger, Instagram), then try again. The floor plans on the left still work here.');
+    hud.style.display = 'none';
+    resetBtn.style.display = 'none';
+  }
+
+  var isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1c1f26);
+
+  var camera = new THREE.PerspectiveCamera(50, 1, 0.05, 500);
+  // The GLB is exported Blender-native (export_yup=False): Z is vertical,
+  // not three.js's default Y. Without this, OrbitControls orbits around the
+  // wrong pole and "up" on screen is actually the model's Y (depth) axis --
+  // harmless for a roughly-cubic whole building, but it flattens a single
+  // storey (long in Y, short in Z) into a tall sliver instead of a plan.
+  camera.up.set(0, 0, 1);
+
+  var renderer = null;
+  if (hasWebGL()) {
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isCoarsePointer, powerPreference: 'high-performance' });
+    } catch (e) {
+      showMessage("Couldn't start 3D rendering", String((e && e.message) || e));
+      hud.style.display = 'none';
+      resetBtn.style.display = 'none';
+    }
+  }
+
+  var controls = null;
+  var loader = null;
+  var modelRoot = null;
+  var floorRadius = 10;
+  var currentFloor = 0;
+  var floorHome = {};
+
+  // Site-context props (ground slab, street strip, neighbour massing) are
+  // exported much larger than the building itself, so they never belong to
+  // a single floor -- the ground plane is only shown under the Ground tab.
+  var SITE_CONTEXT_NAME = /^(ground|street|neighbour)/i;
+
+  // A mesh belongs to a floor if its Z-extent overlaps that floor's band at
+  // all, not just whichever band its centre happens to land in: the
+  // stairwell/light-well core runs as continuous multi-storey wall meshes
+  // (by design -- it is an intentionally undivided void), so a centre-point
+  // test would arbitrarily assign the whole shaft to one floor and make it
+  // vanish, or loom oversized, on every other floor it actually passes
+  // through. Overlap keeps it visible on every floor it really spans.
+  function overlapsBand(zMin, zMax, band) {
+    return zMax > band.z0 + 1e-6 && zMin < band.z1 - 1e-6;
+  }
+
+  // A stricter version for framing only: a mesh that merely grazes this
+  // band by a few centimetres (e.g. a railing that is 90% Floor 5 and just
+  // clips Floor 4's ceiling datum) shouldn't blow the camera frame out to
+  // cover both floors -- it still renders (overlapsBand keeps it visible),
+  // it just doesn't get to size the shot.
+  function substantialOverlap(zMin, zMax, band) {
+    var overlap = Math.min(zMax, band.z1) - Math.max(zMin, band.z0);
+    if (overlap <= 0) return false;
+    var meshH = zMax - zMin;
+    var bandH = isFinite(band.z1) ? band.z1 - band.z0 : meshH;
+    var refH = Math.min(meshH, bandH) || 1e-6;
+    return overlap / refH >= 0.4;
+  }
+
+  function floorFitBox(i) {
+    var band = FLOOR_BANDS[i];
+    var box = new THREE.Box3();
+    var any = false;
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh || obj.userData.floorIndex === -1) return;
+      if (!substantialOverlap(obj.userData.zMin, obj.userData.zMax, band)) return;
+      box.expandByObject(obj);
+      any = true;
+    });
+    return any ? box : null;
+  }
+
+  function selectFloor(i, instant) {
+    currentFloor = i;
+    tabButtons.forEach(function (btn, idx) {
+      var active = idx === i;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    planPanels.forEach(function (div, idx) { div.classList.toggle('active', idx === i); });
+
+    if (!modelRoot) return;
+
+    var band = FLOOR_BANDS[i];
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      // Site context (ground slab etc.) is huge relative to a single floor
+      // and would swamp the frame -- never show it here.
+      if (obj.userData.floorIndex === -1) { obj.visible = false; return; }
+      obj.visible = overlapsBand(obj.userData.zMin, obj.userData.zMax, band);
+    });
+
+    var box = floorFitBox(i);
+    if (!box) return;
+    var size = new THREE.Vector3();
+    box.getSize(size);
+    var centre = new THREE.Vector3();
+    box.getCenter(centre);
+    floorRadius = Math.max(size.x, size.y, size.z) || 5;
+    controls.minDistance = floorRadius * 0.01;
+    controls.maxDistance = floorRadius * 10;
+
+    // A single floor is long and narrow (Y, the tube house's long axis,
+    // dominates X by 5x+): to read its full length across the frame the
+    // camera needs to stand off mostly along X (broadside), not push out
+    // along Y (which looks end-down-the-corridor and foreshortens the very
+    // length we're trying to show). dist is sized off size.y so it scales
+    // with how long the floor actually is.
+    var dist = size.y * 1.0;
+    var toPos = new THREE.Vector3(centre.x + dist * 0.85, centre.y - dist * 0.12, centre.z + dist * 0.55);
+
+    floorHome[i] = { position: toPos.clone(), target: centre.clone() };
+    if (instant) {
+      camera.position.copy(toPos);
+      controls.target.copy(centre);
+      controls.update();
+    } else {
+      animateCamera(toPos, centre, 420);
+    }
+  }
+
+  tabButtons.forEach(function (btn, idx) {
+    btn.addEventListener('click', function () { selectFloor(idx, false); });
+  });
+
+  function onModel(gltf) {
+    var root = gltf.scene || gltf.scenes[0];
+    scene.add(root);
+    root.updateMatrixWorld(true);
+    modelRoot = root;
+
+    var tmpBox = new THREE.Box3();
+    root.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      if (SITE_CONTEXT_NAME.test(obj.name)) { obj.userData.floorIndex = -1; return; }
+      tmpBox.setFromObject(obj);
+      obj.userData.floorIndex = 0; // sentinel: "not site context", see zMin/zMax for the real extent
+      obj.userData.zMin = tmpBox.min.z;
+      obj.userData.zMax = tmpBox.max.z;
+    });
+
+    selectFloor(currentFloor, true);
+    overlay.classList.add('hidden');
+  }
+
+  function onModelError(err) {
+    showMessage('This model failed to load', (err && err.message) ? err.message : String(err));
+  }
+
+  if (renderer) {
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+
+    scene.add(new THREE.AmbientLight(0x8899aa, 0.5));
+    var key = new THREE.DirectionalLight(0xffffff, 1.1);
+    key.position.set(6, 10, 8);
+    scene.add(key);
+    var fill = new THREE.DirectionalLight(0xaabbcc, 0.35);
+    fill.position.set(-6, 4, -6);
+    scene.add(fill);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 0.2;
+    controls.maxDistance = 400;
+
+    loader = new THREE.GLTFLoader();
+
+    __LOAD_CALL__
+
+    resetBtn.addEventListener('click', function () {
+      var home = floorHome[currentFloor];
+      if (home) animateCamera(home.position, home.target, 450);
+    });
+
+    // -- Tap/click a point on the model: re-centre orbiting there and step
+    // closer. Only the current floor's meshes are visible/raycastable in
+    // practice; hidden floors are skipped even though three.js would
+    // otherwise raycast straight through them. --
+    var raycaster = new THREE.Raycaster();
+    var pointer = new THREE.Vector2();
+    var downPos = null;
+    var downTime = 0;
+    var activePointers = 0;
+    var gestureIsMulti = false;
+
+    function pointerNdc(ev) {
+      var rect = canvas.getBoundingClientRect();
+      return {
+        x: ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+        y: -((ev.clientY - rect.top) / rect.height) * 2 + 1
+      };
+    }
+
+    canvas.addEventListener('pointerdown', function (ev) {
+      activePointers += 1;
+      if (activePointers === 1) {
+        gestureIsMulti = false;
+        downPos = { x: ev.clientX, y: ev.clientY };
+        downTime = performance.now();
+      } else {
+        gestureIsMulti = true;
+        downPos = null;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('pointerup', function (ev) {
+      activePointers = Math.max(0, activePointers - 1);
+      var wasTap = downPos && !gestureIsMulti && modelRoot &&
+        Math.hypot(ev.clientX - downPos.x, ev.clientY - downPos.y) <= 8 &&
+        (performance.now() - downTime) <= 400;
+      downPos = null;
+      if (!wasTap) return;
+
+      var ndc = pointerNdc(ev);
+      pointer.set(ndc.x, ndc.y);
+      raycaster.setFromCamera(pointer, camera);
+      var hits = raycaster.intersectObject(modelRoot, true).filter(function (h) { return h.object.visible; });
+      if (!hits.length) return;
+
+      var hit = hits[0].point;
+      var curDist = camera.position.distanceTo(controls.target);
+      var hitDist = camera.position.distanceTo(hit);
+      var newDist = Math.max(controls.minDistance * 3, Math.min(curDist, hitDist) * 0.4);
+      var dir = camera.position.clone().sub(hit);
+      if (dir.lengthSq() < 1e-6) dir.set(0.5, 0.4, 0.7);
+      dir.normalize();
+      var newPos = hit.clone().add(dir.multiplyScalar(newDist));
+
+      animateCamera(newPos, hit, 380);
+    }, { passive: true });
+
+    canvas.addEventListener('pointercancel', function () {
+      activePointers = Math.max(0, activePointers - 1);
+      downPos = null;
+    }, { passive: true });
+
+    var animId = null;
+    function animateCamera(toPos, toTarget, ms) {
+      if (animId) cancelAnimationFrame(animId);
+      var fromPos = camera.position.clone();
+      var fromTarget = controls.target.clone();
+      var start = performance.now();
+      controls.enabled = false;
+      function step(now) {
+        var t = Math.min(1, (now - start) / ms);
+        var e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+        camera.position.lerpVectors(fromPos, toPos, e);
+        controls.target.lerpVectors(fromTarget, toTarget, e);
+        controls.update();
+        if (t < 1) {
+          animId = requestAnimationFrame(step);
+        } else {
+          controls.enabled = true;
+          animId = null;
+        }
+      }
+      animId = requestAnimationFrame(step);
+    };
+
+    function resize() {
+      var w = viewerPane.clientWidth || 1, h = viewerPane.clientHeight || 1;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
+    resize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      var dist = camera.position.distanceTo(controls.target);
+      var nearWanted = Math.max(floorRadius / 2000, dist / 200);
+      if (Math.abs(camera.near - nearWanted) > camera.near * 0.2) {
+        camera.near = nearWanted;
+        camera.far = Math.max(floorRadius * 50, dist * 10);
+        camera.updateProjectionMatrix();
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+})();
+</script>
+</body>
+</html>

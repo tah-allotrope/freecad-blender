@@ -85,6 +85,11 @@
   scene.background = new THREE.Color(0x1c1f26);
 
   var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 500);
+  // The GLB is exported Blender-native (export_yup=False): Z is vertical,
+  // not three.js's default Y. Without this, OrbitControls orbits around the
+  // wrong pole -- easy to miss on a roughly cubic whole building, but it
+  // shows up as sideways/tumbled framing on flatter selections.
+  camera.up.set(0, 0, 1);
 
   var renderer;
   try {

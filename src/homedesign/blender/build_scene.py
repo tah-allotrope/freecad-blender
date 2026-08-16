@@ -604,8 +604,14 @@ def main():
         )
         print(f"gltf: {glb_path}")
         sys.stdout.flush()
-        from homedesign.viewer import write_viewer
+        from homedesign.viewer import write_floor_viewer, write_viewer
         write_viewer(model["name"], glb_path, out_dir)
+        floors_path = write_floor_viewer(model["name"], glb_path, model["storeys"], out_dir / "svg", out_dir)
+        if floors_path is None:
+            print("floor viewer: skipped (plan SVGs not found -- run `plan` before `render --export-gltf`)")
+        else:
+            print(f"floor viewer: {floors_path}")
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
