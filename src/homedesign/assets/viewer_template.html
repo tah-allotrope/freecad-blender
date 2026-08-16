@@ -2,34 +2,101 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1f26">
 <title>homedesign &mdash; __TITLE__</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #1c1f26; font-family: "Segoe UI", sans-serif; }
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: #1c1f26;
+               font-family: "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
   #app { position: relative; width: 100%; height: 100%; }
-  #viewer { display: block; width: 100%; height: 100%; }
-  #hud { position: absolute; left: 16px; bottom: 14px; color: #d8dbe0; font-size: 13px; letter-spacing: 0.03em; opacity: 0.85;
-         background: rgba(10,12,16,0.55); padding: 8px 14px; border-radius: 8px; pointer-events: none; }
+  #viewer { display: block; width: 100%; height: 100%; touch-action: none; outline: none;
+            -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #hud { position: absolute; left: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); color: #d8dbe0;
+         font-size: 13px; letter-spacing: 0.03em; opacity: 0.85; background: rgba(10,12,16,0.55);
+         padding: 8px 14px; border-radius: 8px; pointer-events: none; max-width: calc(100% - 120px);
+         box-sizing: border-box; }
+  #reset-btn { position: absolute; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom));
+               padding: 11px 18px; min-height: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.25);
+               background: rgba(10,12,16,0.55); color: #d8dbe0; font: inherit; font-size: 13px;
+               letter-spacing: 0.03em; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #reset-btn:active { background: rgba(40,44,52,0.85); }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+             justify-content: center; gap: 14px; color: #d8dbe0; background: rgba(20,22,28,0.94);
+             font-size: 14px; text-align: center; padding: 24px; box-sizing: border-box; transition: opacity 0.25s; }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  #overlay .title { font-size: 16px; font-weight: 600; }
+  #overlay .hint { opacity: 0.65; max-width: 320px; line-height: 1.4; }
+  .spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(216,219,224,0.25);
+             border-top-color: #d8dbe0; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="viewer"></canvas>
-  <div id="hud">__TITLE__ &mdash; drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+  <div id="overlay">
+    <div class="spinner" id="overlay-spinner"></div>
+    <div class="title" id="overlay-title">Loading __TITLE__&hellip;</div>
+    <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
+  </div>
+  <div id="hud">__TITLE__ &mdash; drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; two-finger or right-drag to pan &middot; tap a spot to step closer</div>
+  <button id="reset-btn" type="button">Reset view</button>
 </div>
 <script>__THREE_JS__</script>
 <script>__GLTF_LOADER__</script>
 <script>__ORBIT_CONTROLS__</script>
 <script>
 (function () {
+  var overlay = document.getElementById('overlay');
+  var overlayTitle = document.getElementById('overlay-title');
+  var overlayHint = document.getElementById('overlay-hint');
+  var overlaySpinner = document.getElementById('overlay-spinner');
+  var hud = document.getElementById('hud');
+  var resetBtn = document.getElementById('reset-btn');
+  var canvas = document.getElementById('viewer');
+
+  function showMessage(title, hint) {
+    overlaySpinner.style.display = 'none';
+    overlayTitle.textContent = title;
+    overlayHint.textContent = hint;
+    overlay.classList.remove('hidden');
+  }
+
+  function hasWebGL() {
+    try {
+      var c = document.createElement('canvas');
+      return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  if (!hasWebGL()) {
+    showMessage("This browser can't display 3D models",
+      'Open this page in Chrome, Safari or Edge instead of an in-app browser (e.g. Zalo, Messenger, Instagram), then try again.');
+    hud.style.display = 'none';
+    resetBtn.style.display = 'none';
+    return;
+  }
+
+  var isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
   var scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1c1f26);
 
-  var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 500);
+  var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 500);
 
-  var renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('viewer'), antialias: true });
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isCoarsePointer, powerPreference: 'high-performance' });
+  } catch (e) {
+    showMessage("Couldn't start 3D rendering", String((e && e.message) || e));
+    hud.style.display = 'none';
+    resetBtn.style.display = 'none';
+    return;
+  }
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isCoarsePointer ? 1.5 : 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
@@ -46,32 +113,155 @@
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  controls.screenSpacePanning = true;
+  controls.minDistance = 0.2;
+  controls.maxDistance = 400;
 
   var loader = new THREE.GLTFLoader();
+  var modelRoot = null;
+  var sceneRadius = 10;
+  var homeState = null;
+
+  // Site-context props (ground slab, street strip, neighbour massing) are
+  // exported much larger than the building itself so they read as
+  // "surroundings" in the full render -- but that makes them dominate a
+  // naive bounding-box fit, framing a tiny house against a huge empty plane.
+  // Fit on everything except those; still render and still raycast-able.
+  var SITE_CONTEXT_NAME = /^(ground|street|neighbour)/i;
+
+  function fitBox(root) {
+    var box = new THREE.Box3();
+    var any = false;
+    root.traverse(function (obj) {
+      if (!obj.isMesh || SITE_CONTEXT_NAME.test(obj.name)) return;
+      box.expandByObject(obj);
+      any = true;
+    });
+    if (!any) box.setFromObject(root);
+    return box;
+  }
+
   function onModel(gltf) {
     var root = gltf.scene || gltf.scenes[0];
     scene.add(root);
+    modelRoot = root;
 
-    var box = new THREE.Box3().setFromObject(root);
+    var box = fitBox(root);
     var size = new THREE.Vector3();
     box.getSize(size);
     var centre = new THREE.Vector3();
     box.getCenter(centre);
-    var radius = Math.max(size.x, size.y, size.z);
+    var radius = Math.max(size.x, size.y, size.z) || 10;
+    sceneRadius = radius;
 
-    camera.near = Math.max(radius / 1000, 0.01);
-    camera.far = radius * 100;
-    camera.updateProjectionMatrix();
+    // Loose enough to walk right up to a wall, tight enough to stay oriented.
+    controls.minDistance = radius * 0.01;
+    controls.maxDistance = radius * 8;
 
     var dist = radius * 2.4;
-    camera.position.set(dist * 0.7, dist * 0.6, dist);
+    camera.position.set(centre.x + dist * 0.7, centre.y + dist * 0.6, centre.z + dist);
     controls.target.copy(centre);
     controls.update();
+
+    homeState = { position: camera.position.clone(), target: controls.target.clone() };
+    overlay.classList.add('hidden');
   }
+
   function onModelError(err) {
-    document.getElementById('hud').textContent = 'viewer failed: ' + (err && err.message ? err.message : err);
+    showMessage('This model failed to load', (err && err.message) ? err.message : String(err));
   }
+
   __LOAD_CALL__
+
+  // -- Reset view: back to the framing computed when the model loaded. --
+  resetBtn.addEventListener('click', function () {
+    if (homeState) animateCamera(homeState.position, homeState.target, 450);
+  });
+
+  // -- Tap/click a point on the model: re-centre orbiting there and step
+  // closer, so you can walk into a room instead of fighting a pivot that
+  // stays pinned to the building's centre. A drag (or a second finger, for
+  // pinch/pan) is never mistaken for a tap. --
+  var raycaster = new THREE.Raycaster();
+  var pointer = new THREE.Vector2();
+  var downPos = null;
+  var downTime = 0;
+  var activePointers = 0;
+  var gestureIsMulti = false;
+
+  function pointerNdc(ev) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((ev.clientY - rect.top) / rect.height) * 2 + 1
+    };
+  }
+
+  canvas.addEventListener('pointerdown', function (ev) {
+    activePointers += 1;
+    if (activePointers === 1) {
+      gestureIsMulti = false;
+      downPos = { x: ev.clientX, y: ev.clientY };
+      downTime = performance.now();
+    } else {
+      gestureIsMulti = true;
+      downPos = null;
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('pointerup', function (ev) {
+    activePointers = Math.max(0, activePointers - 1);
+    var wasTap = downPos && !gestureIsMulti && modelRoot &&
+      Math.hypot(ev.clientX - downPos.x, ev.clientY - downPos.y) <= 8 &&
+      (performance.now() - downTime) <= 400;
+    downPos = null;
+    if (!wasTap) return;
+
+    var ndc = pointerNdc(ev);
+    pointer.set(ndc.x, ndc.y);
+    raycaster.setFromCamera(pointer, camera);
+    var hits = raycaster.intersectObject(modelRoot, true);
+    if (!hits.length) return;
+
+    var hit = hits[0].point;
+    var curDist = camera.position.distanceTo(controls.target);
+    var hitDist = camera.position.distanceTo(hit);
+    var newDist = Math.max(controls.minDistance * 3, Math.min(curDist, hitDist) * 0.4);
+    var dir = camera.position.clone().sub(hit);
+    if (dir.lengthSq() < 1e-6) dir.set(0.5, 0.4, 0.7);
+    dir.normalize();
+    var newPos = hit.clone().add(dir.multiplyScalar(newDist));
+
+    animateCamera(newPos, hit, 380);
+  }, { passive: true });
+
+  canvas.addEventListener('pointercancel', function () {
+    activePointers = Math.max(0, activePointers - 1);
+    downPos = null;
+  }, { passive: true });
+
+  var animId = null;
+  function animateCamera(toPos, toTarget, ms) {
+    if (animId) cancelAnimationFrame(animId);
+    var fromPos = camera.position.clone();
+    var fromTarget = controls.target.clone();
+    var start = performance.now();
+    controls.enabled = false;
+    function step(now) {
+      var t = Math.min(1, (now - start) / ms);
+      var e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+      camera.position.lerpVectors(fromPos, toPos, e);
+      controls.target.lerpVectors(fromTarget, toTarget, e);
+      controls.update();
+      if (t < 1) {
+        animId = requestAnimationFrame(step);
+      } else {
+        controls.enabled = true;
+        animId = null;
+      }
+    }
+    animId = requestAnimationFrame(step);
+  }
 
   function resize() {
     var w = window.innerWidth, h = window.innerHeight;
@@ -80,9 +270,20 @@
     renderer.setSize(w, h);
   }
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
 
   function animate() {
     requestAnimationFrame(animate);
+    // Keep the near/far planes tight around the current dolly distance so
+    // walking up close to a wall doesn't clip it, while still covering the
+    // whole building when zoomed out.
+    var dist = camera.position.distanceTo(controls.target);
+    var nearWanted = Math.max(sceneRadius / 2000, dist / 200);
+    if (Math.abs(camera.near - nearWanted) > camera.near * 0.2) {
+      camera.near = nearWanted;
+      camera.far = Math.max(sceneRadius * 50, dist * 10);
+      camera.updateProjectionMatrix();
+    }
     controls.update();
     renderer.render(scene, camera);
   }
