@@ -230,19 +230,29 @@ contractor's plan sheets additionally carry the following, none of which is
 generated. This is recorded as a *drawing-completeness* gap distinct from the
 geometric ones above — the underlying model has the data for several of these.
 
-| on the contractor plan | in the generated SVG/DXF | model has the data? |
+| on the contractor plan | in the generated SVG/DXF | status |
 |---|---|---|
-| furniture symbols (beds, sofas, dining sets, kitchen fittings, WC fixtures) | absent | **yes** — 209 furniture objects exist in the 3D scene |
-| level markers (`± 0.000`, `+ 0.200`, `+ 0.300`, `+ 3.800` …) | absent | yes — `storey.base_z` |
-| setback / boundary lines (`Ranh lộ giới`, `Ranh khoảng lùi trước/sau`) | absent | no — not in schema (see (a)) |
-| section cut markers (`MC A-A`) | absent | yes — `meta.sections` |
-| multi-tier dimension chains (2–3 tiers per side) | one tier | yes — derivable |
-| stair tread numbering (1, 3, 5 … 21, 19, 17) | treads drawn, unnumbered | yes — `storey.stairs.treads` |
-| text callouts (`Tiểu cảnh, ô lấy sáng`, `Lô gia`, `Hành lang thương mại`) | absent | partly — some are room names |
+| furniture symbols (beds, sofas, dining sets, kitchen fittings, WC fixtures) | drawn in SVG + DXF `FURNITURE` layer | **closed 2026-08-17** |
+| level markers (`± 0.000`, `+ 0.200`, `+ 0.300`, `+ 3.800` …) | one per storey, from `storey.base_z` | **closed 2026-08-17** |
+| section cut markers (`MC A-A`) | cut line + end labels, from `meta.sections` | **closed 2026-08-17** |
+| stair tread numbering (1, 3, 5 … 21, 19, 17) | every tread numbered | **closed 2026-08-17** |
+| multi-tier dimension chains (2–3 tiers per side) | fine + full-span bands + overall | **closed 2026-08-17** |
+| setback / boundary lines (`Ranh lộ giới`, `Ranh khoảng lùi trước/sau`) | absent | **open** — needs the skewed plot (a) rules out |
+| text callouts (`Tiểu cảnh, ô lấy sáng`, `Lô gia`, `Hành lang thương mại`) | only where they are room names | **open** — no annotation construct in the schema |
 
-**The furniture row is a defect, not an approximation:** the same compiled model
-produces a furnished 3D scene and an unfurnished 2D plan. That inconsistency is
-in the generator, not in the schema.
+The furniture row was a generator defect rather than an approximation: the same
+compiled model produced a furnished 3D scene and an unfurnished 2D plan.
+`placement.plan_room` was already pure (no `bpy`), so the SVG and DXF writers
+now call it directly and the three views cannot disagree.
+
+The dimension tiers are derived, never invented: the middle tier quotes only
+coordinates where a room edge runs clear across the plan, because the schema
+has no structural grid or column line to quote instead. The fine tier spans
+plot edge to plot edge so the front and rear yard setbacks are dimensioned.
+
+**Still true after this work:** the plans are more complete, the elevations and
+the 3D are not — (k)–(n) are untouched, and a reader comparing `MẶT ĐỨNG CHÍNH`
+to `exterior_front.png` sees the same flat massing as before.
 
 ## Enum / type approximations (CON-004, room-type enum grown to 16 values 2026-08-14)
 

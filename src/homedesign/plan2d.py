@@ -120,18 +120,16 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
             parts.append(f'<text class="tread-number" x="{x + w / 2:.1f}" y="{y + d / 2 + 3:.1f}" '
                          f'font-size="7" text-anchor="middle" fill="#555">{i}</text>')
 
-    # Plot dimension lines.
-    parts.append(_dim_line(MARGIN_MM / MM_PER_PX - 40, _mm_to_px(0), MARGIN_MM / MM_PER_PX - 40,
-                           _mm_to_px(model.plot_depth_mm), f"{model.plot_depth_mm/1000:.1f} m", vertical=True))
-    parts.append(_dim_line(_mm_to_px(0), depth_px - 20, _mm_to_px(model.plot_width_mm), depth_px - 20,
-                           f"{model.plot_width_mm/1000:.1f} m", vertical=False))
-
-    # Per-storey dimension chains: one above the plan and one to its left, at
-    # every distinct room-boundary coordinate (room edges = where walls sit).
-    h_coords = sorted({c for r in storey.rooms for c in (r.rect.x, r.rect.x2)})
-    v_coords = sorted({c for r in storey.rooms for c in (r.rect.y, r.rect.y2)})
-    parts.append(_dimension_chain(h_coords, "h", 40.0, model.plot_width_mm))
-    parts.append(_dimension_chain(v_coords, "v", 40.0, model.plot_depth_mm))
+    # Dimension stacks, inner to outer: fine room subdivision, then full-span
+    # band divisions, then the overall figure -- the 2-3 tiers per side the
+    # contractor sheets carry. The overall extent is the outermost tier here,
+    # so the old separate metre-labelled plot line would now duplicate it.
+    for tier, coords in enumerate(
+            _dimension_tiers(storey.rooms, "h", model.plot_width_mm, model.plot_depth_mm), start=1):
+        parts.append(_dimension_chain(coords, "h", 40.0 * tier, model.plot_width_mm, tier=tier))
+    for tier, coords in enumerate(
+            _dimension_tiers(storey.rooms, "v", model.plot_depth_mm, model.plot_width_mm), start=1):
+        parts.append(_dimension_chain(coords, "v", 40.0 * tier, model.plot_depth_mm, tier=tier))
 
     # Section cut lines, and the storey's finished-floor level.
     parts.append(_svg_section_markers(model, storey))
@@ -313,17 +311,6 @@ def _title_block(width_px: float, height_px: float, lines: list[str]) -> str:
     return "\n".join(parts)
 
 
-def _dim_line(x1, y1, x2, y2, label, vertical) -> str:
-    line = f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#000" stroke-width="0.5"/>'
-    label = escape_text(label)
-    if vertical:
-        text = f'<text x="{x1-4:.1f}" y="{(y1+y2)/2:.1f}" font-size="10" text-anchor="middle" ' \
-               f'transform="rotate(-90 {x1-4:.1f} {(y1+y2)/2:.1f})">{label}</text>'
-    else:
-        text = f'<text x="{(x1+x2)/2:.1f}" y="{y1-4:.1f}" font-size="10" text-anchor="middle">{label}</text>'
-    return line + text
-
-
 def _dxf_furniture(msp, storey, plot_depth: float) -> None:
     """Furniture footprints on their own layer, from the same placement rules
     the SVG and the Blender builder use."""
@@ -361,7 +348,69 @@ def _dxf_pt(x_mm: float, y_mm: float, plot_depth_mm: float) -> tuple[float, floa
     return (x_mm, plot_depth_mm - y_mm)
 
 
-def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent_mm: float) -> str:
+def _covers(intervals: list[tuple[float, float]], extent_mm: float, tol: float = 1.0) -> bool:
+    """True if `intervals` tile [0, extent_mm] with no gap wider than `tol`."""
+    reach = 0.0
+    for lo, hi in sorted(intervals):
+        if lo > reach + tol:
+            return False
+        reach = max(reach, hi)
+    return reach >= extent_mm - tol
+
+
+def _major_coords(rooms, axis: str, extent_mm: float, cross_extent_mm: float) -> list[float]:
+    """Coordinates where a room edge runs clear across the plan.
+
+    These are the plan's real band divisions, and the only honest source for a
+    middle dimension tier: the schema has no structural grid or column line, so
+    anything else would be invented. `axis` is `"h"` (x coordinates, tested for
+    full-depth spans) or `"v"` (y coordinates, tested for full-width spans).
+    """
+    if axis == "h":
+        def near(r):
+            return (r.rect.x, r.rect.x2), (r.rect.y, r.rect.y2)
+    else:
+        def near(r):
+            return (r.rect.y, r.rect.y2), (r.rect.x, r.rect.x2)
+
+    candidates = sorted({c for r in rooms for c in near(r)[0]})
+    major = []
+    for value in candidates:
+        spans = [near(r)[1] for r in rooms if abs(near(r)[0][0] - value) < 1e-6
+                 or abs(near(r)[0][1] - value) < 1e-6]
+        if _covers(spans, cross_extent_mm):
+            major.append(value)
+    return major
+
+
+def _dimension_tiers(rooms, axis: str, extent_mm: float, cross_extent_mm: float) -> list[list[float]]:
+    """Ordered inner-to-outer coordinate sets for one side's dimension stack:
+    fine room subdivision, then full-span band divisions, then the overall
+    figure. Consecutive duplicates are dropped so an undivided plan does not
+    draw the same chain three times."""
+    # Plot edges are part of the fine tier so the yard setbacks in front of and
+    # behind the built form get dimensioned, as they are on the sheets.
+    fine = sorted({0.0, extent_mm} | {c for r in rooms
+                   for c in ((r.rect.x, r.rect.x2) if axis == "h" else (r.rect.y, r.rect.y2))})
+    major = _major_coords(rooms, axis, extent_mm, cross_extent_mm)
+    overall = [0.0, extent_mm]
+
+    tiers: list[list[float]] = []
+    for candidate in (fine, major, overall):
+        if len(candidate) < 2:
+            continue
+        if tiers and _same_coords(tiers[-1], candidate):
+            continue
+        tiers.append(candidate)
+    return tiers
+
+
+def _same_coords(a: list[float], b: list[float], tol: float = 1e-6) -> bool:
+    return len(a) == len(b) and all(abs(x - y) < tol for x, y in zip(a, b))
+
+
+def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent_mm: float,
+                     tier: int = 1) -> str:
     """SVG fragment for one dimension chain: a run line, a tick at each
     coordinate, and a millimetre integer label centred between consecutive
     coordinates. `axis` is `"h"` (drawn above the plan) or `"v"` (drawn to its
@@ -373,7 +422,7 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
     def to_px(v: float) -> float:
         return (v + MARGIN_MM) / MM_PER_PX
 
-    parts: list[str] = []
+    parts: list[str] = [f'<g class="dim-chain" data-tier="{tier}" data-axis="{axis}">']
     if len(coords_mm) < 2:
         # Degenerate input: only the overall dimension, no ticks.
         if axis == "h":
@@ -385,6 +434,7 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
             parts.append(f'<text x="{x - 4:.1f}" y="{to_px(extent_mm / 2):.1f}" font-size="10" '
                          f'text-anchor="middle" transform="rotate(-90 {x - 4:.1f} {to_px(extent_mm / 2):.1f})">'
                          f'{int(round(extent_mm))}</text>')
+        parts.append("</g>")
         return "\n".join(parts)
 
     start, end = coords_mm[0], coords_mm[-1]
@@ -411,6 +461,7 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
             parts.append(f'<text x="{x - 6:.1f}" y="{to_px(mid):.1f}" font-size="10" '
                          f'text-anchor="middle" transform="rotate(-90 {x - 6:.1f} {to_px(mid):.1f})">'
                          f'{int(round(b - a))}</text>')
+    parts.append("</g>")
     return "\n".join(parts)
 
 

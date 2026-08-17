@@ -346,3 +346,58 @@ def test_dxf_has_furniture_layer_matching_svg(tmp_path):
     assert expected, "fixture has no furnishable rooms; test would be vacuous"
     drawn = len(msp.query('LWPOLYLINE[layer=="FURNITURE"]'))
     assert drawn == expected, f"expected {expected} furniture footprints in DXF, got {drawn}"
+
+
+def test_svg_dimension_chains_are_multi_tier(tmp_path):
+    """The contractor sheets carry 2-3 tiers per side (fine subdivision, then
+    major bands, then overall); the generator drew a single fine tier."""
+    import re
+
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+
+    tiers = set(re.findall(r'data-tier="(\d+)"', svg_text))
+    assert {"1", "2"} <= tiers, f"expected at least two dimension tiers, got {tiers}"
+
+    # The outermost tier states the overall extent as one figure.
+    assert f">{int(model.plot_width_mm)}<" in svg_text
+    assert f">{int(model.plot_depth_mm)}<" in svg_text
+
+
+def test_svg_major_tier_uses_full_span_divisions_only(tmp_path):
+    """A 'major' division is one a room edge carries clear across the plan --
+    derived, never invented, since the schema has no structural grid."""
+    import re
+
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+
+    # On this fixture the x axis subdivides at 4000/4100/6000, but none of those
+    # edges runs the full 8000 depth, so only 0 and 10000 are major: the widest
+    # x tier must therefore quote 10000 and never 4000.
+    horiz = re.search(r'<g class="dim-chain" data-tier="2" data-axis="h">(.*?)</g>', svg_text, re.S)
+    assert horiz, "no tier-2 horizontal chain emitted"
+    labels = set(re.findall(r">(\d+)<", horiz.group(1)))
+    assert labels == {str(int(model.plot_width_mm))}, labels
+
+
+def test_fine_dimension_tier_spans_the_whole_plot():
+    """The sheets dimension the yard setbacks, not just the built form: a plan
+    whose rooms start 3500mm in must quote that 3500 leading gap."""
+    from types import SimpleNamespace
+
+    from homedesign.plan2d import _dimension_tiers
+
+    def room(x, y, w, d):
+        return SimpleNamespace(rect=SimpleNamespace(x=x, y=y, w=w, d=d, x2=x + w, y2=y + d))
+
+    # One 3960-wide band sitting 3500 from the front and 1200 from the back.
+    rooms = [room(0, 3500, 3960, 20300)]
+    tiers = _dimension_tiers(rooms, "v", extent_mm=25000, cross_extent_mm=3960)
+    fine = tiers[0]
+    assert fine[0] == 0, f"fine tier must start at the plot edge, got {fine[0]}"
+    assert fine[-1] == 25000, f"fine tier must end at the plot edge, got {fine[-1]}"
+    gaps = [round(b - a) for a, b in zip(fine, fine[1:])]
+    assert gaps == [3500, 20300, 1200], gaps
