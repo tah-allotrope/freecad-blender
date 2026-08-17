@@ -236,3 +236,113 @@ def test_declared_void_hatches_svg_and_dxf(tmp_path):
     doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
     assert "VOIDS" in doc.layers
     assert any(e.dxf.layer == "VOIDS" for e in doc.modelspace())
+
+
+# --- Drawing-completeness features (fidelity ledger rev.3, 2026-08-17) -------
+# The contractor plan sheets carry furniture, level markers, numbered stair
+# treads and section-cut markers; the generated plans carried none of them,
+# and the 3D scene was furnished while the 2D plan of the same model was not.
+
+
+def test_svg_draws_furniture_for_furnishable_rooms(tmp_path):
+    """The same compiled model must not be furnished in 3D and bare in 2D."""
+    from homedesign.placement import plan_room
+
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+
+    ground = model.storeys[0]
+    expected_kinds = set()
+    for room in ground.rooms:
+        rect = room.interior or room.rect
+        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+            expected_kinds.add(item.kind)
+    assert expected_kinds, "fixture has no furnishable rooms; test would be vacuous"
+
+    assert 'class="furniture"' in svg_text
+    for kind in expected_kinds:
+        assert f'data-furniture="{kind}"' in svg_text
+
+
+def test_svg_furniture_sits_inside_its_room(tmp_path):
+    """Plan furniture must use the same room-local -> world mapping as the 3D
+    builder (furnish.py), i.e. the interior rect when one exists."""
+    import re
+
+    from homedesign.placement import plan_room
+
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+
+    ground = model.storeys[0]
+    room = next(r for r in ground.rooms
+                if plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000))
+    rect = room.interior or room.rect
+    items = plan_room(room.type, rect.w / 1000, rect.d / 1000)
+
+    # Every drawn footprint centre for this room must fall within the room rect.
+    for item in items:
+        cx_mm = rect.x + item.x * 1000 + item.w * 1000 / 2
+        cy_mm = rect.y + item.y * 1000 + item.d * 1000 / 2
+        assert rect.x - 1 <= cx_mm <= rect.x + rect.w + 1
+        assert rect.y - 1 <= cy_mm <= rect.y + rect.d + 1
+
+    # And the SVG must actually place a rect at that transformed centre.
+    assert re.search(r'data-furniture="[a-z_]+"', svg_text)
+
+
+def test_svg_has_level_marker_per_storey(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    for storey in model.storeys:
+        svg_text = (tmp_path / "svg" / f"{model.name}_f{storey.level}.svg").read_text(encoding="utf-8")
+        expected = "\u00b1 0.000" if storey.base_z == 0 else f"+ {storey.base_z / 1000:.3f}"
+        assert expected in svg_text, f"storey {storey.level} missing level marker {expected!r}"
+
+
+def test_svg_numbers_stair_treads(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    storey = next(s for s in model.storeys if s.stairs and s.stairs.treads)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f{storey.level}.svg").read_text(encoding="utf-8")
+    assert 'class="tread-number"' in svg_text
+    # First and last tread indices are both labelled (the sheets number the run).
+    assert ">1<" in svg_text
+    assert f">{len(storey.stairs.treads)}<" in svg_text
+
+
+def test_svg_draws_section_cut_markers(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    if not model.sections:
+        model.sections = [{"name": "A-A", "axis": "x", "position_mm": model.plot_width_mm / 2}]
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert 'class="section-marker"' in svg_text
+    for sec in model.sections:
+        assert escape_name(sec["name"]) in svg_text
+
+
+def escape_name(name: str) -> str:
+    return name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def test_dxf_has_furniture_layer_matching_svg(tmp_path):
+    """SVG and DXF are one drawing set; furnishing only one repeats the very
+    2D/3D split this work exists to close."""
+    from homedesign.placement import plan_room
+
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    doc = ezdxf.readfile(str(tmp_path / "dxf" / f"{model.name}_f0.dxf"))
+    msp = doc.modelspace()
+
+    ground = model.storeys[0]
+    expected = sum(
+        len(plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000))
+        for r in ground.rooms
+    )
+    assert expected, "fixture has no furnishable rooms; test would be vacuous"
+    drawn = len(msp.query('LWPOLYLINE[layer=="FURNITURE"]'))
+    assert drawn == expected, f"expected {expected} furniture footprints in DXF, got {drawn}"

@@ -1,4 +1,4 @@
-# contractor-as-drawn — fidelity ledger (rev. 2)
+# contractor-as-drawn — fidelity ledger (rev. 3)
 
 Every place the compiled model departs from the contractor's issued drawing set.
 Read this alongside the renders: a render is persuasive, and the point of this
@@ -14,6 +14,14 @@ wrong in more basic ways first (rooms on the wrong side of the core, no
 balconies, the mezzanine filled in, the roof covering the whole footprint).
 This revision reflects the corrected, sheet-sourced model in
 `designs/contractor-as-drawn.json` and `measurements.md` rev.2.
+
+**rev.3 (2026-08-17)** adds two sections that rev.2 omitted entirely:
+*Architectural detail the schema cannot express at all* ((k)–(n)) and
+*Drawing content not reproduced in the generated 2D set*. Rev.2 listed only
+departures on features the model does represent, which made the set look far
+more complete than it is — a reader comparing `MẶT ĐỨNG CHÍNH` against
+`exterior_front.png` sees the difference immediately, and this file did not
+account for it. Nothing in (a)–(j) changed; the omission was one of scope.
 
 Columns: **what the drawing shows → what the model does → why → does it change
 what the render says?**
@@ -172,6 +180,69 @@ and rendered with the roof material in both the 3D scene and the elevations.
 ### (j) No lift pit or overhead
 Unchanged from rev.1: the section shows neither, and the schema has no
 construct for either. **No — nothing is depicted either way.**
+
+## Architectural detail the schema cannot express at all (added 2026-08-17)
+
+Entries (a)–(j) each describe a *specific* departure on a feature the model does
+represent. This section exists because rev.2 of this ledger created a false
+impression of completeness by only listing those: the largest gap between the
+issued set and the renders is a whole class of content the schema has no
+vocabulary for, and which therefore never appears anywhere in the output. A
+reader comparing `MẶT ĐỨNG CHÍNH` to `exterior_front.png` sees this immediately;
+this ledger did not say it, and should have.
+
+The schema's entire geometric vocabulary is: rooms as axis-aligned rectangles
+(`id`/`name`/`type`/`rect`), openings as `type` + `between` + `width_mm`, plus
+`stairs`, `roof`, `voids` and `roof.structures`. Consequences:
+
+### (k) Facade articulation is absent — the front elevation is flat massing
+`MẶT ĐỨNG CHÍNH` carries vertical fins/pilasters running the height of the
+middle storeys, a cornice/coping band at the parapet, and framed panel
+treatments around the openings. **None of it is modelled**, because there is no
+facade-element construct in the schema (`grep -i 'pilaster|fin|mullion|cornice'`
+over `src/` matches only camera-fitting code). The renders show a flat white
+box with rectangular voids. **Yes — this is the single biggest visual departure
+in the set, and the reason the 3D reads as massing rather than as this building.**
+
+### (l) Openings are undivided rectangles — no mullions, transoms or panelling
+Every window on the sheets is subdivided (multi-pane, with transoms; the ground
+floor entrance is a panelled door set). An opening in the model is one
+`width_mm` and renders as a single rectangular hole with a lintel and sill.
+**Yes — the facade's grain and scale come almost entirely from this
+subdivision, and none of it survives.**
+
+### (m) Balcony railings are a plain parapet, not the drawn pattern
+The elevations show a patterned railing/balustrade to each `BAN CÔNG`; the model
+auto-generates an unarticulated 1100mm solid parapet on open edges (see (e)).
+**Yes — visible on every balcony in every exterior view.**
+
+### (n) No material, finish or colour information
+The sheets note `KẾT CẤU: MÓNG - CỘT - SÀN BTCT, NỀN GẠCH, VÁCH GẠCH, MÁI BTCT`
+and imply finish zones on the elevation. The model carries a single `style`
+palette applied by element kind. **Partly — the renders are legible as form but
+must not be read as a finish schedule.**
+
+## Drawing content not reproduced in the generated 2D set (added 2026-08-17)
+
+`plan2d.py` emits: room fills, walls, openings with door swings, stair treads,
+one dimension chain per axis, north arrow, scale bar and title block. The
+contractor's plan sheets additionally carry the following, none of which is
+generated. This is recorded as a *drawing-completeness* gap distinct from the
+geometric ones above — the underlying model has the data for several of these.
+
+| on the contractor plan | in the generated SVG/DXF | model has the data? |
+|---|---|---|
+| furniture symbols (beds, sofas, dining sets, kitchen fittings, WC fixtures) | absent | **yes** — 209 furniture objects exist in the 3D scene |
+| level markers (`± 0.000`, `+ 0.200`, `+ 0.300`, `+ 3.800` …) | absent | yes — `storey.base_z` |
+| setback / boundary lines (`Ranh lộ giới`, `Ranh khoảng lùi trước/sau`) | absent | no — not in schema (see (a)) |
+| section cut markers (`MC A-A`) | absent | yes — `meta.sections` |
+| multi-tier dimension chains (2–3 tiers per side) | one tier | yes — derivable |
+| stair tread numbering (1, 3, 5 … 21, 19, 17) | treads drawn, unnumbered | yes — `storey.stairs.treads` |
+| text callouts (`Tiểu cảnh, ô lấy sáng`, `Lô gia`, `Hành lang thương mại`) | absent | partly — some are room names |
+
+**The furniture row is a defect, not an approximation:** the same compiled model
+produces a furnished 3D scene and an unfurnished 2D plan. That inconsistency is
+in the generator, not in the schema.
 
 ## Enum / type approximations (CON-004, room-type enum grown to 16 values 2026-08-14)
 

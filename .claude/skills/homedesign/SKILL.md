@@ -113,6 +113,11 @@ Cheat sheet:
    and window openings, so never chase EEVEE artifacts). It prints every
    artifact path, ending with `blender build: <N>s`.
 
+   Plans carry furniture footprints, numbered stair treads, the storey's
+   finished-floor level and any declared section cut lines. Furniture comes
+   from the same `placement.plan_room` rules the Blender furnisher uses, so
+   the plan and the 3D scene cannot disagree about what is in a room.
+
    The four elevations are true orthographic projections of the whole
    building — every wall, opening, balcony parapet, stair tread and roof is
    projected and painter-sorted front-to-back — not just the walls touching

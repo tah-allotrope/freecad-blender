@@ -105,12 +105,20 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
             parts.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="10" text-anchor="middle" '
                          f'fill="#555">{escape_text(reason)}</text>')
 
+    # Furniture, drawn from the same pure placement rules the Blender builder
+    # uses (placement.plan_room), so a furnished 3D scene and its plan can no
+    # longer disagree -- they did until 2026-08-17, see the fidelity ledger.
+    parts.append(_svg_furniture(storey))
+
     if storey.stairs:
-        for t in storey.stairs.treads:
+        for i, t in enumerate(storey.stairs.treads, start=1):
             x, y = _mm_to_px(t.x), _mm_to_px(t.y)
             w, d = t.w / MM_PER_PX, t.d / MM_PER_PX
             parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
                          f'fill="none" stroke="#555" stroke-width="1"/>')
+            # Tread numbering, as the contractor sheets number the run.
+            parts.append(f'<text class="tread-number" x="{x + w / 2:.1f}" y="{y + d / 2 + 3:.1f}" '
+                         f'font-size="7" text-anchor="middle" fill="#555">{i}</text>')
 
     # Plot dimension lines.
     parts.append(_dim_line(MARGIN_MM / MM_PER_PX - 40, _mm_to_px(0), MARGIN_MM / MM_PER_PX - 40,
@@ -125,6 +133,10 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     parts.append(_dimension_chain(h_coords, "h", 40.0, model.plot_width_mm))
     parts.append(_dimension_chain(v_coords, "v", 40.0, model.plot_depth_mm))
 
+    # Section cut lines, and the storey's finished-floor level.
+    parts.append(_svg_section_markers(model, storey))
+    parts.append(_svg_level_marker(storey))
+
     # Graphic furniture of the drawing (TASK-06-04): north arrow top-left,
     # scale bar bottom-left, title block bottom-right.
     parts.append(_north_arrow(model.north_deg))
@@ -137,6 +149,74 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     ]))
 
     parts.append("</svg>")
+    return "\n".join(parts)
+
+
+def _svg_furniture(storey) -> str:
+    """Plan footprints for every furnishable room on this storey.
+
+    Deliberately calls the same `placement.plan_room` the Blender furnisher
+    calls, with the same interior-rect preference and the same room-local ->
+    world mapping, so the two views cannot drift apart. `FurnitureItem.x/.y`
+    is the footprint's min corner in room-local metres and `rot_deg` turns it
+    about the footprint centre (see `procedural_furniture._placer_for`).
+    """
+    from .placement import plan_room
+
+    parts = ['<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">']
+    for room in storey.rooms:
+        rect = room.interior or room.rect
+        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+            x_mm = rect.x + item.x * 1000
+            y_mm = rect.y + item.y * 1000
+            w_px, d_px = item.w * 1000 / MM_PER_PX, item.d * 1000 / MM_PER_PX
+            x_px, y_px = _mm_to_px(x_mm), _mm_to_px(y_mm)
+            cx, cy = x_px + w_px / 2, y_px + d_px / 2
+            # SVG's y axis runs down while the model's runs north, so the plan
+            # is mirrored and a model-space CCW rotation reads as CW here.
+            transform = (f' transform="rotate({-item.rot_deg:.1f} {cx:.1f} {cy:.1f})"'
+                         if item.rot_deg else "")
+            parts.append(f'<rect data-furniture="{item.kind}" x="{x_px:.1f}" y="{y_px:.1f}" '
+                         f'width="{w_px:.1f}" height="{d_px:.1f}"{transform}/>')
+    parts.append("</g>")
+    return "\n".join(parts)
+
+
+def _svg_level_marker(storey) -> str:
+    """The storey's finished-floor level, in the sheets' own notation."""
+    level = "± 0.000" if storey.base_z == 0 else f"+ {storey.base_z / 1000:.3f}"
+    x, y = MARGIN_MM / MM_PER_PX, MARGIN_MM / MM_PER_PX - 14
+    return (f'<g class="level-marker">'
+            f'<text x="{x:.1f}" y="{y:.1f}" font-size="12" fill="#222">{escape_text(level)}</text>'
+            f'</g>')
+
+
+def _svg_section_markers(model, storey) -> str:
+    """Cut lines for every declared section, labelled at both ends."""
+    if not model.sections:
+        return ""
+    parts = ['<g class="section-marker">']
+    for sec in model.sections:
+        name = escape_text(str(sec.get("name", "")))
+        pos = float(sec.get("position_mm", 0.0))
+        if sec.get("axis") == "x":
+            # Cut plane perpendicular to x: a vertical line down the plan.
+            px = _mm_to_px(pos)
+            y0, y1 = _mm_to_px(0) - 30, _mm_to_px(model.plot_depth_mm) + 30
+            parts.append(f'<line x1="{px:.1f}" y1="{y0:.1f}" x2="{px:.1f}" y2="{y1:.1f}" '
+                         f'stroke="#c0392b" stroke-width="1" stroke-dasharray="12 4 3 4"/>')
+            for ty, dy in ((y0, -4), (y1, 10)):
+                parts.append(f'<text x="{px + 4:.1f}" y="{ty + dy:.1f}" font-size="10" '
+                             f'fill="#c0392b">{name}</text>')
+        else:
+            py = _mm_to_px(pos)
+            x0, x1 = _mm_to_px(0) - 30, _mm_to_px(model.plot_width_mm) + 30
+            parts.append(f'<line x1="{x0:.1f}" y1="{py:.1f}" x2="{x1:.1f}" y2="{py:.1f}" '
+                         f'stroke="#c0392b" stroke-width="1" stroke-dasharray="12 4 3 4"/>')
+            for tx, dx in ((x0, -18), (x1, 4)):
+                parts.append(f'<text x="{tx + dx:.1f}" y="{py - 4:.1f}" font-size="10" '
+                             f'fill="#c0392b">{name}</text>')
+    parts.append("</g>")
     return "\n".join(parts)
 
 
@@ -244,6 +324,34 @@ def _dim_line(x1, y1, x2, y2, label, vertical) -> str:
     return line + text
 
 
+def _dxf_furniture(msp, storey, plot_depth: float) -> None:
+    """Furniture footprints on their own layer, from the same placement rules
+    the SVG and the Blender builder use."""
+    import math
+
+    from .placement import plan_room
+
+    for room in storey.rooms:
+        rect = room.interior or room.rect
+        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+            x_mm = rect.x + item.x * 1000
+            y_mm = rect.y + item.y * 1000
+            w_mm, d_mm = item.w * 1000, item.d * 1000
+            cx, cy = x_mm + w_mm / 2, y_mm + d_mm / 2
+            theta = math.radians(item.rot_deg)
+            cos_t, sin_t = math.cos(theta), math.sin(theta)
+            corners = []
+            for dx, dy in ((-w_mm / 2, -d_mm / 2), (w_mm / 2, -d_mm / 2),
+                           (w_mm / 2, d_mm / 2), (-w_mm / 2, d_mm / 2)):
+                # Rotate about the footprint centre in model space, then flip
+                # into DXF's y-up frame (DXF keeps model orientation, unlike
+                # the mirrored SVG, so no sign change on the angle here).
+                rx = cx + dx * cos_t - dy * sin_t
+                ry = cy + dx * sin_t + dy * cos_t
+                corners.append(_dxf_pt(rx, ry, plot_depth))
+            msp.add_lwpolyline(corners, close=True, dxfattribs={"layer": "FURNITURE"})
+
+
 def _dxf_pt(x_mm: float, y_mm: float, plot_depth_mm: float) -> tuple[float, float]:
     """Model point (mm) -> DXF/CAD point with the y axis flipped.
 
@@ -341,7 +449,8 @@ def _dxf_dimension_chain(msp, coords, axis, offset_mm, plot_depth):
 def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
     doc = ezdxf.new("R2010")
     doc.units = ezdxf.units.MM
-    for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2), ("DIMS", 8), ("VOIDS", 4)]:
+    for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2),
+                         ("DIMS", 8), ("VOIDS", 4), ("FURNITURE", 9)]:
         doc.layers.add(layer, color=color)
     msp = doc.modelspace()
     plot_depth = model.plot_depth_mm
@@ -352,6 +461,8 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
                _dxf_pt(wall.x + wall.w, wall.y + wall.h, plot_depth),
                _dxf_pt(wall.x, wall.y + wall.h, plot_depth)]
         msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "WALLS"})
+
+    _dxf_furniture(msp, storey, plot_depth)
 
     for opening in storey.openings:
         wall = next((w for w in storey.walls if w.id == opening.wall_id), None)
