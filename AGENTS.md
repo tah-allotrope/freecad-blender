@@ -33,8 +33,8 @@
 - `.claude/skills/homedesign/SKILL.md` — the homedesign skill (mirrored to
   `.agents/skills/homedesign/SKILL.md` by `scripts/sync_skill.py`; keep in
   sync via `python scripts/sync_skill.py`).
-- `.claude/mcp.json` — Claude Code MCP config for BlenderMCP interactive
-  mode (see setup below).
+- BlenderMCP interactive mode has no config file in this repo; the server is
+  registered at Claude Code's *local* scope in `~/.claude.json` (see setup below).
 
 ## Commands
 ```bash
@@ -107,22 +107,56 @@ homedesign publish designs/<slug>.json [--force]        # hash-verified copy int
 
 | Component | Status | Location |
 |-----------|--------|----------|
-| **Blender Addon** | ✅ Installed | `C:\Users\tukum\Blender\blender-4.1.1-windows-x64\4.1\scripts\addons\blender_mcp_addon.py` |
-| **MCP Server** | ✅ Available | `uvx blender-mcp` (managed by uv) |
-| **Claude Code Config** | ✅ Active | `.claude/mcp.json` + global `~/.claude.json` |
+| **Blender Addon** | Installed + enabled in prefs | `C:\Users\tukum\Blender\blender-4.1.1-windows-x64\4.1\scripts\addons\blender_mcp_addon.py` |
+| **MCP Server** | `uvx blender-mcp` (1.8.0, managed by uv) | local scope in `~/.claude.json` |
+| **Enabled-addon state** | `userpref.blend` | `%APPDATA%\Blender Foundation\Blender\4.1\config\` |
+
+The MCP server is registered at Claude Code's **local** scope — private to this
+machine, not committed. There is no `.mcp.json` in the repo, and a file at
+`.claude/mcp.json` would do nothing: Claude Code reads project MCP config from
+`.mcp.json` at the repo root only. Inspect the live entry with `claude mcp get blender`.
+
+### The addon is a local fork — do not replace it from upstream
+
+The installed `blender_mcp_addon.py` reports upstream `bl_info` version `(1, 2)` but
+carries two local patches that upstream does not have:
+
+- `register()` auto-starts the socket server, so no one has to click *Connect to
+  Claude* in the View3D sidebar.
+- It refuses to bind the port under `blender --background`, where queued commands
+  would never execute.
+
+Re-downloading the addon from https://github.com/ahujasid/blender-mcp silently reverts
+both. If you must update it, re-apply the patches.
 
 ### Workflow
 
-1. **Start Blender** — open Blender GUI, the addon auto-starts the MCP socket server (port 9876)
-2. **Use Claude Code** — `claude` in this project directory auto-loads the Blender MCP tools
+1. **Start Blender** — open the Blender 4.1 GUI; the addon auto-starts the MCP socket
+   server on port 9876. Background/headless Blender will **not** serve MCP by design.
+2. **Use Claude Code** — `claude` in this project directory loads the Blender MCP tools
 3. **Interact** — ask Claude to create/modify objects, apply materials, set up lighting, render
 
-### Manual Addon Enable (one-time)
+Verify the whole chain rather than trusting the server's "connected" status — the stdio
+server starts fine whether or not Blender is reachable:
 
-If the addon isn't showing in Blender:
-1. Open Blender → Edit → Preferences → Add-ons
-2. Search "Blender MCP" or locate `blender_mcp_addon.py`
-3. Check the box to enable
+```bash
+# port up?
+powershell -c "Get-NetTCPConnection -LocalPort 9876"
+# real proof: call get_scene_info via MCP and expect a scene payload
+```
+
+### Re-enabling the addon (one-time, e.g. after a Blender reinstall)
+
+Headless, no GUI interaction needed:
+
+```bash
+"C:/Users/tukum/Blender/blender-4.1.1-windows-x64/blender.exe" --background \
+  --python-expr "import bpy; bpy.ops.preferences.addon_enable(module='blender_mcp_addon'); bpy.ops.wm.save_userpref()"
+```
+
+Expect `BlenderMCP addon registered` plus `Preferences saved`. (The "cannot start server
+in background mode" line on that run is the guard above doing its job, not an error.)
+Fallback: Blender → Edit → Preferences → Add-ons → search "Blender MCP" → tick the box.
 
 ### Environment Variables
 
