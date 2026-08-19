@@ -137,6 +137,69 @@ Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
 
 ## Review
 
+### 2026-08-19 — SVG/PDF fidelity pass against the contractor drawings + a real PDF pipeline bug found along the way
+
+Triggered by `contractor/approval drawing.jpg`, a new phone photo of the full
+stamped approval sheet (all plans + both elevations + section A-A + a site
+plan, on one page — more complete than the five per-sheet PDFs this model was
+built from, though only 960×1280 and too low-resolution to re-read core
+dimensions reliably; see `designs/contractor-as-drawn.fidelity.md`'s new
+provenance section for exactly what it does and doesn't confirm).
+
+**Plot boundary now drawn.** `plan2d.py` gained `_svg_plot_boundary` (SVG) and
+a `PLOT` DXF layer: a dash-dot rectangle at the model's own plot extent,
+labelled `Ranh lộ giới` at the street edge — closing the "setback / boundary
+lines" row that was `open` in the fidelity ledger's drawing-completeness
+table. Previously the front/rear yards were blank white space with no
+indication they were the plot edge. No new approximation: the line traces
+`plot_width_mm`/`plot_depth_mm`, the same rectangle every wall already uses.
+Verified by rendering `contractor-as-drawn_f0.svg` and `_f2.svg` to PNG
+(headless Chrome screenshot, since `cairosvg` has no native `cairo` lib on
+this machine) — the boundary wraps the yards correctly on all four edges, and
+on `f2` it visibly confirms `BAN CÔNG` sits behind `Ranh lộ giới`, not
+cantilevered past it. Two new tests in `tests/test_plan2d.py`.
+
+**Found and fixed while rebuilding the PDF to check the render: the PDF
+pipeline was silently failing and had been for at least 4 days.**
+`homedesign pdf designs/contractor-as-drawn.json` reported success
+(`output\pdf\contractor-as-drawn-brief.pdf`, exit 0) but the file's mtime
+never moved from 2026-08-15. Root cause, `src/homedesign/pdf.py`:
+
+1. `print_html_to_pdf` passed `--print-to-pdf=<relative path>` to headless
+   Chromium. Chromium resolves that flag against *its own* working directory,
+   not the caller's — it logged `Failed to write file ...: The system cannot
+   find the path specified` to stderr and **still exited 0**.
+2. The success check was `not pdf_path.exists()` — presence, not freshness —
+   so a stale PDF already on disk from a previous good run made every
+   subsequent silent failure look like success.
+3. Separately, `_svg_inline` (used to embed each plan SVG into the brief HTML)
+   read the file with the platform-default encoding instead of UTF-8, which
+   crashes on this machine (Windows, Python 3.14, cp1252 default) the moment
+   the SVG carries a diacritic — as every room-name label already did, and as
+   the new `Ranh lộ giới` boundary label now also does. `validate.py`'s schema
+   load had the same latent gap; fixed alongside it.
+
+Fixed at the root, not patched around: `--print-to-pdf` now gets
+`pdf_path.resolve()`, and the check compares the file's mtime before/after
+the subprocess call rather than just checking existence. Two regression tests
+added to `tests/test_pdf.py` (monkeypatched `subprocess.run`): one asserts the
+path handed to Chromium is absolute, the other asserts a browser that exits 0
+without touching the file raises rather than leaving the stale PDF in place.
+`_svg_inline`/`validate.load_schema` now pin `encoding="utf-8"`, consistent
+with the fix already applied elsewhere in the pipeline (2026-08-13 entry
+below) for the same class of bug.
+
+**Verified:** 212 tests passing (208 baseline + 4 new), `ruff` clean,
+`contractor-as-drawn-brief.pdf` rebuilt fresh (4.19 MB, today's timestamp,
+matches a manual `chrome.exe --print-to-pdf` run byte-for-byte in size).
+
+**Not done this pass, and why:** the interior setback lines (`Ranh xây dựng
+lùi mái`) and text callouts remain open — no second-boundary or annotation
+construct in the schema, a real modelling gap rather than a rendering
+oversight; and the elevator inference (c) is still unresolved — the new photo
+was checked specifically for this and doesn't have the resolution to settle
+it either way.
+
 ### 2026-08-13 — Contractor as-drawn render (plans/2026-08-13-contractor-scheme-3d-render-plan.md, all phases done)
 
 **Render wall-clock:** `blender build: 1450.6s` (~24.2 min) for the 12-view
@@ -212,6 +275,33 @@ still holds the red PDF/GLB — manual copy step, left for a deliberate publish;
 page, plan SVGs occupying ~14% of page width with ~2.5 pt labels, half-empty gallery
 pages, 44 DPI cover hero); (c) the furniture planner leaves **25 of 41 rooms empty**
 and paints all 41 items one shared tan.
+
+### BlenderMCP setup finished — 2026-08-15
+
+Commit `491adcd` left the integration in a state the docs called done and the machine
+did not. Two real defects, both now fixed:
+
+1. **The addon had never been enabled.** `blender_mcp_addon.py` was copied into
+   `blender-4.1.1-windows-x64\4.1\scripts\addons\`, but Blender 4.1 had no user config
+   directory at all — `%APPDATA%\Blender Foundation\Blender` held only an empty `4.5`.
+   An addon absent from `userpref.blend` never registers, so the auto-start patch never
+   ran and nothing ever listened on 9876. Fixed by enabling it headlessly and saving
+   prefs (command recorded in AGENTS.md).
+2. **`.claude/mcp.json` was dead config.** Claude Code reads project MCP config from
+   `.mcp.json` at the repo root, never `.claude/mcp.json`. The only working entry was —
+   and remains, by choice — local scope in `~/.claude.json`. The dead file also
+   contradicted the live one (`--python 3.11`). Deleted.
+
+**Proof, not assumption:** a fresh headless Blender reports `blender_mcp_addon` enabled
+via `addon_utils.check`; with the GUI open, 127.0.0.1:9876 is listening; and
+`mcp__blender__get_scene_info` returned the real startup scene (Cube/Light/Camera,
+2 materials). The MCP server showing "connected" proves nothing on its own — the stdio
+server starts whether or not Blender is reachable.
+
+**Worth knowing:** the installed addon is a local fork of upstream v1.2, patched to
+auto-start on `register()` and to refuse binding under `--background`. Re-downloading
+from upstream silently reverts both. Declined at check-in: committing an `.mcp.json`
+and vendoring the addon into the repo — so that patch lives only in the Blender install.
 
 ### Sprint review — 2026-08-05 (plans/2026-08-04-homedesign-camera-truth-and-drawings-plan.md, all phases done)
 

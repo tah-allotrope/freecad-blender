@@ -13,7 +13,7 @@ SCHEMA_PATH = Path(__file__).resolve().parent.parent.parent / "spec" / "homespec
 
 
 def load_schema() -> dict:
-    return json.loads(SCHEMA_PATH.read_text())
+    return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def validate_schema(spec: dict) -> list[SpecError]:

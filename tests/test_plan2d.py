@@ -99,6 +99,29 @@ def test_svg_has_north_arrow_scale_bar_title_block(tmp_path):
     assert ">m</text>" in svg_text  # scale bar unit
 
 
+def test_svg_draws_plot_boundary_labelled_ranh_lo_gioi(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert 'class="plot-boundary"' in svg_text
+    assert "Ranh lộ giới" in svg_text
+    # The boundary rect spans the full plot, not just the built footprint.
+    w_px = model.plot_width_mm / plan2d.MM_PER_PX
+    d_px = model.plot_depth_mm / plan2d.MM_PER_PX
+    assert f'width="{w_px:.1f}"' in svg_text
+    assert f'height="{d_px:.1f}"' in svg_text
+
+
+def test_dxf_has_plot_layer_boundary(tmp_path):
+    model = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(model, tmp_path)
+    doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
+    msp = doc.modelspace()
+    boundary = [e for e in msp.query("LWPOLYLINE") if e.dxf.layer == "PLOT"]
+    assert len(boundary) == 1
+    assert len(boundary[0]) == 4
+
+
 def test_dimension_chain_segments_and_ticks():
     frag = plan2d._dimension_chain([0.0, 3005.0, 3960.0], "h", 40.0, 3960.0)
     assert ">3005<" in frag

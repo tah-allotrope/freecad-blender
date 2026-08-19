@@ -173,7 +173,7 @@ def build_takeoff(model: CompiledModel) -> list[dict]:
 
 
 def _svg_inline(path: Path) -> str:
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     if text.startswith("<?xml"):
         text = text.split("?>", 1)[1]
     return text
@@ -427,13 +427,21 @@ def _find_browser() -> str:
 
 
 def print_html_to_pdf(html_path: Path, pdf_path: Path) -> None:
+    # --print-to-pdf must be absolute: headless Chromium resolves it against
+    # its own working directory, not the caller's, and silently logs
+    # "cannot find the path specified" to stderr (exit code still 0) rather
+    # than failing the process -- so a relative path here leaves a stale PDF
+    # in place undetected by an exists()-only check.
     browser = _find_browser()
+    pdf_path = pdf_path.resolve()
+    before = pdf_path.stat().st_mtime if pdf_path.exists() else None
     cmd = [
         browser, "--headless", "--disable-gpu",
         f"--print-to-pdf={pdf_path}", html_path.resolve().as_uri(),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0 or not pdf_path.exists():
+    after = pdf_path.stat().st_mtime if pdf_path.exists() else None
+    if result.returncode != 0 or after is None or after == before:
         raise RuntimeError(f"PDF print failed (exit {result.returncode}): {result.stderr}")
 
 

@@ -23,6 +23,52 @@ def _brief():
     }
 
 
+def test_print_html_to_pdf_passes_an_absolute_path(tmp_path, monkeypatch):
+    """Headless Chromium resolves --print-to-pdf against its own working
+    directory, not the caller's, so a relative path silently fails
+    (regression: contractor-as-drawn-brief.pdf stayed 4 days stale while
+    every `homedesign pdf` run reported success)."""
+    html_path = tmp_path / "brief.html"
+    html_path.write_text("<html></html>", encoding="utf-8")
+    pdf_path = Path("relative/out.pdf")  # deliberately not absolute
+    captured = {}
+
+    def fake_run(cmd, capture_output, text):
+        captured["cmd"] = cmd
+        (tmp_path / "sentinel").touch()  # proves the fake ran
+        Path(cmd[3].split("=", 1)[1]).parent.mkdir(parents=True, exist_ok=True)
+        Path(cmd[3].split("=", 1)[1]).write_bytes(b"%PDF-1.4 fake")
+        return type("R", (), {"returncode": 0, "stderr": ""})()
+
+    monkeypatch.setattr(pdf.subprocess, "run", fake_run)
+    monkeypatch.setattr(pdf, "_find_browser", lambda: "fake-browser")
+    monkeypatch.chdir(tmp_path)
+    pdf.print_html_to_pdf(html_path, pdf_path)
+    printed_arg = captured["cmd"][3]
+    assert printed_arg.startswith("--print-to-pdf=")
+    assert Path(printed_arg.split("=", 1)[1]).is_absolute()
+
+
+def test_print_html_to_pdf_raises_when_output_is_stale(tmp_path, monkeypatch):
+    """A browser that exits 0 but never touches the output (the exact
+    EdgeCore/Chromium failure mode this regression hit) must raise, not
+    silently leave a pre-existing PDF in place."""
+    html_path = tmp_path / "brief.html"
+    html_path.write_text("<html></html>", encoding="utf-8")
+    pdf_path = tmp_path / "out.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4 stale")
+    stale_mtime = pdf_path.stat().st_mtime
+
+    def fake_run_noop(cmd, capture_output, text):
+        return type("R", (), {"returncode": 0, "stderr": "cannot find the path specified"})()
+
+    monkeypatch.setattr(pdf.subprocess, "run", fake_run_noop)
+    monkeypatch.setattr(pdf, "_find_browser", lambda: "fake-browser")
+    with pytest.raises(RuntimeError, match="PDF print failed"):
+        pdf.print_html_to_pdf(html_path, pdf_path)
+    assert pdf_path.stat().st_mtime == stale_mtime
+
+
 def test_room_schedule_lists_every_room_with_area_and_floor_totals():
     model = compile_spec(load_example("tubehouse-mini.json"))
     schedule = pdf.build_room_schedule(model)

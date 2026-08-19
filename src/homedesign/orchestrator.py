@@ -68,11 +68,18 @@ def find_blender() -> str:
 def _build_command(model_path: Path, out_dir: Path, profile: str,
                    views: list[str] | None = None, skip_existing: bool = False,
                    reuse_blend: bool = False, gltf: bool = False) -> list[str]:
+    # Absolute, not `str(out_dir)` as-passed: a relative path here is resolved
+    # by Blender's own process against whatever it thinks its working
+    # directory is at the moment each save happens, which does not reliably
+    # stay pinned to `cwd=REPO_ROOT` across a save-blend / open-blend /
+    # render-and-save sequence -- observed writing 12 renders to `C:\output\`
+    # (the drive root) instead of `<repo>\output\` under a detached launch.
+    # Same failure class as the relative `--print-to-pdf` path fixed in pdf.py.
     blender = find_blender()
     builder_script = Path(__file__).resolve().parent / "blender" / "build_scene.py"
     cmd = [
         blender, "--background", "--python", str(builder_script), "--",
-        "--model", str(model_path), "--out", str(out_dir), "--profile", profile,
+        "--model", str(model_path.resolve()), "--out", str(out_dir.resolve()), "--profile", profile,
     ]
     if views:
         cmd += ["--views", ",".join(views)]

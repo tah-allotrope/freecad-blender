@@ -135,6 +135,10 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     parts.append(_svg_section_markers(model, storey))
     parts.append(_svg_level_marker(storey))
 
+    # Legal plot perimeter, dash-dot per drawing convention, drawn last so it
+    # reads over any room fill it happens to coincide with at the plot edge.
+    parts.append(_svg_plot_boundary(model))
+
     # Graphic furniture of the drawing (TASK-06-04): north arrow top-left,
     # scale bar bottom-left, title block bottom-right.
     parts.append(_north_arrow(model.north_deg))
@@ -216,6 +220,26 @@ def _svg_section_markers(model, storey) -> str:
                              f'fill="#c0392b">{name}</text>')
     parts.append("</g>")
     return "\n".join(parts)
+
+
+def _svg_plot_boundary(model) -> str:
+    """The legal plot perimeter -- "ranh dat" on the contractor sheets, with
+    the street-facing edge (y=0, ASM-001) called out as "Ranh lo gioi" the
+    way every issued plan sheet labels it. Drawn as the schema's own
+    orthogonal collapse of the plot (DEC-005): real boundaries taper, this
+    line does not, matching the same simplification already baked into
+    every room/wall in the model rather than adding a new one."""
+    x0, y0 = _mm_to_px(0), _mm_to_px(0)
+    w = model.plot_width_mm / MM_PER_PX
+    d = model.plot_depth_mm / MM_PER_PX
+    return (
+        f'<g class="plot-boundary">'
+        f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w:.1f}" height="{d:.1f}" '
+        f'fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/>'
+        f'<text x="{x0 + w / 2:.1f}" y="{y0 - 6:.1f}" font-size="10" text-anchor="middle" '
+        f'fill="#555">Ranh lộ giới</text>'
+        f'</g>'
+    )
 
 
 def _svg_opening(wall, opening) -> str:
@@ -501,10 +525,14 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
     doc = ezdxf.new("R2010")
     doc.units = ezdxf.units.MM
     for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2),
-                         ("DIMS", 8), ("VOIDS", 4), ("FURNITURE", 9)]:
+                         ("DIMS", 8), ("VOIDS", 4), ("FURNITURE", 9), ("PLOT", 6)]:
         doc.layers.add(layer, color=color)
     msp = doc.modelspace()
     plot_depth = model.plot_depth_mm
+
+    boundary = [_dxf_pt(0.0, 0.0, plot_depth), _dxf_pt(model.plot_width_mm, 0.0, plot_depth),
+                _dxf_pt(model.plot_width_mm, plot_depth, plot_depth), _dxf_pt(0.0, plot_depth, plot_depth)]
+    msp.add_lwpolyline(boundary, close=True, dxfattribs={"layer": "PLOT"})
 
     for wall in storey.walls:
         pts = [_dxf_pt(wall.x, wall.y, plot_depth),

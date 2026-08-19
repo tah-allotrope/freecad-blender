@@ -237,7 +237,8 @@ geometric ones above — the underlying model has the data for several of these.
 | section cut markers (`MC A-A`) | cut line + end labels, from `meta.sections` | **closed 2026-08-17** |
 | stair tread numbering (1, 3, 5 … 21, 19, 17) | every tread numbered | **closed 2026-08-17** |
 | multi-tier dimension chains (2–3 tiers per side) | fine + full-span bands + overall | **closed 2026-08-17** |
-| setback / boundary lines (`Ranh lộ giới`, `Ranh khoảng lùi trước/sau`) | absent | **open** — needs the skewed plot (a) rules out |
+| property boundary (`Ranh lộ giới`) | dash-dot rectangle at the plot extent, labelled at the street edge, in SVG + a `PLOT` DXF layer | **closed 2026-08-19** |
+| interior setback lines (`Ranh xây dựng lùi mái`, `ranh khoảng lùi xây dựng`) | absent | **open** — these mark a *building* line distinct from the plot line, e.g. an upper-storey stepback; the schema has no second boundary construct, only the one plot rectangle |
 | text callouts (`Tiểu cảnh, ô lấy sáng`, `Lô gia`, `Hành lang thương mại`) | only where they are room names | **open** — no annotation construct in the schema |
 
 The furniture row was a generator defect rather than an approximation: the same
@@ -253,6 +254,51 @@ plot edge to plot edge so the front and rear yard setbacks are dimensioned.
 **Still true after this work:** the plans are more complete, the elevations and
 the 3D are not — (k)–(n) are untouched, and a reader comparing `MẶT ĐỨNG CHÍNH`
 to `exterior_front.png` sees the same flat massing as before.
+
+The property-boundary row is drawn from the model's own `plot_width_mm` /
+`plot_depth_mm` — the same orthogonal rectangle every wall and room already
+uses (DEC-005) — so it adds no new approximation, it just makes the existing
+one visible. Confirmed against the ground-floor plan render: the boundary
+correctly wraps the untiled front (`SÂN TRƯỚC`) and rear (`SÂN SAU`) yards
+that were previously blank white space with no indication they were the plot
+edge, and on `f2`–`f5` it shows the `BAN CÔNG` sitting well back of `Ranh lộ
+giới` — a rendered check, not just an assertion, that (e)'s recessed-not-
+cantilevered reading is drawn consistently.
+
+## Provenance addition: `contractor/approval drawing.jpg` (2026-08-19)
+
+A phone photo of the full stamped/signed approval sheet (all plans, both
+elevations, section A-A and the site plan on one physical page) was added to
+`contractor/`. It is genuinely new information — the five per-sheet PDFs this
+model was built from carry no site plan and no visible north indicator at
+all — but its usable resolution is low (960×1280, a folded-paper phone photo,
+not a scan), so this pass treats it as **corroboration, not a new primary
+source**: nothing in `designs/contractor-as-drawn.json` was changed on the
+strength of it alone. What it does confirm at readable resolution:
+
+- **A north-arrow (compass) glyph is printed on the ground-floor and mezzanine
+  plan sheets and the site plan**, contradicting this ledger's prior "the
+  sheets carry no north point (finding C-04)" — a glyph exists, but at this
+  resolution its bearing cannot be read reliably enough to assign
+  `site.north_deg` a real value. **The "shadows are decorative, not solar"
+  note below is unchanged**; upgrading it needs a proper scan of that glyph,
+  not this photo.
+- The site plan (`TỔNG MẶT BẰNG`, 1/200) confirms the plot tapers, matches
+  (a), and adds real-world context absent from the five sheets: project
+  location "thửa 1 phần BC 1281 ... nay là phường Minh Phụng, TP.HCM" and a
+  per-storey built-footprint area table. The table's own figures were
+  attempted as a cross-check and abandoned: at this resolution individual
+  digits in a multi-term formula (e.g. subtraction terms suggesting upper
+  floors project further toward the street than the ground floor) cannot be
+  read with enough confidence to either confirm or contradict (e), and
+  guessing digits from a blurry photo would be a worse error than the gap it
+  claims to close.
+- Zooming further into the core (stair/elevator/WC band) on any floor-plan
+  column, the room-label text becomes illegible before it becomes readable —
+  the source photo has already hit its real information ceiling there.
+  **(c), the elevator inference, is still open**; this photo does not resolve
+  it, and does not raise or lower confidence in either of the two readings
+  already on record.
 
 ## Enum / type approximations (CON-004, room-type enum grown to 16 values 2026-08-14)
 
