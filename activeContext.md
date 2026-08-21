@@ -200,6 +200,23 @@ oversight; and the elevator inference (c) is still unresolved — the new photo
 was checked specifically for this and doesn't have the resolution to settle
 it either way.
 
+### 2026-08-21 — SVG ↔ contractor-PDF parity gauntlet, round 1 (in progress, bar C)
+
+**Goal (gloop, bar C):** full drawing-set parity — every plan sheet's dimensions, walls/openings, stair runs, annotations and labels in `output/svg/contractor-as-drawn_*.svg` match the five vector PDFs in `contractor/` sheet-by-sheet. One mismatch = fail. Accepted deviations ledgered (DEC-005 orthogonal vs ~7.2° skew, elevator inference (c) kept-but-hatched, stair depth 4000 vs 3200 (g), honest scale note, 3960 vs 3950).
+
+**Round 1 delivered.** Checklist `reports/2026-08-21-svg-pdf-parity-checklist.md` built from 4× rasterized PDFs (`output/contractor_pdf_png/` via PyMuPDF) and text inventory of the SVG set. Builder (single agent) changed 6 tracked files + generated artifacts:
+
+- `src/homedesign/plan2d.py` — orientation flip (rear at TOP), odd-only tread numbers (1,3…21), per-room `level_mm` markers, `Ranh khoảng lùi trước/sau` dash-dot setbacks, `A-A`/`B-B` section bubbles, `Lô gia`/`Tiểu cảnh`/ `Ô lấy sáng` annotation construct, elevator cross-hatch, `Ô THÔNG TẦNG` → room-below-name on voids.
+- `spec/homespec.schema.json` + `src/homedesign/model.py` + `src/homedesign/compiler.py` — new optional fields `site.setbacks {front_mm,rear_mm}`, `storeys[].annotations[]`, `room.level_mm`, `meta.sections[].label`.
+- `designs/contractor-as-drawn.json` — setbacks {3500,2500}, annotations on f0/f1/f2-f6, level_mm per room, label renames `P.NGỦ CHÍNH`→`P.NGỦ` and `BẾP & ĂN`→`P. ĂN + BẾP`, section labels A-A/B-B, fix `Tiểu cảnh` y 12350→11200 (was landing inside stair).
+- `tests/test_plan2d.py` — 8 new tests, 1 rewritten for odd treads.
+
+**Verified:** `python -m pytest tests -q` **225 passed** (was 217), `ruff check src tests` clean, `homedesign plans` regenerates without error, headless-Chrome re-render to `output/svg_png/` done. Local text-inventory confirms: odd treads `1,3…19/21`, per-room levels `±0.000/+0.100/+0.300/-0.450/+3.800…`, both setback lines + `Ranh lộ giới`, section bubbles `A-A`/`B-B`, `Lô gia`/`Ô lấy sáng` callouts present.
+
+**Critic pass:** 4 harsh critics fanned out (f0+f1, f2-f4, f5+f6, elevation+section). Only f5+f6 critic returned text; 3 returned empty (tooling flake). f5+f6 report claimed: f5 missing second WC / f6 stair not drawn / level markers duplicated / Ranh trước absent / B9/A4 bubbles / etc. **Lead-agent re-verification** debunked 4 claims: odd treads and setbacks and Ô lấy sáng on f6 ARE present (`<text>` count shows `Ranh khoảng lùi trước`×1 on both, `Ô lấy sáng`×1 on f6, treads `1,3…`), `B9/A4` were misread `A-A/B-B` bubbles. Confirmed real gap: zoom at 10× on `MB 5- MAI-Model.pdf` (y 380-500pt clip, `output/contractor_pdf_png/zoom_t5_midband2.png`) shows a cross-hatched `Ô lấy sáng` void directly below the stair, then a full-width WC with sink+toilet below that — our f5's 3400-deep `HÀNH LANG` should be split. f6's `stairs: {mode:"none"}` explains why the critic saw no treads on the roof terrace.
+
+**Pending (round 2):** split f5 `hall_front_f5` into light-well void handling + front ensuite WC (fix measurements.md vs drawing), make `storeys[6].stairs` a real arrival flight, rebuild elevation/section against `MB MAI-MD` + `MC A-A`, re-fan critics until every sheet reports PASS, then `pdf --require-fresh` + `publish`.
+
 ### 2026-08-13 — Contractor as-drawn render (plans/2026-08-13-contractor-scheme-3d-render-plan.md, all phases done)
 
 **Render wall-clock:** `blender build: 1450.6s` (~24.2 min) for the 12-view

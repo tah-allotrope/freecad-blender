@@ -52,6 +52,21 @@ def _mm_to_px(v: float) -> float:
     return (v + MARGIN_MM) / MM_PER_PX
 
 
+def _y(v: float, depth_mm: float) -> float:
+    """Model y (mm; 0 = street, plot_depth_mm = rear) -> SVG y with the REAR
+    at the TOP of the sheet, the way the contractor plans are drawn (C1).
+    The single place the plan orientation flip happens for SVG."""
+    return (depth_mm - v) / MM_PER_PX
+
+
+def _level_text(level_mm: float) -> str:
+    """A finished-floor level in the sheets' own notation: ± 0.000 / + 0.100."""
+    if level_mm == 0:
+        return "± 0.000"
+    sign = "+" if level_mm > 0 else "-"
+    return f"{sign} {abs(level_mm) / 1000:.3f}"
+
+
 def _render_svg(model: CompiledModel, storey: Storey) -> str:
     width_px = _mm_to_px(model.plot_width_mm) + MARGIN_MM / MM_PER_PX
     depth_px = _mm_to_px(model.plot_depth_mm) + MARGIN_MM / MM_PER_PX
@@ -67,10 +82,19 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
         'patternUnits="userSpaceOnUse">'
         '<line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>'
     )
+    parts.append(
+        '<defs><pattern id="elevhatch" width="8" height="8" patternUnits="userSpaceOnUse">'
+        '<line x1="0" y1="0" x2="8" y2="8" stroke="#888" stroke-width="1"/>'
+        '<line x1="8" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1"/></pattern></defs>'
+    )
 
+    depth = model.plot_depth_mm
     for room in storey.rooms:
-        fill = ROOM_FILL.get(room.type, "#f0f0f0")
-        x, y = _mm_to_px(room.rect.x), _mm_to_px(room.rect.y)
+        if room.type == "elevator":
+            fill = "url(#elevhatch)"
+        else:
+            fill = ROOM_FILL.get(room.type, "#f0f0f0")
+        x, y = _mm_to_px(room.rect.x), _y(room.rect.y2, depth)
         w, d = room.rect.w / MM_PER_PX, room.rect.d / MM_PER_PX
         parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
                      f'fill="{fill}" stroke="none"/>')
@@ -81,9 +105,13 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
                      f'{label}</text>')
         parts.append(f'<text x="{cx:.1f}" y="{cy + 14:.1f}" font-size="10" text-anchor="middle" fill="#666">'
                      f'{escape_text(f"{area_sqm:.1f} m")}&#178;</text>')
+        if room.level_mm is not None:
+            datum = _level_text(storey.base_z + room.level_mm)
+            parts.append(f'<text class="level-marker" x="{cx:.1f}" y="{cy + 28:.1f}" font-size="10" '
+                         f'text-anchor="middle" fill="#222">{escape_text(datum)}</text>')
 
     for wall in storey.walls:
-        x, y = _mm_to_px(wall.x), _mm_to_px(wall.y)
+        x, y = _mm_to_px(wall.x), _y(wall.y + wall.h, depth)
         w, h = wall.w / MM_PER_PX, wall.h / MM_PER_PX
         stroke = "#222" if wall.kind == "exterior" else "#888"
         parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" fill="{stroke}"/>')
@@ -92,33 +120,43 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
         wall = next((w for w in storey.walls if w.id == opening.wall_id), None)
         if wall is None:
             continue
-        parts.append(_svg_opening(wall, opening))
+        parts.append(_svg_opening(wall, opening, depth))
 
-    # Declared floor voids: diagonal-hatched with an optional reason label.
+    # Declared floor voids: diagonal-hatched; the primary label repeats the
+    # name(s) of the room(s) on the storey below (largest overlap first), as
+    # the drawing does over its hatched lửng zones.
     for void, reason in zip(storey.authored_voids, storey.authored_void_reasons):
-        x, y = _mm_to_px(void.x), _mm_to_px(void.y)
+        x, y = _mm_to_px(void.x), _y(void.y + void.d, depth)
         w, d = void.w / MM_PER_PX, void.d / MM_PER_PX
         parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
                      f'fill="url(#voidhatch)" stroke="#888" stroke-width="0.8"/>')
+        cx, cy = x + w / 2, y + d / 2
+        below_names = _void_below_names(model, storey, void)
+        if below_names:
+            parts.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="12" text-anchor="middle" '
+                         f'fill="#333">{escape_text(below_names)}</text>')
         if reason:
-            cx, cy = x + w / 2, y + d / 2
-            parts.append(f'<text x="{cx:.1f}" y="{cy:.1f}" font-size="10" text-anchor="middle" '
+            dy = 14 if below_names else 0
+            parts.append(f'<text x="{cx:.1f}" y="{cy + dy:.1f}" font-size="10" text-anchor="middle" '
                          f'fill="#555">{escape_text(reason)}</text>')
 
     # Furniture, drawn from the same pure placement rules the Blender builder
     # uses (placement.plan_room), so a furnished 3D scene and its plan can no
     # longer disagree -- they did until 2026-08-17, see the fidelity ledger.
-    parts.append(_svg_furniture(storey))
+    parts.append(_svg_furniture(storey, depth))
 
     if storey.stairs:
         for i, t in enumerate(storey.stairs.treads, start=1):
-            x, y = _mm_to_px(t.x), _mm_to_px(t.y)
+            x, y = _mm_to_px(t.x), _y(t.y + t.d, depth)
             w, d = t.w / MM_PER_PX, t.d / MM_PER_PX
             parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
                          f'fill="none" stroke="#555" stroke-width="1"/>')
-            # Tread numbering, as the contractor sheets number the run.
-            parts.append(f'<text class="tread-number" x="{x + w / 2:.1f}" y="{y + d / 2 + 3:.1f}" '
-                         f'font-size="7" text-anchor="middle" fill="#555">{i}</text>')
+            # Tread numbering, as the contractor sheets number the run: odd
+            # tread numbers only (the riser each tread leads to), so a 22-riser
+            # flight reads 1,3,...,21 up and 21,...,13 on the return.
+            if i % 2 == 1:
+                parts.append(f'<text class="tread-number" x="{x + w / 2:.1f}" y="{y + d / 2 + 3:.1f}" '
+                             f'font-size="7" text-anchor="middle" fill="#555">{i}</text>')
 
     # Dimension stacks, inner to outer: fine room subdivision, then full-span
     # band divisions, then the overall figure -- the 2-3 tiers per side the
@@ -129,15 +167,22 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
         parts.append(_dimension_chain(coords, "h", 40.0 * tier, model.plot_width_mm, tier=tier))
     for tier, coords in enumerate(
             _dimension_tiers(storey.rooms, "v", model.plot_depth_mm, model.plot_width_mm), start=1):
-        parts.append(_dimension_chain(coords, "v", 40.0 * tier, model.plot_depth_mm, tier=tier))
+        parts.append(_dimension_chain(coords, "v", 40.0 * tier, model.plot_depth_mm,
+                                      tier=tier, plot_depth_mm=depth))
 
-    # Section cut lines, and the storey's finished-floor level.
+    # Section cut lines, and the storey's finished-floor level (per-room
+    # markers win; the storey datum is the fallback when no room carries one).
     parts.append(_svg_section_markers(model, storey))
-    parts.append(_svg_level_marker(storey))
+    if not any(r.level_mm is not None for r in storey.rooms):
+        parts.append(_svg_level_marker(storey))
+
+    # Text callouts (dashed box + italic label); never geometry.
+    parts.append(_svg_annotations(storey, depth))
 
     # Legal plot perimeter, dash-dot per drawing convention, drawn last so it
     # reads over any room fill it happens to coincide with at the plot edge.
     parts.append(_svg_plot_boundary(model))
+    parts.append(_svg_setbacks(model))
 
     # Graphic furniture of the drawing (TASK-06-04): north arrow top-left,
     # scale bar bottom-left, title block bottom-right.
@@ -154,7 +199,7 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
     return "\n".join(parts)
 
 
-def _svg_furniture(storey) -> str:
+def _svg_furniture(storey, depth: float) -> str:
     """Plan footprints for every furnishable room on this storey.
 
     Deliberately calls the same `placement.plan_room` the Blender furnisher
@@ -172,7 +217,7 @@ def _svg_furniture(storey) -> str:
             x_mm = rect.x + item.x * 1000
             y_mm = rect.y + item.y * 1000
             w_px, d_px = item.w * 1000 / MM_PER_PX, item.d * 1000 / MM_PER_PX
-            x_px, y_px = _mm_to_px(x_mm), _mm_to_px(y_mm)
+            x_px, y_px = _mm_to_px(x_mm), _y(y_mm + item.d * 1000, depth)
             cx, cy = x_px + w_px / 2, y_px + d_px / 2
             # SVG's y axis runs down while the model's runs north, so the plan
             # is mirrored and a model-space CCW rotation reads as CW here.
@@ -182,6 +227,23 @@ def _svg_furniture(storey) -> str:
                          f'width="{w_px:.1f}" height="{d_px:.1f}"{transform}/>')
     parts.append("</g>")
     return "\n".join(parts)
+
+
+def _void_below_names(model: CompiledModel, storey: Storey, void) -> str:
+    """Names of the rooms on the storey below whose rects overlap this void,
+    largest overlap first -- the drawing repeats those names over its hatched
+    double-height zones."""
+    prev = next((s for s in model.storeys if s.level == storey.level - 1), None)
+    if prev is None:
+        return ""
+    overlaps: list[tuple[float, str]] = []
+    for room in prev.rooms:
+        ox = min(void.x + void.w, room.rect.x2) - max(void.x, room.rect.x)
+        oy = min(void.y + void.d, room.rect.y2) - max(void.y, room.rect.y)
+        if ox > 0 and oy > 0:
+            overlaps.append((ox * oy, room.name or room.id))
+    overlaps.sort(key=lambda t: -t[0])
+    return " / ".join(name for _, name in overlaps)
 
 
 def _svg_level_marker(storey) -> str:
@@ -194,30 +256,36 @@ def _svg_level_marker(storey) -> str:
 
 
 def _svg_section_markers(model, storey) -> str:
-    """Cut lines for every declared section, labelled at both ends."""
+    """Cut lines for every declared section, in circle bubbles at both ends,
+    labelled with the section's drawing label (fallback: uppercased name)."""
     if not model.sections:
         return ""
+    depth = model.plot_depth_mm
     parts = ['<g class="section-marker">']
     for sec in model.sections:
-        name = escape_text(str(sec.get("name", "")))
+        name = escape_text(str(sec.get("label") or sec.get("name", "")).upper())
         pos = float(sec.get("position_mm", 0.0))
         if sec.get("axis") == "x":
             # Cut plane perpendicular to x: a vertical line down the plan.
             px = _mm_to_px(pos)
-            y0, y1 = _mm_to_px(0) - 30, _mm_to_px(model.plot_depth_mm) + 30
+            y0, y1 = _y(depth, depth) - 30, _y(0, depth) + 30
             parts.append(f'<line x1="{px:.1f}" y1="{y0:.1f}" x2="{px:.1f}" y2="{y1:.1f}" '
                          f'stroke="#c0392b" stroke-width="1" stroke-dasharray="12 4 3 4"/>')
-            for ty, dy in ((y0, -4), (y1, 10)):
-                parts.append(f'<text x="{px + 4:.1f}" y="{ty + dy:.1f}" font-size="10" '
-                             f'fill="#c0392b">{name}</text>')
+            for cy in (y0, y1):
+                parts.append(f'<circle cx="{px:.1f}" cy="{cy:.1f}" r="11" fill="white" '
+                             f'stroke="#c0392b" stroke-width="1"/>')
+                parts.append(f'<text x="{px:.1f}" y="{cy + 3.5:.1f}" font-size="9" '
+                             f'text-anchor="middle" fill="#c0392b">{name}</text>')
         else:
-            py = _mm_to_px(pos)
+            py = _y(pos, depth)
             x0, x1 = _mm_to_px(0) - 30, _mm_to_px(model.plot_width_mm) + 30
             parts.append(f'<line x1="{x0:.1f}" y1="{py:.1f}" x2="{x1:.1f}" y2="{py:.1f}" '
                          f'stroke="#c0392b" stroke-width="1" stroke-dasharray="12 4 3 4"/>')
-            for tx, dx in ((x0, -18), (x1, 4)):
-                parts.append(f'<text x="{tx + dx:.1f}" y="{py - 4:.1f}" font-size="10" '
-                             f'fill="#c0392b">{name}</text>')
+            for cx in (x0, x1):
+                parts.append(f'<circle cx="{cx:.1f}" cy="{py:.1f}" r="11" fill="white" '
+                             f'stroke="#c0392b" stroke-width="1"/>')
+                parts.append(f'<text x="{cx:.1f}" y="{py + 3.5:.1f}" font-size="9" '
+                             f'text-anchor="middle" fill="#c0392b">{name}</text>')
     parts.append("</g>")
     return "\n".join(parts)
 
@@ -229,25 +297,71 @@ def _svg_plot_boundary(model) -> str:
     orthogonal collapse of the plot (DEC-005): real boundaries taper, this
     line does not, matching the same simplification already baked into
     every room/wall in the model rather than adding a new one."""
-    x0, y0 = _mm_to_px(0), _mm_to_px(0)
+    x0, y0 = _mm_to_px(0), _y(model.plot_depth_mm, model.plot_depth_mm)
     w = model.plot_width_mm / MM_PER_PX
     d = model.plot_depth_mm / MM_PER_PX
     return (
         f'<g class="plot-boundary">'
         f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{w:.1f}" height="{d:.1f}" '
         f'fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/>'
-        f'<text x="{x0 + w / 2:.1f}" y="{y0 - 6:.1f}" font-size="10" text-anchor="middle" '
+        f'<text x="{x0 + w / 2:.1f}" y="{y0 + d + 14:.1f}" font-size="10" text-anchor="middle" '
         f'fill="#555">Ranh lộ giới</text>'
         f'</g>'
     )
 
 
-def _svg_opening(wall, opening) -> str:
+def _svg_setbacks(model) -> str:
+    """The building lines ("ranh khoảng lùi"): dash-dot rules spanning the
+    full plot width at the declared front/rear setback distances, labelled
+    like the sheets label them. Absent when the site declares none."""
+    setbacks = model.setbacks
+    if not setbacks:
+        return ""
+    depth = model.plot_depth_mm
+    x0 = _mm_to_px(0)
+    x1 = _mm_to_px(model.plot_width_mm)
+    parts = ['<g class="setback">']
+    for key, dist, label in (
+        ("front_mm", float(setbacks.get("front_mm", 0.0)), "Ranh khoảng lùi trước"),
+        ("rear_mm", float(setbacks.get("rear_mm", 0.0)), "Ranh khoảng lùi sau"),
+    ):
+        if not setbacks.get(key):
+            continue
+        y = _y(depth - dist, depth)
+        parts.append(f'<line x1="{x0:.1f}" y1="{y:.1f}" x2="{x1:.1f}" y2="{y:.1f}" '
+                     f'stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/>')
+        lx = x0 + 10
+        parts.append(f'<text x="{lx:.1f}" y="{y - 4:.1f}" font-size="10" fill="#555" '
+                     f'transform="rotate(-90 {lx:.1f} {y - 4:.1f})">{escape_text(label)}</text>')
+    parts.append("</g>")
+    return "\n".join(parts)
+
+
+def _svg_annotations(storey: Storey, depth: float) -> str:
+    """Text callouts: a dashed rectangle when `boxed`, italic centred text.
+    Callouts only -- they never affect checks, tiling or furniture."""
+    if not storey.annotations:
+        return ""
+    parts = ['<g class="annotation">']
+    for ann in storey.annotations:
+        x, y = _mm_to_px(float(ann["x"])), _y(float(ann["y"]) + float(ann["d"]), depth)
+        w, d = float(ann["w"]) / MM_PER_PX, float(ann["d"]) / MM_PER_PX
+        cx, cy = x + w / 2, y + d / 2
+        if ann.get("boxed"):
+            parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{d:.1f}" '
+                         f'fill="none" stroke="#888" stroke-width="0.8" stroke-dasharray="6 3"/>')
+        parts.append(f'<text x="{cx:.1f}" y="{cy + 3.5:.1f}" font-size="10" text-anchor="middle" '
+                     f'fill="#444" font-style="italic">{escape_text(str(ann["text"]))}</text>')
+    parts.append("</g>")
+    return "\n".join(parts)
+
+
+def _svg_opening(wall, opening, depth: float) -> str:
     off = opening.offset_mm / MM_PER_PX
     width = opening.width_mm / MM_PER_PX
     if wall.orientation == "vertical":
         x = _mm_to_px(wall.x + wall.thickness / 2)
-        y = _mm_to_px(wall.y) + off
+        y = _y(wall.y + opening.offset_mm + opening.width_mm, depth)
         color = "#3a7bd5" if opening.type == "window" else "#c0392b"
         if opening.type == "window":
             # Three-line window symbol: centre line + two frame lines.
@@ -259,7 +373,7 @@ def _svg_opening(wall, opening) -> str:
         # Door: leaf line plus swing arc quarter-circle from the hinge jamb.
         return _svg_door_vertical(x, y, width)
     x = _mm_to_px(wall.x) + off
-    y = _mm_to_px(wall.y + wall.thickness / 2)
+    y = _y(wall.y + wall.thickness / 2, depth)
     color = "#3a7bd5" if opening.type == "window" else "#c0392b"
     if opening.type == "window":
         return (
@@ -434,17 +548,23 @@ def _same_coords(a: list[float], b: list[float], tol: float = 1e-6) -> bool:
 
 
 def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent_mm: float,
-                     tier: int = 1) -> str:
+                     tier: int = 1, plot_depth_mm: float | None = None) -> str:
     """SVG fragment for one dimension chain: a run line, a tick at each
     coordinate, and a millimetre integer label centred between consecutive
     coordinates. `axis` is `"h"` (drawn above the plan) or `"v"` (drawn to its
     left); `offset_px` is the distance from the plan edge; `extent_mm` is the
     overall plot dimension along that axis (used for the degenerate empty case).
+    Vertical chains read model y through `_y` so they flip with the plan (C1).
     """
     margin_px = MARGIN_MM / MM_PER_PX
 
     def to_px(v: float) -> float:
         return (v + MARGIN_MM) / MM_PER_PX
+
+    def to_py(v: float) -> float:
+        if plot_depth_mm is None:
+            return to_px(v)
+        return _y(v, plot_depth_mm)
 
     parts: list[str] = [f'<g class="dim-chain" data-tier="{tier}" data-axis="{axis}">']
     if len(coords_mm) < 2:
@@ -455,8 +575,8 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
                          f'font-size="10" text-anchor="middle">{int(round(extent_mm))}</text>')
         else:
             x = margin_px - offset_px
-            parts.append(f'<text x="{x - 4:.1f}" y="{to_px(extent_mm / 2):.1f}" font-size="10" '
-                         f'text-anchor="middle" transform="rotate(-90 {x - 4:.1f} {to_px(extent_mm / 2):.1f})">'
+            parts.append(f'<text x="{x - 4:.1f}" y="{to_py(extent_mm / 2):.1f}" font-size="10" '
+                         f'text-anchor="middle" transform="rotate(-90 {x - 4:.1f} {to_py(extent_mm / 2):.1f})">'
                          f'{int(round(extent_mm))}</text>')
         parts.append("</g>")
         return "\n".join(parts)
@@ -475,15 +595,15 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
                          f'text-anchor="middle">{int(round(b - a))}</text>')
     else:
         x = margin_px - offset_px
-        parts.append(f'<rect x="{x - 0.25:.1f}" y="{to_px(start):.1f}" '
-                     f'width="0.5" height="{to_px(end) - to_px(start):.1f}" fill="#000"/>')
+        parts.append(f'<rect x="{x - 0.25:.1f}" y="{to_py(start):.1f}" '
+                     f'width="0.5" height="{to_py(end) - to_py(start):.1f}" fill="#000"/>')
         for v in coords_mm:
-            parts.append(f'<line x1="{x - 3:.1f}" y1="{to_px(v):.1f}" x2="{x + 3:.1f}" '
-                         f'y2="{to_px(v):.1f}" stroke="#000" stroke-width="0.5"/>')
+            parts.append(f'<line x1="{x - 3:.1f}" y1="{to_py(v):.1f}" x2="{x + 3:.1f}" '
+                         f'y2="{to_py(v):.1f}" stroke="#000" stroke-width="0.5"/>')
         for a, b in zip(coords_mm, coords_mm[1:]):
             mid = (a + b) / 2
-            parts.append(f'<text x="{x - 6:.1f}" y="{to_px(mid):.1f}" font-size="10" '
-                         f'text-anchor="middle" transform="rotate(-90 {x - 6:.1f} {to_px(mid):.1f})">'
+            parts.append(f'<text x="{x - 6:.1f}" y="{to_py(mid):.1f}" font-size="10" '
+                         f'text-anchor="middle" transform="rotate(-90 {x - 6:.1f} {to_py(mid):.1f})">'
                          f'{int(round(b - a))}</text>')
     parts.append("</g>")
     return "\n".join(parts)
@@ -525,7 +645,8 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
     doc = ezdxf.new("R2010")
     doc.units = ezdxf.units.MM
     for layer, color in [("WALLS", 7), ("DOORS", 1), ("WINDOWS", 5), ("STAIRS", 3), ("TEXT", 2),
-                         ("DIMS", 8), ("VOIDS", 4), ("FURNITURE", 9), ("PLOT", 6)]:
+                         ("DIMS", 8), ("VOIDS", 4), ("FURNITURE", 9), ("PLOT", 6),
+                         ("SETBACK", 5), ("ANNOT", 2)]:
         doc.layers.add(layer, color=color)
     msp = doc.modelspace()
     plot_depth = model.plot_depth_mm
@@ -589,12 +710,46 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
         msp.add_text(label, dxfattribs={"layer": "TEXT", "height": 150}).set_placement(
             (cx_f, cy_f), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
 
-    for void in storey.authored_voids:
+    for void, reason in zip(storey.authored_voids, storey.authored_void_reasons):
         pts = [_dxf_pt(void.x, void.y, plot_depth),
                _dxf_pt(void.x + void.w, void.y, plot_depth),
                _dxf_pt(void.x + void.w, void.y + void.d, plot_depth),
                _dxf_pt(void.x, void.y + void.d, plot_depth)]
         msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "VOIDS"})
+        cx = void.x + void.w / 2
+        cy = void.y + void.d / 2
+        below_names = _void_below_names(model, storey, void)
+        if below_names:
+            msp.add_text(below_names, dxfattribs={"layer": "VOIDS", "height": 150}).set_placement(
+                _dxf_pt(cx, cy, plot_depth), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
+        if reason:
+            msp.add_text(reason, dxfattribs={"layer": "VOIDS", "height": 100}).set_placement(
+                _dxf_pt(cx, cy - 200, plot_depth), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
+
+    setbacks = model.setbacks or {}
+    for key, dist, label in (
+        ("front_mm", float(setbacks.get("front_mm", 0.0)), "Ranh khoảng lùi trước"),
+        ("rear_mm", float(setbacks.get("rear_mm", 0.0)), "Ranh khoảng lùi sau"),
+    ):
+        if not setbacks.get(key):
+            continue
+        y = plot_depth - dist
+        msp.add_line(_dxf_pt(0.0, y, plot_depth), _dxf_pt(model.plot_width_mm, y, plot_depth),
+                     dxfattribs={"layer": "SETBACK"})
+        tx, ty = _dxf_pt(100.0, y - 100.0, plot_depth)
+        msp.add_text(label, dxfattribs={"layer": "SETBACK", "height": 120, "rotation": 90}).set_placement(
+            (tx, ty), align=ezdxf.enums.TextEntityAlignment.MIDDLE_LEFT)
+
+    for ann in storey.annotations:
+        ax, ay = float(ann["x"]), float(ann["y"])
+        aw, ad = float(ann["w"]), float(ann["d"])
+        if ann.get("boxed"):
+            pts = [_dxf_pt(ax, ay, plot_depth), _dxf_pt(ax + aw, ay, plot_depth),
+                   _dxf_pt(ax + aw, ay + ad, plot_depth), _dxf_pt(ax, ay + ad, plot_depth)]
+            msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "ANNOT"})
+        cx_f, cy_f = _dxf_pt(ax + aw / 2, ay + ad / 2, plot_depth)
+        msp.add_text(str(ann["text"]), dxfattribs={"layer": "ANNOT", "height": 120}).set_placement(
+            (cx_f, cy_f), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
 
     h_coords = sorted({c for r in storey.rooms for c in (r.rect.x, r.rect.x2)})
     v_coords = sorted({c for r in storey.rooms for c in (r.rect.y, r.rect.y2)})

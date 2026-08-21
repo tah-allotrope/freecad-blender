@@ -5,11 +5,13 @@
     "sections": [
       {
         "name": "long",
+        "label": "A-A",
         "axis": "x",
         "position_mm": 1500
       },
       {
         "name": "cross_bed",
+        "label": "B-B",
         "axis": "y",
         "position_mm": 6900
       }
@@ -79,6 +81,10 @@
     "plot_width_mm": 3960,
     "plot_depth_mm": 25000,
     "wall_alignment": "inside",
+    "setbacks": {
+      "front_mm": 3500,
+      "rear_mm": 2500
+    },
     "context": {
       "neighbours": false,
       "street_depth_mm": 6000
@@ -99,6 +105,7 @@
           "id": "gara",
           "type": "garage",
           "name": "NƠI ĐỂ XE",
+          "level_mm": 0,
           "rect": {
             "x": 0,
             "y": 3500,
@@ -110,6 +117,7 @@
           "id": "khach",
           "type": "living",
           "name": "P.KHÁCH",
+          "level_mm": 100,
           "rect": {
             "x": 0,
             "y": 7500,
@@ -175,7 +183,8 @@
         {
           "id": "bep_an",
           "type": "kitchen",
-          "name": "BẾP & ĂN",
+          "name": "P. ĂN + BẾP",
+          "level_mm": 300,
           "rect": {
             "x": 0,
             "y": 19700,
@@ -300,6 +309,32 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "annotations": [
+        {
+          "x": 1300,
+          "y": 11200,
+          "w": 1800,
+          "d": 950,
+          "text": "Tiểu cảnh, ô lấy sáng",
+          "boxed": true
+        },
+        {
+          "x": 1580,
+          "y": 1150,
+          "w": 800,
+          "d": 700,
+          "text": "- 0.450",
+          "boxed": false
+        },
+        {
+          "x": 1580,
+          "y": 24050,
+          "w": 800,
+          "d": 700,
+          "text": "+ 0.200",
+          "boxed": false
+        }
       ]
     },
     {
@@ -360,6 +395,7 @@
           "id": "sinh_hoat",
           "type": "living",
           "name": "P.SINH HOẠT",
+          "level_mm": 0,
           "rect": {
             "x": 0,
             "y": 18100,
@@ -443,6 +479,24 @@
           "d": 8800,
           "reason": "Ô THÔNG TẦNG (double-height void per drawing)"
         }
+      ],
+      "annotations": [
+        {
+          "x": 1300,
+          "y": 11200,
+          "w": 1800,
+          "d": 950,
+          "text": "Tiểu cảnh, ô lấy sáng",
+          "boxed": true
+        },
+        {
+          "x": 2560,
+          "y": 18600,
+          "w": 800,
+          "d": 600,
+          "text": "Lô gia",
+          "boxed": false
+        }
       ]
     },
     {
@@ -469,13 +523,14 @@
         {
           "id": "ngu_truoc_f2",
           "type": "bedroom",
-          "name": "P.NGỦ CHÍNH",
+          "name": "P.NGỦ",
           "rect": {
             "x": 0,
             "y": 4900,
             "w": 3960,
             "d": 4000
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "wc_truoc_f2",
@@ -486,7 +541,8 @@
             "y": 8900,
             "w": 1950,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "hall_wc_f2",
@@ -563,7 +619,8 @@
             "y": 18100,
             "w": 3960,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "ngu_sau_f2",
@@ -574,7 +631,8 @@
             "y": 19700,
             "w": 3960,
             "d": 4100
-          }
+          },
+          "level_mm": 0
         }
       ],
       "openings": [
@@ -725,6 +783,24 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "annotations": [
+        {
+          "x": 2560,
+          "y": 18600,
+          "w": 800,
+          "d": 600,
+          "text": "Lô gia",
+          "boxed": false
+        },
+        {
+          "x": 880,
+          "y": 10400,
+          "w": 2200,
+          "d": 1900,
+          "text": "Ô lấy sáng 2200",
+          "boxed": true
+        }
       ]
     },
     {
@@ -751,13 +827,14 @@
         {
           "id": "ngu_truoc_f3",
           "type": "bedroom",
-          "name": "P.NGỦ CHÍNH",
+          "name": "P.NGỦ",
           "rect": {
             "x": 0,
             "y": 4900,
             "w": 3960,
             "d": 4000
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "wc_truoc_f3",
@@ -768,7 +845,8 @@
             "y": 8900,
             "w": 1950,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "hall_wc_f3",
@@ -845,7 +923,8 @@
             "y": 18100,
             "w": 3960,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "ngu_sau_f3",
@@ -856,7 +935,8 @@
             "y": 19700,
             "w": 3960,
             "d": 4100
-          }
+          },
+          "level_mm": 0
         }
       ],
       "openings": [
@@ -1007,6 +1087,24 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "annotations": [
+        {
+          "x": 2560,
+          "y": 18600,
+          "w": 800,
+          "d": 600,
+          "text": "Lô gia",
+          "boxed": false
+        },
+        {
+          "x": 880,
+          "y": 10400,
+          "w": 2200,
+          "d": 1900,
+          "text": "Ô lấy sáng 2200",
+          "boxed": true
+        }
       ]
     },
     {
@@ -1033,13 +1131,14 @@
         {
           "id": "ngu_truoc_f4",
           "type": "bedroom",
-          "name": "P.NGỦ CHÍNH",
+          "name": "P.NGỦ",
           "rect": {
             "x": 0,
             "y": 4900,
             "w": 3960,
             "d": 4000
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "wc_truoc_f4",
@@ -1050,7 +1149,8 @@
             "y": 8900,
             "w": 1950,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "hall_wc_f4",
@@ -1127,7 +1227,8 @@
             "y": 18100,
             "w": 3960,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "ngu_sau_f4",
@@ -1138,7 +1239,8 @@
             "y": 19700,
             "w": 3960,
             "d": 4100
-          }
+          },
+          "level_mm": 0
         }
       ],
       "openings": [
@@ -1289,6 +1391,24 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "annotations": [
+        {
+          "x": 2560,
+          "y": 18600,
+          "w": 800,
+          "d": 600,
+          "text": "Lô gia",
+          "boxed": false
+        },
+        {
+          "x": 880,
+          "y": 10400,
+          "w": 2200,
+          "d": 1900,
+          "text": "Ô lấy sáng 2200",
+          "boxed": true
+        }
       ]
     },
     {
@@ -1387,7 +1507,8 @@
             "y": 18100,
             "w": 3960,
             "d": 1600
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "ngu_sau_f5",
@@ -1398,7 +1519,8 @@
             "y": 19700,
             "w": 3960,
             "d": 4100
-          }
+          },
+          "level_mm": 0
         }
       ],
       "openings": [
@@ -1517,6 +1639,24 @@
           "side": "south",
           "width_mm": 1500
         }
+      ],
+      "annotations": [
+        {
+          "x": 2560,
+          "y": 18600,
+          "w": 800,
+          "d": 600,
+          "text": "Lô gia",
+          "boxed": false
+        },
+        {
+          "x": 880,
+          "y": 10400,
+          "w": 2200,
+          "d": 1900,
+          "text": "Ô lấy sáng 2200",
+          "boxed": true
+        }
       ]
     },
     {
@@ -1538,7 +1678,8 @@
             "y": 3500,
             "w": 3960,
             "d": 8800
-          }
+          },
+          "level_mm": 0
         },
         {
           "id": "stairwell",
@@ -1593,7 +1734,8 @@
             "y": 18100,
             "w": 3960,
             "d": 5700
-          }
+          },
+          "level_mm": 0
         }
       ],
       "openings": [
@@ -1697,7 +1839,17 @@
             "name": "Ô KỸ THUẬT THANG MÁY"
           }
         ]
-      }
+      },
+      "annotations": [
+        {
+          "x": 0,
+          "y": 12300,
+          "w": 3005,
+          "d": 4000,
+          "text": "Ô lấy sáng",
+          "boxed": true
+        }
+      ]
     }
   ]
 }

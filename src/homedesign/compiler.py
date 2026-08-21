@@ -76,6 +76,7 @@ def compile_spec(spec: dict) -> CompiledModel:
                 roof=roof,
                 authored_voids=[Rect(x=v["x"], y=v["y"], w=v["w"], d=v["d"]) for v in s.get("voids", [])],
                 authored_void_reasons=[v.get("reason", "") for v in s.get("voids", [])],
+                annotations=list(s.get("annotations", [])),
             )
         )
         base_z += height
@@ -116,6 +117,7 @@ def compile_spec(spec: dict) -> CompiledModel:
         wall_alignment=wall_alignment,
         sections=sections,
         north_deg=spec["site"].get("north_deg", 0.0),
+        setbacks=spec["site"].get("setbacks"),
     )
 
 
@@ -146,7 +148,8 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
         still_pending = []
         for r in pending:
             if "rect" in r:
-                resolved[r["id"]] = Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]), name=r.get("name"))
+                resolved[r["id"]] = Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]),
+                                         name=r.get("name"), level_mm=r.get("level_mm"))
                 continue
             rel = r["relative"]
             anchor = resolved.get(rel["adjacent_to"])
@@ -154,7 +157,8 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
                 still_pending.append(r)
                 continue
             resolved[r["id"]] = Room(
-                id=r["id"], type=r["type"], rect=_place_relative(anchor.rect, rel), name=r.get("name")
+                id=r["id"], type=r["type"], rect=_place_relative(anchor.rect, rel), name=r.get("name"),
+                level_mm=r.get("level_mm"),
             )
         pending = still_pending
 

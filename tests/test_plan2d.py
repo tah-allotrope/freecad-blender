@@ -326,14 +326,36 @@ def test_svg_has_level_marker_per_storey(tmp_path):
 
 
 def test_svg_numbers_stair_treads(tmp_path):
+    import re
+
     model = load_model("demo-3br-2storey.json")
     plan2d.write_plans(model, tmp_path)
     storey = next(s for s in model.storeys if s.stairs and s.stairs.treads)
     svg_text = (tmp_path / "svg" / f"{model.name}_f{storey.level}.svg").read_text(encoding="utf-8")
     assert 'class="tread-number"' in svg_text
-    # First and last tread indices are both labelled (the sheets number the run).
-    assert ">1<" in svg_text
-    assert f">{len(storey.stairs.treads)}<" in svg_text
+    nums = re.findall(r'class="tread-number"[^>]*>(\d+)<', svg_text)
+    assert nums
+    # The sheets number odd treads only.
+    assert all(int(n) % 2 == 1 for n in nums)
+    assert "1" in nums
+    assert str(len(storey.stairs.treads) if len(storey.stairs.treads) % 2 == 1
+               else len(storey.stairs.treads) - 1) in nums
+
+
+def test_u_return_tread_numbers_are_odd_ascending_then_returning(tmp_path):
+    """22 risers -> up-flight prints 1,3,...,11 and the return prints
+    13,15,...,21, matching the contractor sheets' odd-only convention."""
+    import re
+
+    spec = json.loads((REPO_ROOT / "designs" / "contractor-as-drawn.json").read_text(encoding="utf-8"))
+    model = compile_spec(spec)
+    # 3800mm storey -> 22 risers -> 21 numbered positions (the landing carries
+    # one), printed odd-only.
+    assert len(model.storeys[0].stairs.treads) == 22
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    nums = re.findall(r'class="tread-number"[^>]*>(\d+)<', svg_text)
+    assert nums == ["1", "3", "5", "7", "9", "11", "13", "15", "17", "19", "21"]
 
 
 def test_svg_draws_section_cut_markers(tmp_path):
@@ -424,3 +446,123 @@ def test_fine_dimension_tier_spans_the_whole_plot():
     assert fine[-1] == 25000, f"fine tier must end at the plot edge, got {fine[-1]}"
     gaps = [round(b - a) for a, b in zip(fine, fine[1:])]
     assert gaps == [3500, 20300, 1200], gaps
+
+
+# --- Contractor-parity pass (checklist 2026-08-21) ---------------------------
+
+
+def _contractor_model():
+    spec = json.loads((REPO_ROOT / "designs" / "contractor-as-drawn.json").read_text(encoding="utf-8"))
+    return compile_spec(spec)
+
+
+def _text_y(svg_text: str, label: str) -> float:
+    import re
+
+    m = re.search(rf'<text[^>]*y="([\d.]+)"[^>]*>{re.escape(label)}</text>', svg_text)
+    assert m, f"label {label!r} not found in svg"
+    return float(m.group(1))
+
+
+def test_plan_orientation_rear_at_top(tmp_path):
+    """C1: the rear-most room's label sits at a smaller SVG y than the
+    front-most room's -- rear at the top of the sheet, street at the bottom."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    y_rear = _text_y(svg_text, "P. ĂN + BẾP")
+    y_front = _text_y(svg_text, "NƠI ĐỂ XE")
+    assert y_rear < y_front
+
+
+def test_per_room_level_markers_replace_storey_fallback(tmp_path):
+    """C3: rooms carrying level_mm print their own marker (absolute datum =
+    base_z + level_mm); the once-per-storey marker only survives on storeys
+    where no room carries one."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    f0 = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert ">± 0.000<" in f0   # gara
+    assert ">+ 0.100<" in f0   # khach
+    assert ">+ 0.300<" in f0   # bep_an
+    f1 = (tmp_path / "svg" / f"{model.name}_f1.svg").read_text(encoding="utf-8")
+    assert ">+ 3.800<" in f1   # sinh_hoat: level_mm 0 over base_z 3800
+    # A model with no level_mm anywhere keeps the per-storey fallback.
+    plain = load_model("demo-3br-2storey.json")
+    plan2d.write_plans(plain, tmp_path)
+    for storey in plain.storeys:
+        svg_text = (tmp_path / "svg" / f"{plain.name}_f{storey.level}.svg").read_text(encoding="utf-8")
+        expected = "\u00b1 0.000" if storey.base_z == 0 else f"+ {storey.base_z / 1000:.3f}"
+        assert expected in svg_text
+
+
+def test_setback_lines_rendered_in_svg_and_dxf(tmp_path):
+    """C4: dash-dot building lines at front/rear setback distances, labelled,
+    in both writers."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert 'class="setback"' in svg_text
+    assert "Ranh khoảng lùi trước" in svg_text
+    assert "Ranh khoảng lùi sau" in svg_text
+    # Front line at model y=3500 -> flipped SVG y=(25000-3500)/10.
+    assert 'y1="2150.0"' in svg_text
+    # Rear line at model y=25000-2500 -> flipped SVG y=250.0.
+    assert 'y1="250.0"' in svg_text
+    doc = ezdxf.readfile(tmp_path / "dxf" / f"{model.name}_f0.dxf")
+    msp = doc.modelspace()
+    setbacks = [e for e in msp if e.dxf.layer == "SETBACK"]
+    lines = [e for e in setbacks if e.dxftype() == "LINE"]
+    assert len(lines) == 2
+    texts = [e.dxf.text for e in setbacks if e.dxftype() == "TEXT"]
+    assert any("trước" in t for t in texts)
+    assert any("sau" in t for t in texts)
+
+
+def test_section_markers_use_drawing_labels(tmp_path):
+    """C6: cut lines carry A-A/B-B circle bubbles, not raw internal names."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert ">A-A<" in svg_text
+    assert ">B-B<" in svg_text
+    assert ">long<" not in svg_text
+    assert ">cross_bed<" not in svg_text
+    assert "<circle" in svg_text
+
+
+def test_elevator_room_cross_hatched(tmp_path):
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    svg_text = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "url(#elevhatch)" in svg_text
+
+
+def test_annotations_render_as_callouts(tmp_path):
+    """S3/S4/B2/M2: dashed boxes + italic text callouts on the plans."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    f0 = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "Tiểu cảnh, ô lấy sáng" in f0
+    assert "- 0.450" in f0 and "+ 0.200" in f0
+    for level in range(1, 6):
+        svg_text = (tmp_path / "svg" / f"{model.name}_f{level}.svg").read_text(encoding="utf-8")
+        assert "Lô gia" in svg_text, f"f{level} missing Lô gia"
+    for level in range(2, 6):
+        svg_text = (tmp_path / "svg" / f"{model.name}_f{level}.svg").read_text(encoding="utf-8")
+        assert "Ô lấy sáng 2200" in svg_text, f"f{level} missing Ô lấy sáng 2200"
+    f6 = (tmp_path / "svg" / f"{model.name}_f6.svg").read_text(encoding="utf-8")
+    assert "Ô lấy sáng" in f6
+    # Boxed callouts draw a dashed rectangle inside the annotation group.
+    assert 'class="annotation"' in f0
+    assert 'stroke-dasharray="6 3"' in f0
+
+
+def test_void_label_names_rooms_below(tmp_path):
+    """S2: the primary label over a hatched void repeats the room-below
+    names (largest overlap first); the reason stays as secondary text."""
+    model = _contractor_model()
+    plan2d.write_plans(model, tmp_path)
+    f1 = (tmp_path / "svg" / f"{model.name}_f1.svg").read_text(encoding="utf-8")
+    assert "P.KHÁCH / NƠI ĐỂ XE" in f1
+    assert "Ô THÔNG TẦNG" in f1

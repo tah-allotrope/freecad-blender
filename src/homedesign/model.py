@@ -39,6 +39,7 @@ class Room:
     rect: Rect
     name: Optional[str] = None
     interior: Optional[Rect] = None  # net usable rect after wall thickness (S5)
+    level_mm: Optional[float] = None  # finished-floor offset from storey base_z
 
 
 @dataclass
@@ -120,6 +121,7 @@ class Storey:
     floor_voids: list[Rect] = field(default_factory=list)
     authored_voids: list[Rect] = field(default_factory=list)
     authored_void_reasons: list[str] = field(default_factory=list)
+    annotations: list[dict] = field(default_factory=list)  # text callouts, not rooms
 
 
 @dataclass
@@ -134,6 +136,7 @@ class CompiledModel:
     wall_alignment: str = "centre"  # "centre" or "inside" (S5)
     sections: list[dict] = field(default_factory=list)
     north_deg: float = 0.0
+    setbacks: Optional[dict] = None  # {"front_mm", "rear_mm"} building lines
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -149,6 +152,7 @@ class CompiledModel:
                     rect=Rect(**r["rect"]),
                     name=r.get("name"),
                     interior=Rect(**r["interior"]) if r.get("interior") else None,
+                    level_mm=r.get("level_mm"),
                 )
                 for r in s["rooms"]
             ]
@@ -183,6 +187,7 @@ class CompiledModel:
                     floor_voids=[Rect(**v) for v in s.get("floor_voids", [])],
                     authored_voids=[Rect(**v) for v in s.get("authored_voids", [])],
                     authored_void_reasons=list(s.get("authored_void_reasons", [])),
+                    annotations=list(s.get("annotations", [])),
                 )
             )
         views = [View(**v) for v in data.get("views", [])]
@@ -197,6 +202,7 @@ class CompiledModel:
             wall_alignment=data.get("wall_alignment", "centre"),
             sections=list(data.get("sections", [])),
             north_deg=data.get("north_deg", 0.0),
+            setbacks=data.get("setbacks"),
         )
 
 

@@ -53,6 +53,11 @@
        "position_mm": {
         "type": "number",
         "minimum": 0
+       },
+       "label": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Optional drawing label printed at both ends of the section cut line, e.g. 'A-A'. Falls back to the uppercased name."
        }
       }
      }
@@ -149,6 +154,22 @@
      "exclusiveMaximum": 360,
      "default": 0,
      "description": "Compass bearing of north in degrees clockwise from model -y toward model +x; rotates the sun rig and the plan north arrow."
+    },
+    "setbacks": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "front_mm": {
+       "type": "number",
+       "minimum": 0,
+       "description": "Building line distance from the street boundary (y=0)."
+      },
+      "rear_mm": {
+       "type": "number",
+       "minimum": 0,
+       "description": "Building line distance from the rear boundary (y=plot_depth_mm)."
+      }
+     }
     }
    }
   },
@@ -302,40 +323,81 @@
        }
       }
      },
-     "voids": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "required": [
-        "x",
-        "y",
-        "w",
-        "d"
-       ],
-       "additionalProperties": false,
-       "properties": {
-        "x": {
-         "type": "number",
-         "minimum": 0
-        },
-        "y": {
-         "type": "number",
-         "minimum": 0
-        },
-        "w": {
-         "type": "number",
-         "exclusiveMinimum": 0
-        },
-        "d": {
-         "type": "number",
-         "exclusiveMinimum": 0
-        },
-        "reason": {
-         "type": "string"
+      "voids": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": [
+         "x",
+         "y",
+         "w",
+         "d"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "x": {
+          "type": "number",
+          "minimum": 0
+         },
+         "y": {
+          "type": "number",
+          "minimum": 0
+         },
+         "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "d": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "reason": {
+          "type": "string"
+         }
         }
        }
-      }
-     },
+      },
+      "annotations": {
+       "type": "array",
+       "description": "Text callouts drawn on the plan (dashed box when boxed). Callouts only -- they never affect checks, tiling or furniture.",
+       "items": {
+        "type": "object",
+        "required": [
+         "x",
+         "y",
+         "w",
+         "d",
+         "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "x": {
+          "type": "number",
+          "minimum": 0
+         },
+         "y": {
+          "type": "number",
+          "minimum": 0
+         },
+         "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "d": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "text": {
+          "type": "string",
+          "minLength": 1
+         },
+         "boxed": {
+          "type": "boolean",
+          "default": false
+         }
+        }
+       }
+      },
      "stairs": {
       "type": "object",
       "additionalProperties": false,
@@ -383,6 +445,10 @@
          "type": "string",
          "minLength": 1,
          "description": "Optional human-readable room label, e.g. 'Master bedroom'. Plan labels and the PDF schedule use name when present, else id."
+        },
+        "level_mm": {
+         "type": "number",
+         "description": "Finished-floor offset from the storey's base_z; prints a per-room level marker on the plan (e.g. '+ 0.100')."
         },
         "type": {
          "type": "string",
