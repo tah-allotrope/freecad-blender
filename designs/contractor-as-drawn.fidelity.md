@@ -335,8 +335,13 @@ Per-floor programme, confirmed room-by-room against the sheets this pass:
 - **L2–L4 (Tầng 2–4):** identical — one bedroom front (with ensuite +
   balcony), one bedroom rear (with ensuite). **Two bedrooms per floor, not
   three** — rev.1 invented a third bedroom in a slot that is actually the WC.
-- **L5 (Tầng 5):** P.THỜ (altar room, no ensuite) front with a balcony, one
-  bedroom rear. Rev.1 gave this floor two bedrooms and no altar room.
+- **L5 (Tầng 5):** P.THỜ (altar room) front with a balcony, a front ensuite
+  WC under the `Ô lấy sáng` light well beside the stair, and one bedroom rear.
+  Rev.1 gave this floor two bedrooms and no altar room. Rev.2 dropped the
+  front WC entirely ("no toilet/sink icons in that zone") — disproved by the
+  10× zoom of `MB 5- MAI-Model.pdf` (2026-08-21 round 2), which shows the
+  X-hatched well plus a sink-and-toilet WC directly below it; the model now
+  carries both (`wc_truoc_f5`, void 2000×1500 over the hall).
 - **L6 (Sân thượng):** open terrace front and rear, core roofed over.
 
 ## Shadows are decorative, not solar

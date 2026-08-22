@@ -143,10 +143,21 @@ bedroom is drawn on any sheet.
 
 Same rear zone as tầng 2–4 (WC 1600 + P. NGỦ 4100, one bedroom). Front zone
 differs: **P. THỜ** (altar room), 4000mm, printed directly, with an altar
-counter/table against its rear wall (drawn, not a WC). The 4800 zone between
-stair and P. THỜ is open circulation with a serving counter — no ensuite WC on
-this floor's front zone (confirmed: no toilet/sink icons in that zone, unlike
-tầng 2–4). Ban công (1400) at the front, same as tầng 2–4.
+counter/table against its rear wall (drawn, not a WC). Ban công (1400) at the
+front, same as tầng 2–4.
+
+**Midband (rev.3 correction, 2026-08-21 round 2).** Rev.2 called the whole
+stair→P.THỜ slot "open circulation with a serving counter — no ensuite WC on
+this floor's front zone". The 10× zoom (`output/contractor_pdf_png/
+zoom_t5_midband2.png`, clip of `MB 5- MAI-Model.pdf`) disproves the "no WC"
+half: directly below the stair sits an X-hatched **Ô lấy sáng** light well
+(right half, printed chain "1500" deep), and directly below that a **WC with
+sink + toilet**, entered by a door from the open hall on its left. The model
+therefore splits the 3400mm midband as: HÀNH LANG column x0–1960 full depth;
+WC x1960–3960 × 1900; void (the well) x1960–3960 × 1500 against the stair
+wall — aligned with the elevator box's left edge, mirroring tầng 2–4's
+1950-wide front WC pattern. The serving-counter reading survives only in the
+open hall column.
 
 ## Roof (`MB 5- MAI-Model.pdf` right-hand plan "MẶT BẰNG SÂN THƯỢNG", and `MB MAI - MD-Model.pdf` left-hand plan "MẶT BẰNG MÁI")
 

@@ -88,10 +88,22 @@ def test_section_cuts_every_storey_slab_and_only_cut_walls():
 
 def test_section_outside_plot_returns_only_ground():
     # A plane clearly outside the plot (far past the 100mm centre-aligned wall
-    # overhang) cuts nothing.
+    # overhang) cuts no geometry -- only the ground line and the annotation
+    # level tags remain.
     model = _demo()
     items = build_section(model, "x", -1000.0)
-    assert [i["kind"] for i in items] == ["ground"]
+    assert [i["kind"] for i in items if i["kind"] != "level"] == ["ground"]
+
+
+def test_section_carries_storey_level_tags():
+    """A2: MC A-A tags every finished-floor level down the cut."""
+    model = _demo()
+    items = build_section(model, "x", 5000.0)
+    levels = [i for i in items if i["kind"] == "level"]
+    assert len(levels) == len(model.storeys)
+    for tag, storey in zip(levels, model.storeys):
+        assert tag["z"] == storey.base_z
+        assert f"+{storey.base_z / 1000:.3f}" in tag["label"]
 
 
 def test_write_elevations_and_sections_produce_valid_files(tmp_path):

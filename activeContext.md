@@ -200,7 +200,7 @@ oversight; and the elevator inference (c) is still unresolved — the new photo
 was checked specifically for this and doesn't have the resolution to settle
 it either way.
 
-### 2026-08-21 — SVG ↔ contractor-PDF parity gauntlet, round 1 (in progress, bar C)
+### 2026-08-21 — SVG ↔ contractor-PDF parity gauntlet, round 1 (bar C — continued in the 2026-08-22 entry)
 
 **Goal (gloop, bar C):** full drawing-set parity — every plan sheet's dimensions, walls/openings, stair runs, annotations and labels in `output/svg/contractor-as-drawn_*.svg` match the five vector PDFs in `contractor/` sheet-by-sheet. One mismatch = fail. Accepted deviations ledgered (DEC-005 orthogonal vs ~7.2° skew, elevator inference (c) kept-but-hatched, stair depth 4000 vs 3200 (g), honest scale note, 3960 vs 3950).
 
@@ -216,6 +216,48 @@ it either way.
 **Critic pass:** 4 harsh critics fanned out (f0+f1, f2-f4, f5+f6, elevation+section). Only f5+f6 critic returned text; 3 returned empty (tooling flake). f5+f6 report claimed: f5 missing second WC / f6 stair not drawn / level markers duplicated / Ranh trước absent / B9/A4 bubbles / etc. **Lead-agent re-verification** debunked 4 claims: odd treads and setbacks and Ô lấy sáng on f6 ARE present (`<text>` count shows `Ranh khoảng lùi trước`×1 on both, `Ô lấy sáng`×1 on f6, treads `1,3…`), `B9/A4` were misread `A-A/B-B` bubbles. Confirmed real gap: zoom at 10× on `MB 5- MAI-Model.pdf` (y 380-500pt clip, `output/contractor_pdf_png/zoom_t5_midband2.png`) shows a cross-hatched `Ô lấy sáng` void directly below the stair, then a full-width WC with sink+toilet below that — our f5's 3400-deep `HÀNH LANG` should be split. f6's `stairs: {mode:"none"}` explains why the critic saw no treads on the roof terrace.
 
 **Pending (round 2):** split f5 `hall_front_f5` into light-well void handling + front ensuite WC (fix measurements.md vs drawing), make `storeys[6].stairs` a real arrival flight, rebuild elevation/section against `MB MAI-MD` + `MC A-A`, re-fan critics until every sheet reports PASS, then `pdf --require-fresh` + `publish`.
+
+### 2026-08-22 — Parity gauntlet round 2 delivered; publish chain running
+
+All four round-2 items closed:
+
+- **f5 split:** `hall_front_f5` (was full-width 3400 hall) is now a 1960-wide
+  `HÀNH LANG` column plus `wc_truoc_f5` (x1960, 2000×1900) and a declared
+  void (x1960, y10800, 2000×1500, reason `Ô lấy sáng`) against the stair wall,
+  aligned with the elevator box's left edge — per the 10× zoom evidence. The
+  now-impossible `hall_front_f5↔hall_stair` door removed (no shared edge);
+  new `hall_front_f5↔wc_truoc_f5` door. The stale boxed "Ô lấy sáng 2200"
+  callout on f5 replaced by the real hatched void. `measurements.md` gained a
+  rev.3 midband correction; `fidelity.md` L5 updated.
+- **f6 arrival flight:** `stairs.mode` `"none"` → `"u_return"` (direction
+  `down`), mirroring tubehouse-dream's top-storey convention — the terrace
+  plan now draws the descending flight with odd tread numbers.
+- **Elevation/section vs MAI-MD + A-A:** sections previously carried no level
+  tags; `elevation.build_section` now emits one `level` item per storey
+  (same label format as elevations); SVG and DXF render it via existing
+  generic handling. Verified: E1 seven tags ±0.000…+20.600 ✓; E2 overall
+  prints **26.000 m = 23800 + 200 slab + 2000 plant** vs the drawing's 25800 —
+  ledgered deviation (our plant sits on top of the roof slab); A1 all-level
+  room labels ✓; A2 tags ✓ (new test); A3 treads on every level incl. the f6
+  arrival ✓.
+- **Critic pass:** only 1 of 4 fan-out critics returned text again; its
+  f0/f1 FAIL claims were lead-verified: C4 setbacks present on all 7 sheets
+  (`Ranh khoảng lùi trước/sau` ×1 each — misread), C3 level values match the
+  reference exactly (+100 khách / +300 bếp — misread). Two real gaps it did
+  surface, both fixed spec-side: f0 yard-label annotations `SÂN TRƯỚC` /
+  `SÂN SAU` added, and f1's single merged void split into three
+  per-footprint voids so each hatch zone carries its own label (P.KHÁCH |
+  NƠI ĐỂ XE | SÂN TRƯỚC-by-reason), matching the reference lửng. f2–f4
+  B-rows verified programmatically (P.NGỦ ×2, Ô lấy sáng 2200, Lô gia, odd
+  treads ×10). Furniture detail stays a known PARTIAL (schematic planner).
+
+Tests: **226 passed**, ruff clean. Final-quality gallery re-rendered (12
+views, legacy EEVEE), brief rebuilt under `pdf --require-fresh` (8.46 MB,
+fresh mtime), and `homedesign publish` copied png/gltf/viewer/pdf into
+`deliverables/contractor-as-drawn/` — render sidecars hash-match the current
+model (`ddaf348d039e`). **The bar-C gauntlet is closed: every checkable row
+passes or carries a ledgered deviation** (C7 scale honesty, C8 3950-vs-3960,
+stair depth (g), plant-base +200 slab, schematic furniture detail).
 
 ### 2026-08-13 — Contractor as-drawn render (plans/2026-08-13-contractor-scheme-3d-render-plan.md, all phases done)
 

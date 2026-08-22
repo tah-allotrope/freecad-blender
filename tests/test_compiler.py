@@ -462,9 +462,10 @@ def test_contractor_declares_void_not_fake_room():
     model = compile_spec(spec)
     assert all(r.id != "void_fill" for s in model.storeys for r in s.rooms)
     storey1 = model.storeys[1]
-    assert len(storey1.authored_voids) == 1
-    v = storey1.authored_voids[0]
-    assert (v.w, v.d) == (3960, 8800)
+    # Three voids since round 2: one per room-below footprint (khách, xe)
+    # plus the yard strip labelled by reason, tiling y 500-12300.
+    assert len(storey1.authored_voids) == 3
+    assert sum(v.d for v in storey1.authored_voids) == 11800
     assert validate_compiled(model) == []
 
 

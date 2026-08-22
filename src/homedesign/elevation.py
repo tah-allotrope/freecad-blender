@@ -274,6 +274,12 @@ def build_section(model: CompiledModel, axis: str, position_mm: float) -> list[d
                 "kind": "head_annotation", "x": xpos, "z": base + opening.head_mm, "w": 0, "h": 0,
                 "label": f"+{opening.head_mm / 1000:.3f}", "type": None,
             })
+    # Storey level tags down the cut, as MC A-A carries them (checklist A2).
+    for storey in model.storeys:
+        items.append({
+            "kind": "level", "x": 0.0, "z": storey.base_z, "w": width_mm, "h": 0.0,
+            "label": f"{storey.name}  +{storey.base_z / 1000:.3f}", "type": None,
+        })
     return items
 
 

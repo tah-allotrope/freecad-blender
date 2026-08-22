@@ -548,9 +548,12 @@ def test_annotations_render_as_callouts(tmp_path):
     for level in range(1, 6):
         svg_text = (tmp_path / "svg" / f"{model.name}_f{level}.svg").read_text(encoding="utf-8")
         assert "Lô gia" in svg_text, f"f{level} missing Lô gia"
-    for level in range(2, 6):
+    for level in range(2, 5):
         svg_text = (tmp_path / "svg" / f"{model.name}_f{level}.svg").read_text(encoding="utf-8")
         assert "Ô lấy sáng 2200" in svg_text, f"f{level} missing Ô lấy sáng 2200"
+    # f5's light well is a real declared void since round 2, not a callout.
+    f5 = (tmp_path / "svg" / f"{model.name}_f5.svg").read_text(encoding="utf-8")
+    assert "voidhatch" in f5 and "Ô lấy sáng" in f5
     f6 = (tmp_path / "svg" / f"{model.name}_f6.svg").read_text(encoding="utf-8")
     assert "Ô lấy sáng" in f6
     # Boxed callouts draw a dashed rectangle inside the annotation group.
@@ -559,10 +562,14 @@ def test_annotations_render_as_callouts(tmp_path):
 
 
 def test_void_label_names_rooms_below(tmp_path):
-    """S2: the primary label over a hatched void repeats the room-below
-    names (largest overlap first); the reason stays as secondary text."""
+    """S2: the labels over the hatched lửng voids repeat each room-below
+    name separately (the voids are split per room-below footprint), and
+    the yard strip over no room falls back to its reason text."""
     model = _contractor_model()
     plan2d.write_plans(model, tmp_path)
     f1 = (tmp_path / "svg" / f"{model.name}_f1.svg").read_text(encoding="utf-8")
-    assert "P.KHÁCH / NƠI ĐỂ XE" in f1
-    assert "Ô THÔNG TẦNG" in f1
+    assert "P.KHÁCH" in f1
+    assert "NƠI ĐỂ XE" in f1
+    assert "SÂN TRƯỚC" in f1
+    f0 = (tmp_path / "svg" / f"{model.name}_f0.svg").read_text(encoding="utf-8")
+    assert "SÂN TRƯỚC" in f0 and "SÂN SAU" in f0

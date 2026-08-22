@@ -328,11 +328,27 @@
           "boxed": false
         },
         {
-          "x": 1580,
-          "y": 24050,
-          "w": 800,
+          "x": 1280,
+          "y": 2050,
+          "w": 1400,
           "d": 700,
+          "text": "SÂN TRƯỚC",
+          "boxed": false
+        },
+        {
+          "x": 1580,
+          "y": 24540,
+          "w": 800,
+          "d": 460,
           "text": "+ 0.200",
+          "boxed": false
+        },
+        {
+          "x": 1430,
+          "y": 23900,
+          "w": 1100,
+          "d": 560,
+          "text": "SÂN SAU",
           "boxed": false
         }
       ]
@@ -474,10 +490,24 @@
       "voids": [
         {
           "x": 0,
+          "y": 7500,
+          "w": 3960,
+          "d": 4800,
+          "reason": ""
+        },
+        {
+          "x": 0,
           "y": 3500,
           "w": 3960,
-          "d": 8800,
-          "reason": "Ô THÔNG TẦNG (double-height void per drawing)"
+          "d": 4000,
+          "reason": ""
+        },
+        {
+          "x": 0,
+          "y": 500,
+          "w": 3960,
+          "d": 3000,
+          "reason": "SÂN TRƯỚC"
         }
       ],
       "annotations": [
@@ -1450,9 +1480,21 @@
           "rect": {
             "x": 0,
             "y": 8900,
-            "w": 3960,
+            "w": 1960,
             "d": 3400
           }
+        },
+        {
+          "id": "wc_truoc_f5",
+          "type": "wc",
+          "name": "WC",
+          "rect": {
+            "x": 1960,
+            "y": 8900,
+            "w": 2000,
+            "d": 1900
+          },
+          "level_mm": 0
         },
         {
           "id": "stairwell",
@@ -1545,6 +1587,14 @@
         {
           "type": "door",
           "between": [
+            "hall_front_f5",
+            "wc_truoc_f5"
+          ],
+          "width_mm": 900
+        },
+        {
+          "type": "door",
+          "between": [
             "tho_f5",
             "hall_front_f5"
           ],
@@ -1555,14 +1605,6 @@
           "between": [
             "hall_front_f5",
             "stairwell"
-          ],
-          "width_mm": 900
-        },
-        {
-          "type": "door",
-          "between": [
-            "hall_front_f5",
-            "hall_stair"
           ],
           "width_mm": 900
         },
@@ -1640,6 +1682,15 @@
           "width_mm": 1500
         }
       ],
+      "voids": [
+        {
+          "x": 1960,
+          "y": 10800,
+          "w": 2000,
+          "d": 1500,
+          "reason": "Ô lấy sáng"
+        }
+      ],
       "annotations": [
         {
           "x": 2560,
@@ -1648,14 +1699,6 @@
           "d": 600,
           "text": "Lô gia",
           "boxed": false
-        },
-        {
-          "x": 880,
-          "y": 10400,
-          "w": 2200,
-          "d": 1900,
-          "text": "Ô lấy sáng 2200",
-          "boxed": true
         }
       ]
     },
@@ -1666,7 +1709,7 @@
       "stairs": {
         "room": "stairwell",
         "direction": "down",
-        "mode": "none"
+        "mode": "u_return"
       },
       "rooms": [
         {
