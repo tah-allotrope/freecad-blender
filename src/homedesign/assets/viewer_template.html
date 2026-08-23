@@ -39,7 +39,7 @@
     <div class="title" id="overlay-title">Loading __TITLE__&hellip;</div>
     <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
   </div>
-  <div id="hud">__TITLE__ &mdash; drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; two-finger or right-drag to pan &middot; tap a spot to step closer</div>
+  <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; two-finger or right-drag to pan &middot; tap a spot to step closer</div>
   <button id="reset-btn" type="button">Reset view</button>
 </div>
 <script>__THREE_JS__</script>
@@ -82,7 +82,25 @@
   var isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
   var scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1c1f26);
+
+  // A vertical sky gradient instead of a flat void: zenith blue through
+  // horizon haze into a muted ground tone below the horizon line, so the
+  // model sits in a plausible atmosphere rather than on a black backdrop.
+  function makeSkyTexture() {
+    var c = document.createElement('canvas');
+    c.width = 2; c.height = 512;
+    var g = c.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0.0, '#9fc3de');
+    grad.addColorStop(0.5, '#cfe0ec');
+    grad.addColorStop(0.58, '#d8e2e6');
+    grad.addColorStop(0.66, '#b9beb2');
+    grad.addColorStop(1.0, '#8f948a');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 2, 512);
+    return new THREE.CanvasTexture(c);
+  }
+  scene.background = makeSkyTexture();
 
   var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 500);
   // The GLB is exported Blender-native (export_yup=False): Z is vertical,
@@ -105,15 +123,18 @@
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // Lights: key sun, fill, and a soft rim so the model reads from every angle.
-  scene.add(new THREE.AmbientLight(0x8899aa, 0.5));
-  var key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(6, 10, 8);
+  // Lights: sky/ground bounce (hemisphere) plus one warm sun that casts
+  // soft contact shadows, so massing reads as solid instead of floating.
+  scene.add(new THREE.HemisphereLight(0xcfe0ee, 0x8f887a, 0.85));
+  var key = new THREE.DirectionalLight(0xfff2dd, 1.35);
+  key.castShadow = !isCoarsePointer;
+  key.shadow.mapSize.set(isCoarsePointer ? 1024 : 2048, isCoarsePointer ? 1024 : 2048);
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.02;
   scene.add(key);
-  var fill = new THREE.DirectionalLight(0xaabbcc, 0.35);
-  fill.position.set(-6, 4, -6);
-  scene.add(fill);
 
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -148,6 +169,17 @@
 
   function onModel(gltf) {
     var root = gltf.scene || gltf.scenes[0];
+    root.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      obj.castShadow = true;
+      obj.receiveShadow = true;
+      // Quantized GLB materials can arrive too glossy for daylight massing.
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (m) {
+        if (m && m.roughness !== undefined && m.roughness < 0.55) m.roughness = 0.75;
+        if (m && m.metalness !== undefined && m.metalness > 0.2) m.metalness = 0.0;
+      });
+    });
     scene.add(root);
     modelRoot = root;
 
@@ -163,12 +195,58 @@
     controls.minDistance = radius * 0.01;
     controls.maxDistance = radius * 8;
 
-    var dist = radius * 2.4;
-    camera.position.set(centre.x + dist * 0.7, centre.y + dist * 0.6, centre.z + dist);
-    controls.target.copy(centre);
+    // Fit the sun and its shadow frustum to the real site extent (including
+    // ground/street context), so contact shadows land where the building is.
+    // The default hero camera stands south-west of the model looking north:
+    // putting the sun east-high throws raking shadows toward the viewer,
+    // which is what makes massing read as solid instead of floating.
+    key.position.set(centre.x + radius * 0.9, centre.y + radius * 1.3, centre.z + radius * 1.7);
+    if (key.target) {
+      key.target.position.copy(centre);
+      scene.add(key.target);
+    }
+    var s = key.shadow.camera;
+    s.left = -radius * 1.6; s.right = radius * 1.6;
+    s.top = radius * 1.6; s.bottom = -radius * 1.6;
+    s.near = radius * 0.05; s.far = radius * 6;
+    s.updateProjectionMatrix();
+
+    // Depth cue + edge blend: haze the far reaches of the site plane into
+    // the horizon so the exported ground rectangle doesn't end on a hard
+    // line, and calm the site-context greens so white massing keeps
+    // contrast against its surroundings.
+    scene.fog = new THREE.Fog(0xd8e2e6, radius * 3, radius * 16);
+    root.traverse(function (obj) {
+      if (!obj.isMesh || !SITE_CONTEXT_NAME.test(obj.name)) return;
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (m) {
+        if (m && m.color) m.color.multiplyScalar(0.82);
+      });
+    });
+
+    // Hero framing: three-quarter view with the building filling ~60% of the
+    // frame height, derived from the actual FOV instead of a fixed distance
+    // multiple that leaves it a speck on tall/narrow models.
+    var vFov = camera.fov * Math.PI / 180;
+    var hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    var distH = (size.z * 0.5) / Math.tan(vFov / 2);
+    var distW = (Math.max(size.x, size.y) * 0.5) / Math.tan(hFov / 2);
+    var dist = Math.max(distH, distW) / 0.6;
+    // Unit hero direction scaled by the fitted distance, not per-axis
+    // multiples of it (which compounded to ~1.4x too far).
+    var dir = new THREE.Vector3(0.62, -0.55, 0).normalize();
+    camera.position.set(
+      centre.x + dir.x * dist,
+      centre.y + dir.y * dist,
+      centre.z + size.z * 0.35
+    );
+    controls.target.set(centre.x, centre.y, centre.z - size.z * 0.06);
     controls.update();
 
     homeState = { position: camera.position.clone(), target: controls.target.clone() };
+    // Debug/testing handle: lets automation inspect or drive the scene
+    // (shadow toggles, camera moves) without reaching into the IIFE.
+    window.__viewer = { scene: scene, camera: camera, renderer: renderer, controls: controls, key: key, modelRoot: root };
     overlay.classList.add('hidden');
   }
 

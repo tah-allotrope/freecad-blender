@@ -582,10 +582,14 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
         return "\n".join(parts)
 
     start, end = coords_mm[0], coords_mm[-1]
+    # SVG rejects negative rect dimensions (the whole element is dropped, not
+    # just flipped), so normalise the run's pixel extent explicitly -- after
+    # the rear-at-TOP orientation flip, end < start is normal for v-chains.
     if axis == "h":
         y = margin_px - offset_px
-        parts.append(f'<rect x="{to_px(start):.1f}" y="{y - 0.25:.1f}" '
-                     f'width="{to_px(end) - to_px(start):.1f}" height="0.5" fill="#000"/>')
+        rx, rw = sorted((to_px(start), to_px(end)))
+        parts.append(f'<rect x="{rx:.1f}" y="{y - 0.25:.1f}" '
+                     f'width="{rw - rx:.1f}" height="0.5" fill="#000"/>')
         for v in coords_mm:
             parts.append(f'<line x1="{to_px(v):.1f}" y1="{y - 3:.1f}" x2="{to_px(v):.1f}" '
                          f'y2="{y + 3:.1f}" stroke="#000" stroke-width="0.5"/>')
@@ -595,8 +599,9 @@ def _dimension_chain(coords_mm: list[float], axis: str, offset_px: float, extent
                          f'text-anchor="middle">{int(round(b - a))}</text>')
     else:
         x = margin_px - offset_px
-        parts.append(f'<rect x="{x - 0.25:.1f}" y="{to_py(start):.1f}" '
-                     f'width="0.5" height="{to_py(end) - to_py(start):.1f}" fill="#000"/>')
+        ry, rh = sorted((to_py(start), to_py(end)))
+        parts.append(f'<rect x="{x - 0.25:.1f}" y="{ry:.1f}" '
+                     f'width="0.5" height="{rh - ry:.1f}" fill="#000"/>')
         for v in coords_mm:
             parts.append(f'<line x1="{x - 3:.1f}" y1="{to_py(v):.1f}" x2="{x + 3:.1f}" '
                          f'y2="{to_py(v):.1f}" stroke="#000" stroke-width="0.5"/>')

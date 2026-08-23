@@ -1,14 +1,36 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1c1f26">
-<title>homedesign &mdash; tubehouse-dream</title>
+<title>homedesign &mdash; tubehouse-dream by floor</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: #1c1f26;
                font-family: "Segoe UI", sans-serif; -webkit-text-size-adjust: 100%; }
-  #app { position: relative; width: 100%; height: 100%; }
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  #tabs { flex: 0 0 auto; display: flex; gap: 6px; overflow-x: auto; padding: 10px 12px;
+          background: #14161b; border-bottom: 1px solid rgba(255,255,255,0.08); box-sizing: border-box;
+          -webkit-overflow-scrolling: touch; }
+  #tabs button { flex: 0 0 auto; padding: 8px 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.15);
+                 background: transparent; color: #b7bbc4; font: inherit; font-size: 13px; letter-spacing: 0.02em;
+                 cursor: pointer; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+  #tabs button.active { background: #d8dbe0; color: #14161b; border-color: #d8dbe0; font-weight: 600; }
+
+  #main { flex: 1 1 auto; display: flex; min-height: 0; }
+  @media (max-width: 860px) { #main { flex-direction: column; } }
+
+  #plan-pane { flex: 0 0 360px; min-width: 0; min-height: 0; box-sizing: border-box; padding: 16px;
+               background: #1c1f26; }
+  @media (max-width: 860px) { #plan-pane { flex: 0 0 38vh; width: 100%; } }
+  .plan { display: none; width: 100%; height: 100%; }
+  .plan.active { display: block; }
+  .plan-sheet { width: 100%; height: 100%; background: #fff; border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.4); overflow: hidden; padding: 10px; box-sizing: border-box; }
+  .plan-sheet svg { display: block; width: 100%; height: 100%; }
+
+  #viewer-pane { flex: 1 1 auto; position: relative; min-width: 0; min-height: 0; background: #1c1f26; }
   #viewer { display: block; width: 100%; height: 100%; touch-action: none; outline: none;
             -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   #hud { position: absolute; left: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); color: #d8dbe0;
@@ -33,14 +55,991 @@
 </head>
 <body>
 <div id="app">
-  <canvas id="viewer"></canvas>
-  <div id="overlay">
-    <div class="spinner" id="overlay-spinner"></div>
-    <div class="title" id="overlay-title">Loading tubehouse-dream&hellip;</div>
-    <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
+  <div id="tabs"><button type="button" aria-pressed="true" class="active">Ground Floor - Garage &amp; Lease</button><button type="button" aria-pressed="false">Floor 1 - Lease Studio</button><button type="button" aria-pressed="false">Floor 2 - Living, Kitchen &amp; Dining</button><button type="button" aria-pressed="false">Floor 3 - Master Suite &amp; Kid's Room</button><button type="button" aria-pressed="false">Floor 4 - Office, Guest Room &amp; Roof Terrace</button></div>
+  <div id="main">
+    <div id="plan-pane"><div class="plan active" data-floor="0"><div class="plan-sheet"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 2700" preserveAspectRatio="xMidYMid meet" font-family="sans-serif">
+<rect x="0" y="0" width="600" height="2700" fill="white"/>
+<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>
+<rect x="400.0" y="1200.0" width="100.0" height="140.0" fill="#c9c9d9" stroke="none"/>
+<text x="450.0" y="1270.0" font-size="12" text-anchor="middle" fill="#333">elevator</text>
+<text x="450.0" y="1284.0" font-size="10" text-anchor="middle" fill="#666">1.4 m&#178;</text>
+<rect x="100.0" y="1200.0" width="190.0" height="370.0" fill="#d9d9d9" stroke="none"/>
+<text x="195.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">stair</text>
+<text x="195.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">7.0 m&#178;</text>
+<rect x="290.0" y="1200.0" width="110.0" height="370.0" fill="#eeeeee" stroke="none"/>
+<text x="345.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">hall</text>
+<text x="345.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">4.1 m&#178;</text>
+<rect x="100.0" y="100.0" width="400.0" height="700.0" fill="#c9c9c9" stroke="none"/>
+<text x="300.0" y="450.0" font-size="12" text-anchor="middle" fill="#333">garage</text>
+<text x="300.0" y="464.0" font-size="10" text-anchor="middle" fill="#666">28.0 m&#178;</text>
+<rect x="100.0" y="800.0" width="400.0" height="400.0" fill="#eeeeee" stroke="none"/>
+<text x="300.0" y="1000.0" font-size="12" text-anchor="middle" fill="#333">entry_hall</text>
+<text x="300.0" y="1014.0" font-size="10" text-anchor="middle" fill="#666">16.0 m&#178;</text>
+<rect x="100.0" y="1570.0" width="400.0" height="1030.0" fill="#e0e0d0" stroke="none"/>
+<text x="300.0" y="2085.0" font-size="12" text-anchor="middle" fill="#333">lease_gf</text>
+<text x="300.0" y="2099.0" font-size="10" text-anchor="middle" fill="#666">41.2 m&#178;</text>
+<rect x="395.0" y="1200.0" width="10.0" height="140.0" fill="#888"/>
+<rect x="380.0" y="1340.0" width="20.0" height="230.0" fill="#222"/>
+<rect x="480.0" y="100.0" width="20.0" height="700.0" fill="#222"/>
+<rect x="480.0" y="800.0" width="20.0" height="400.0" fill="#222"/>
+<rect x="480.0" y="1200.0" width="20.0" height="140.0" fill="#222"/>
+<rect x="480.0" y="1570.0" width="20.0" height="1030.0" fill="#222"/>
+<rect x="100.0" y="1195.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1195.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1195.0" width="100.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1320.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="20.0" height="700.0" fill="#222"/>
+<rect x="100.0" y="800.0" width="20.0" height="400.0" fill="#222"/>
+<rect x="100.0" y="1200.0" width="20.0" height="370.0" fill="#222"/>
+<rect x="100.0" y="1570.0" width="20.0" height="1030.0" fill="#222"/>
+<rect x="285.0" y="1200.0" width="10.0" height="370.0" fill="#888"/>
+<rect x="100.0" y="1565.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1565.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1570.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="400.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="795.0" width="400.0" height="10.0" fill="#888"/>
+<rect x="100.0" y="2580.0" width="400.0" height="20.0" fill="#222"/>
+<line x1="400.0" y1="1220.0" x2="500.0" y2="1220.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 400.0 1220.0 A 100.0 100.0 0 0 1 400.0 1320.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1340.0" x2="380.0" y2="1340.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1340.0 A 90.0 90.0 0 0 1 290.0 1430.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="150.0" y1="110.0" x2="150.0" y2="410.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 150.0 110.0 A 300.0 300.0 0 0 1 450.0 110.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="240.0" y1="800.0" x2="240.0" y2="920.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 240.0 800.0 A 120.0 120.0 0 0 1 360.0 800.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1200.0" x2="300.0" y2="1290.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1200.0 A 90.0 90.0 0 0 1 390.0 1200.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1570.0" x2="300.0" y2="1660.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1570.0 A 90.0 90.0 0 0 1 390.0 1570.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="405.0" y1="1580.0" x2="495.0" y2="1580.0" stroke="#3a7bd5" stroke-width="3"/><line x1="405.0" y1="1577.0" x2="495.0" y2="1577.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="405.0" y1="1583.0" x2="495.0" y2="1583.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="400.0" x2="110.0" y2="500.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="400.0" x2="107.0" y2="500.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="400.0" x2="113.0" y2="500.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">
+<rect data-furniture="car" x="210.0" y="232.5" width="180.0" height="450.0"/>
+<rect data-furniture="console" x="130.0" y="815.0" width="35.0" height="370.0"/>
+<rect data-furniture="desk" x="140.0" y="1610.0" width="140.0" height="70.0"/>
+</g>
+<rect x="100.0" y="1200.0" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1215.6" font-size="7" text-anchor="middle" fill="#555">1</text>
+<rect x="100.0" y="1225.2" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1240.8" font-size="7" text-anchor="middle" fill="#555">2</text>
+<rect x="100.0" y="1250.4" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1266.0" font-size="7" text-anchor="middle" fill="#555">3</text>
+<rect x="100.0" y="1275.7" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1291.3" font-size="7" text-anchor="middle" fill="#555">4</text>
+<rect x="100.0" y="1300.9" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1316.5" font-size="7" text-anchor="middle" fill="#555">5</text>
+<rect x="100.0" y="1326.1" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1341.7" font-size="7" text-anchor="middle" fill="#555">6</text>
+<rect x="100.0" y="1351.3" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1366.9" font-size="7" text-anchor="middle" fill="#555">7</text>
+<rect x="100.0" y="1376.5" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1392.1" font-size="7" text-anchor="middle" fill="#555">8</text>
+<rect x="100.0" y="1401.7" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1417.3" font-size="7" text-anchor="middle" fill="#555">9</text>
+<rect x="100.0" y="1427.0" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1442.6" font-size="7" text-anchor="middle" fill="#555">10</text>
+<rect x="100.0" y="1452.2" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1467.8" font-size="7" text-anchor="middle" fill="#555">11</text>
+<rect x="100.0" y="1477.4" width="190.0" height="92.6" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="195.0" y="1526.7" font-size="7" text-anchor="middle" fill="#555">12</text>
+<rect x="200.0" y="1452.2" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1467.8" font-size="7" text-anchor="middle" fill="#555">13</text>
+<rect x="200.0" y="1427.0" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1442.6" font-size="7" text-anchor="middle" fill="#555">14</text>
+<rect x="200.0" y="1401.7" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1417.3" font-size="7" text-anchor="middle" fill="#555">15</text>
+<rect x="200.0" y="1376.5" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1392.1" font-size="7" text-anchor="middle" fill="#555">16</text>
+<rect x="200.0" y="1351.3" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1366.9" font-size="7" text-anchor="middle" fill="#555">17</text>
+<rect x="200.0" y="1326.1" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1341.7" font-size="7" text-anchor="middle" fill="#555">18</text>
+<rect x="200.0" y="1300.9" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1316.5" font-size="7" text-anchor="middle" fill="#555">19</text>
+<rect x="200.0" y="1275.7" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1291.3" font-size="7" text-anchor="middle" fill="#555">20</text>
+<rect x="200.0" y="1250.4" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1266.0" font-size="7" text-anchor="middle" fill="#555">21</text>
+<rect x="200.0" y="1225.2" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1240.8" font-size="7" text-anchor="middle" fill="#555">22</text>
+<rect x="200.0" y="1200.0" width="90.0" height="25.2" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1215.6" font-size="7" text-anchor="middle" fill="#555">23</text>
+<g class="dim-chain" data-tier="1" data-axis="h">
+<rect x="100.0" y="59.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="57.0" x2="100.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="290.0" y1="57.0" x2="290.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="400.0" y1="57.0" x2="400.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="57.0" x2="500.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<text x="195.0" y="54.0" font-size="10" text-anchor="middle">1900</text>
+<text x="345.0" y="54.0" font-size="10" text-anchor="middle">1100</text>
+<text x="450.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="h">
+<rect x="100.0" y="19.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="17.0" x2="100.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="17.0" x2="500.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<text x="300.0" y="14.0" font-size="10" text-anchor="middle">4000</text>
+</g>
+<g class="dim-chain" data-tier="1" data-axis="v">
+<rect x="59.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="57.0" y1="100.0" x2="63.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="800.0" x2="63.0" y2="800.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1200.0" x2="63.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1340.0" x2="63.0" y2="1340.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1570.0" x2="63.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2600.0" x2="63.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="54.0" y="450.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 450.0)">7000</text>
+<text x="54.0" y="1000.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1000.0)">4000</text>
+<text x="54.0" y="1270.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1270.0)">1400</text>
+<text x="54.0" y="1455.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1455.0)">2300</text>
+<text x="54.0" y="2085.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2085.0)">10300</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="v">
+<rect x="19.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="17.0" y1="100.0" x2="23.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="800.0" x2="23.0" y2="800.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1200.0" x2="23.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1570.0" x2="23.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2600.0" x2="23.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="14.0" y="450.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 450.0)">7000</text>
+<text x="14.0" y="1000.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1000.0)">4000</text>
+<text x="14.0" y="1385.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1385.0)">3700</text>
+<text x="14.0" y="2085.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2085.0)">10300</text>
+</g>
+<g class="dim-chain" data-tier="3" data-axis="v">
+<rect x="-20.2" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="-23.0" y1="100.0" x2="-17.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="-23.0" y1="2600.0" x2="-17.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="-26.0" y="1350.0" font-size="10" text-anchor="middle" transform="rotate(-90 -26.0 1350.0)">25000</text>
+</g>
+
+<g class="level-marker"><text x="100.0" y="86.0" font-size="12" fill="#222">± 0.000</text></g>
+<g class="plot-boundary"><rect x="100.0" y="100.0" width="400.0" height="2500.0" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/><text x="300.0" y="94.0" font-size="10" text-anchor="middle" fill="#555">Ranh lộ giới</text></g>
+<g transform="translate(70.0,60.0)"><path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/><text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text></g>
+<g transform="translate(70.0,2640.0)">
+<rect x="0.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="50.0" y="26" font-size="10" text-anchor="middle" fill="#222">1</text>
+<rect x="100.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="150.0" y="26" font-size="10" text-anchor="middle" fill="#222">2</text>
+<rect x="200.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="250.0" y="26" font-size="10" text-anchor="middle" fill="#222">3</text>
+<rect x="300.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="350.0" y="26" font-size="10" text-anchor="middle" fill="#222">4</text>
+<rect x="400.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="450.0" y="26" font-size="10" text-anchor="middle" fill="#222">5</text>
+<text x="-6" y="26" font-size="10" text-anchor="end" fill="#222">0</text>
+<text x="250.0" y="42" font-size="10" text-anchor="middle" fill="#666">m</text>
+</g>
+<rect x="200.0" y="2560.0" width="360.0" height="100.0" fill="white" stroke="#222" stroke-width="1.2"/>
+<text x="212.0" y="2582.0" font-size="11" fill="#222">tubehouse-dream</text>
+<text x="212.0" y="2602.0" font-size="11" fill="#222">Ground Floor - Garage &amp; Lease</text>
+<text x="212.0" y="2622.0" font-size="11" fill="#222">Plot 4.0 m x 25.0 m</text>
+<text x="212.0" y="2642.0" font-size="11" fill="#222">Scale: use the graphic bar</text>
+</svg></div></div><div class="plan" data-floor="1"><div class="plan-sheet"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 2700" preserveAspectRatio="xMidYMid meet" font-family="sans-serif">
+<rect x="0" y="0" width="600" height="2700" fill="white"/>
+<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>
+<rect x="400.0" y="1200.0" width="100.0" height="140.0" fill="#c9c9d9" stroke="none"/>
+<text x="450.0" y="1270.0" font-size="12" text-anchor="middle" fill="#333">elevator</text>
+<text x="450.0" y="1284.0" font-size="10" text-anchor="middle" fill="#666">1.4 m&#178;</text>
+<rect x="100.0" y="1200.0" width="190.0" height="370.0" fill="#d9d9d9" stroke="none"/>
+<text x="195.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">stair</text>
+<text x="195.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">7.0 m&#178;</text>
+<rect x="290.0" y="1200.0" width="110.0" height="370.0" fill="#eeeeee" stroke="none"/>
+<text x="345.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">hall</text>
+<text x="345.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">4.1 m&#178;</text>
+<rect x="100.0" y="100.0" width="400.0" height="1100.0" fill="#e0e0d0" stroke="none"/>
+<text x="300.0" y="650.0" font-size="12" text-anchor="middle" fill="#333">lease_f1</text>
+<text x="300.0" y="664.0" font-size="10" text-anchor="middle" fill="#666">44.0 m&#178;</text>
+<rect x="100.0" y="1570.0" width="400.0" height="880.0" fill="#e0e0d0" stroke="none"/>
+<text x="300.0" y="2010.0" font-size="12" text-anchor="middle" fill="#333">lease_f1_rear</text>
+<text x="300.0" y="2024.0" font-size="10" text-anchor="middle" fill="#666">35.2 m&#178;</text>
+<rect x="100.0" y="2450.0" width="200.0" height="150.0" fill="#cfe3e8" stroke="none"/>
+<text x="200.0" y="2525.0" font-size="12" text-anchor="middle" fill="#333">wc_f1</text>
+<text x="200.0" y="2539.0" font-size="10" text-anchor="middle" fill="#666">3.0 m&#178;</text>
+<rect x="300.0" y="2450.0" width="200.0" height="150.0" fill="#dcdcdc" stroke="none"/>
+<text x="400.0" y="2525.0" font-size="12" text-anchor="middle" fill="#333">storage_f1</text>
+<text x="400.0" y="2539.0" font-size="10" text-anchor="middle" fill="#666">3.0 m&#178;</text>
+<rect x="395.0" y="1200.0" width="10.0" height="140.0" fill="#888"/>
+<rect x="380.0" y="1340.0" width="20.0" height="230.0" fill="#222"/>
+<rect x="480.0" y="100.0" width="20.0" height="1100.0" fill="#222"/>
+<rect x="480.0" y="1200.0" width="20.0" height="140.0" fill="#222"/>
+<rect x="480.0" y="1570.0" width="20.0" height="880.0" fill="#222"/>
+<rect x="480.0" y="2450.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="100.0" y="1195.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1195.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1195.0" width="100.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1320.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="20.0" height="1100.0" fill="#222"/>
+<rect x="100.0" y="1200.0" width="20.0" height="370.0" fill="#222"/>
+<rect x="100.0" y="1570.0" width="20.0" height="880.0" fill="#222"/>
+<rect x="100.0" y="2450.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="285.0" y="1200.0" width="10.0" height="370.0" fill="#888"/>
+<rect x="100.0" y="1565.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1565.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1570.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="400.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="2445.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="300.0" y="2445.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="295.0" y="2450.0" width="10.0" height="150.0" fill="#888"/>
+<rect x="100.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<rect x="300.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<line x1="400.0" y1="1220.0" x2="500.0" y2="1220.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 400.0 1220.0 A 100.0 100.0 0 0 1 400.0 1320.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1340.0" x2="380.0" y2="1340.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1340.0 A 90.0 90.0 0 0 1 290.0 1430.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1200.0" x2="300.0" y2="1290.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1200.0 A 90.0 90.0 0 0 1 390.0 1200.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1570.0" x2="300.0" y2="1660.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1570.0 A 90.0 90.0 0 0 1 390.0 1570.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="160.0" y1="2450.0" x2="160.0" y2="2530.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 160.0 2450.0 A 80.0 80.0 0 0 1 240.0 2450.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="355.0" y1="2450.0" x2="355.0" y2="2540.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 355.0 2450.0 A 90.0 90.0 0 0 1 445.0 2450.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="405.0" y1="1580.0" x2="495.0" y2="1580.0" stroke="#3a7bd5" stroke-width="3"/><line x1="405.0" y1="1577.0" x2="495.0" y2="1577.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="405.0" y1="1583.0" x2="495.0" y2="1583.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="150.0" y1="110.0" x2="450.0" y2="110.0" stroke="#3a7bd5" stroke-width="3"/><line x1="150.0" y1="107.0" x2="450.0" y2="107.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="150.0" y1="113.0" x2="450.0" y2="113.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">
+<rect data-furniture="desk" x="140.0" y="140.0" width="140.0" height="70.0"/>
+<rect data-furniture="desk" x="140.0" y="1610.0" width="140.0" height="70.0"/>
+<rect data-furniture="wc" x="140.0" y="2540.0" width="40.0" height="60.0"/>
+<rect data-furniture="basin" x="235.0" y="2465.0" width="50.0" height="40.0"/>
+<rect data-furniture="shelving" x="315.0" y="2465.0" width="155.0" height="60.0"/>
+</g>
+<rect x="100.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">1</text>
+<rect x="100.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">2</text>
+<rect x="100.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">3</text>
+<rect x="100.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">4</text>
+<rect x="100.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">5</text>
+<rect x="100.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">6</text>
+<rect x="100.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">7</text>
+<rect x="100.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">8</text>
+<rect x="100.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">9</text>
+<rect x="100.0" y="1425.0" width="190.0" height="145.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="195.0" y="1500.5" font-size="7" text-anchor="middle" fill="#555">10</text>
+<rect x="200.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">11</text>
+<rect x="200.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">12</text>
+<rect x="200.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">13</text>
+<rect x="200.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">14</text>
+<rect x="200.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">15</text>
+<rect x="200.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">16</text>
+<rect x="200.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">17</text>
+<rect x="200.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">18</text>
+<rect x="200.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">19</text>
+<g class="dim-chain" data-tier="1" data-axis="h">
+<rect x="100.0" y="59.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="57.0" x2="100.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="290.0" y1="57.0" x2="290.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="300.0" y1="57.0" x2="300.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="400.0" y1="57.0" x2="400.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="57.0" x2="500.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<text x="195.0" y="54.0" font-size="10" text-anchor="middle">1900</text>
+<text x="295.0" y="54.0" font-size="10" text-anchor="middle">100</text>
+<text x="350.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+<text x="450.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="h">
+<rect x="100.0" y="19.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="17.0" x2="100.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="17.0" x2="500.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<text x="300.0" y="14.0" font-size="10" text-anchor="middle">4000</text>
+</g>
+<g class="dim-chain" data-tier="1" data-axis="v">
+<rect x="59.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="57.0" y1="100.0" x2="63.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1200.0" x2="63.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1340.0" x2="63.0" y2="1340.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1570.0" x2="63.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2450.0" x2="63.0" y2="2450.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2600.0" x2="63.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="54.0" y="650.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 650.0)">11000</text>
+<text x="54.0" y="1270.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1270.0)">1400</text>
+<text x="54.0" y="1455.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1455.0)">2300</text>
+<text x="54.0" y="2010.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2010.0)">8800</text>
+<text x="54.0" y="2525.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2525.0)">1500</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="v">
+<rect x="19.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="17.0" y1="100.0" x2="23.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1200.0" x2="23.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1570.0" x2="23.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2450.0" x2="23.0" y2="2450.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2600.0" x2="23.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="14.0" y="650.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 650.0)">11000</text>
+<text x="14.0" y="1385.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1385.0)">3700</text>
+<text x="14.0" y="2010.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2010.0)">8800</text>
+<text x="14.0" y="2525.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2525.0)">1500</text>
+</g>
+<g class="dim-chain" data-tier="3" data-axis="v">
+<rect x="-20.2" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="-23.0" y1="100.0" x2="-17.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="-23.0" y1="2600.0" x2="-17.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="-26.0" y="1350.0" font-size="10" text-anchor="middle" transform="rotate(-90 -26.0 1350.0)">25000</text>
+</g>
+
+<g class="level-marker"><text x="100.0" y="86.0" font-size="12" fill="#222">+ 4.000</text></g>
+<g class="plot-boundary"><rect x="100.0" y="100.0" width="400.0" height="2500.0" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/><text x="300.0" y="94.0" font-size="10" text-anchor="middle" fill="#555">Ranh lộ giới</text></g>
+<g transform="translate(70.0,60.0)"><path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/><text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text></g>
+<g transform="translate(70.0,2640.0)">
+<rect x="0.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="50.0" y="26" font-size="10" text-anchor="middle" fill="#222">1</text>
+<rect x="100.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="150.0" y="26" font-size="10" text-anchor="middle" fill="#222">2</text>
+<rect x="200.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="250.0" y="26" font-size="10" text-anchor="middle" fill="#222">3</text>
+<rect x="300.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="350.0" y="26" font-size="10" text-anchor="middle" fill="#222">4</text>
+<rect x="400.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="450.0" y="26" font-size="10" text-anchor="middle" fill="#222">5</text>
+<text x="-6" y="26" font-size="10" text-anchor="end" fill="#222">0</text>
+<text x="250.0" y="42" font-size="10" text-anchor="middle" fill="#666">m</text>
+</g>
+<rect x="200.0" y="2560.0" width="360.0" height="100.0" fill="white" stroke="#222" stroke-width="1.2"/>
+<text x="212.0" y="2582.0" font-size="11" fill="#222">tubehouse-dream</text>
+<text x="212.0" y="2602.0" font-size="11" fill="#222">Floor 1 - Lease Studio</text>
+<text x="212.0" y="2622.0" font-size="11" fill="#222">Plot 4.0 m x 25.0 m</text>
+<text x="212.0" y="2642.0" font-size="11" fill="#222">Scale: use the graphic bar</text>
+</svg></div></div><div class="plan" data-floor="2"><div class="plan-sheet"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 2700" preserveAspectRatio="xMidYMid meet" font-family="sans-serif">
+<rect x="0" y="0" width="600" height="2700" fill="white"/>
+<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>
+<rect x="400.0" y="1200.0" width="100.0" height="140.0" fill="#c9c9d9" stroke="none"/>
+<text x="450.0" y="1270.0" font-size="12" text-anchor="middle" fill="#333">elevator</text>
+<text x="450.0" y="1284.0" font-size="10" text-anchor="middle" fill="#666">1.4 m&#178;</text>
+<rect x="100.0" y="1200.0" width="190.0" height="370.0" fill="#d9d9d9" stroke="none"/>
+<text x="195.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">stair</text>
+<text x="195.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">7.0 m&#178;</text>
+<rect x="290.0" y="1200.0" width="110.0" height="370.0" fill="#eeeeee" stroke="none"/>
+<text x="345.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">hall</text>
+<text x="345.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">4.1 m&#178;</text>
+<rect x="100.0" y="100.0" width="400.0" height="150.0" fill="#d9e8d0" stroke="none"/>
+<text x="300.0" y="175.0" font-size="12" text-anchor="middle" fill="#333">balcony_f2</text>
+<text x="300.0" y="189.0" font-size="10" text-anchor="middle" fill="#666">6.0 m&#178;</text>
+<rect x="100.0" y="250.0" width="400.0" height="950.0" fill="#e3e8cf" stroke="none"/>
+<text x="300.0" y="725.0" font-size="12" text-anchor="middle" fill="#333">living_f2</text>
+<text x="300.0" y="739.0" font-size="10" text-anchor="middle" fill="#666">38.0 m&#178;</text>
+<rect x="100.0" y="1570.0" width="400.0" height="450.0" fill="#e8cfc3" stroke="none"/>
+<text x="300.0" y="1795.0" font-size="12" text-anchor="middle" fill="#333">kitchen_f2</text>
+<text x="300.0" y="1809.0" font-size="10" text-anchor="middle" fill="#666">18.0 m&#178;</text>
+<rect x="100.0" y="2020.0" width="400.0" height="380.0" fill="#e3e8cf" stroke="none"/>
+<text x="300.0" y="2210.0" font-size="12" text-anchor="middle" fill="#333">dining_f2</text>
+<text x="300.0" y="2224.0" font-size="10" text-anchor="middle" fill="#666">15.2 m&#178;</text>
+<rect x="100.0" y="2400.0" width="200.0" height="200.0" fill="#cfe3e8" stroke="none"/>
+<text x="200.0" y="2500.0" font-size="12" text-anchor="middle" fill="#333">wc_f2</text>
+<text x="200.0" y="2514.0" font-size="10" text-anchor="middle" fill="#666">4.0 m&#178;</text>
+<rect x="300.0" y="2400.0" width="200.0" height="200.0" fill="#dcdcdc" stroke="none"/>
+<text x="400.0" y="2500.0" font-size="12" text-anchor="middle" fill="#333">utility_f2</text>
+<text x="400.0" y="2514.0" font-size="10" text-anchor="middle" fill="#666">4.0 m&#178;</text>
+<rect x="395.0" y="1200.0" width="10.0" height="140.0" fill="#888"/>
+<rect x="380.0" y="1340.0" width="20.0" height="230.0" fill="#222"/>
+<rect x="480.0" y="100.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="480.0" y="250.0" width="20.0" height="950.0" fill="#222"/>
+<rect x="480.0" y="1200.0" width="20.0" height="140.0" fill="#222"/>
+<rect x="480.0" y="1570.0" width="20.0" height="450.0" fill="#222"/>
+<rect x="480.0" y="2020.0" width="20.0" height="380.0" fill="#222"/>
+<rect x="480.0" y="2400.0" width="20.0" height="200.0" fill="#222"/>
+<rect x="100.0" y="1195.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1195.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1195.0" width="100.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1320.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="100.0" y="250.0" width="20.0" height="950.0" fill="#222"/>
+<rect x="100.0" y="1200.0" width="20.0" height="370.0" fill="#222"/>
+<rect x="100.0" y="1570.0" width="20.0" height="450.0" fill="#222"/>
+<rect x="100.0" y="2020.0" width="20.0" height="380.0" fill="#222"/>
+<rect x="100.0" y="2400.0" width="20.0" height="200.0" fill="#222"/>
+<rect x="285.0" y="1200.0" width="10.0" height="370.0" fill="#888"/>
+<rect x="100.0" y="1565.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1565.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1570.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="400.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="245.0" width="400.0" height="10.0" fill="#888"/>
+<rect x="100.0" y="2015.0" width="400.0" height="10.0" fill="#888"/>
+<rect x="100.0" y="2395.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="300.0" y="2395.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="295.0" y="2400.0" width="10.0" height="200.0" fill="#888"/>
+<rect x="100.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<rect x="300.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<line x1="400.0" y1="1220.0" x2="500.0" y2="1220.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 400.0 1220.0 A 100.0 100.0 0 0 1 400.0 1320.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1340.0" x2="380.0" y2="1340.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1340.0 A 90.0 90.0 0 0 1 290.0 1430.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="180.0" y1="250.0" x2="180.0" y2="490.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 180.0 250.0 A 240.0 240.0 0 0 1 420.0 250.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1200.0" x2="300.0" y2="1290.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1200.0 A 90.0 90.0 0 0 1 390.0 1200.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1570.0" x2="300.0" y2="1660.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1570.0 A 90.0 90.0 0 0 1 390.0 1570.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="225.0" y1="2020.0" x2="225.0" y2="2170.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 225.0 2020.0 A 150.0 150.0 0 0 1 375.0 2020.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="160.0" y1="2400.0" x2="160.0" y2="2480.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 160.0 2400.0 A 80.0 80.0 0 0 1 240.0 2400.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="355.0" y1="2400.0" x2="355.0" y2="2490.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 355.0 2400.0 A 90.0 90.0 0 0 1 445.0 2400.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="130.0" y1="110.0" x2="470.0" y2="110.0" stroke="#3a7bd5" stroke-width="3"/><line x1="130.0" y1="107.0" x2="470.0" y2="107.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="130.0" y1="113.0" x2="470.0" y2="113.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="405.0" y1="1580.0" x2="495.0" y2="1580.0" stroke="#3a7bd5" stroke-width="3"/><line x1="405.0" y1="1577.0" x2="495.0" y2="1577.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="405.0" y1="1583.0" x2="495.0" y2="1583.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="450.0" x2="110.0" y2="570.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="450.0" x2="107.0" y2="570.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="450.0" x2="113.0" y2="570.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="2160.0" x2="110.0" y2="2280.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="2160.0" x2="107.0" y2="2280.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="2160.0" x2="113.0" y2="2280.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">
+<rect data-furniture="sofa" x="150.0" y="1105.0" width="216.0" height="90.0"/>
+<rect data-furniture="coffee_table" x="208.0" y="1015.0" width="100.0" height="60.0"/>
+<rect data-furniture="dining_table" x="300.0" y="285.0" width="160.0" height="90.0"/>
+<rect data-furniture="chair" x="305.0" y="395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="355.0" y="395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="405.0" y="395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="410.0" y="395.0" width="45.0" height="45.0"/>
+<rect data-furniture="kitchen_run" x="140.0" y="1590.0" width="320.0" height="60.0"/>
+<rect data-furniture="fridge" x="140.0" y="1945.0" width="70.0" height="70.0"/>
+<rect data-furniture="sofa" x="150.0" y="2305.0" width="216.0" height="90.0"/>
+<rect data-furniture="coffee_table" x="208.0" y="2215.0" width="100.0" height="60.0"/>
+<rect data-furniture="dining_table" x="300.0" y="2055.0" width="160.0" height="90.0"/>
+<rect data-furniture="chair" x="305.0" y="2165.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="355.0" y="2165.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="405.0" y="2165.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="410.0" y="2165.0" width="45.0" height="45.0"/>
+<rect data-furniture="wc" x="140.0" y="2540.0" width="40.0" height="60.0"/>
+<rect data-furniture="basin" x="235.0" y="2415.0" width="50.0" height="40.0"/>
+<rect data-furniture="shelving" x="315.0" y="2415.0" width="60.0" height="155.0"/>
+</g>
+<rect x="100.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">1</text>
+<rect x="100.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">2</text>
+<rect x="100.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">3</text>
+<rect x="100.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">4</text>
+<rect x="100.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">5</text>
+<rect x="100.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">6</text>
+<rect x="100.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">7</text>
+<rect x="100.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">8</text>
+<rect x="100.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">9</text>
+<rect x="100.0" y="1425.0" width="190.0" height="145.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="195.0" y="1500.5" font-size="7" text-anchor="middle" fill="#555">10</text>
+<rect x="200.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">11</text>
+<rect x="200.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">12</text>
+<rect x="200.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">13</text>
+<rect x="200.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">14</text>
+<rect x="200.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">15</text>
+<rect x="200.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">16</text>
+<rect x="200.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">17</text>
+<rect x="200.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">18</text>
+<rect x="200.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">19</text>
+<g class="dim-chain" data-tier="1" data-axis="h">
+<rect x="100.0" y="59.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="57.0" x2="100.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="290.0" y1="57.0" x2="290.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="300.0" y1="57.0" x2="300.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="400.0" y1="57.0" x2="400.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="57.0" x2="500.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<text x="195.0" y="54.0" font-size="10" text-anchor="middle">1900</text>
+<text x="295.0" y="54.0" font-size="10" text-anchor="middle">100</text>
+<text x="350.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+<text x="450.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="h">
+<rect x="100.0" y="19.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="17.0" x2="100.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="17.0" x2="500.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<text x="300.0" y="14.0" font-size="10" text-anchor="middle">4000</text>
+</g>
+<g class="dim-chain" data-tier="1" data-axis="v">
+<rect x="59.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="57.0" y1="100.0" x2="63.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="250.0" x2="63.0" y2="250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1200.0" x2="63.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1340.0" x2="63.0" y2="1340.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1570.0" x2="63.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2020.0" x2="63.0" y2="2020.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2400.0" x2="63.0" y2="2400.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2600.0" x2="63.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="54.0" y="175.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 175.0)">1500</text>
+<text x="54.0" y="725.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 725.0)">9500</text>
+<text x="54.0" y="1270.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1270.0)">1400</text>
+<text x="54.0" y="1455.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1455.0)">2300</text>
+<text x="54.0" y="1795.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1795.0)">4500</text>
+<text x="54.0" y="2210.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2210.0)">3800</text>
+<text x="54.0" y="2500.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2500.0)">2000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="v">
+<rect x="19.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="17.0" y1="100.0" x2="23.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="250.0" x2="23.0" y2="250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1200.0" x2="23.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1570.0" x2="23.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2020.0" x2="23.0" y2="2020.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2400.0" x2="23.0" y2="2400.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2600.0" x2="23.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="14.0" y="175.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 175.0)">1500</text>
+<text x="14.0" y="725.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 725.0)">9500</text>
+<text x="14.0" y="1385.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1385.0)">3700</text>
+<text x="14.0" y="1795.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1795.0)">4500</text>
+<text x="14.0" y="2210.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2210.0)">3800</text>
+<text x="14.0" y="2500.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2500.0)">2000</text>
+</g>
+<g class="dim-chain" data-tier="3" data-axis="v">
+<rect x="-20.2" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="-23.0" y1="100.0" x2="-17.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="-23.0" y1="2600.0" x2="-17.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="-26.0" y="1350.0" font-size="10" text-anchor="middle" transform="rotate(-90 -26.0 1350.0)">25000</text>
+</g>
+
+<g class="level-marker"><text x="100.0" y="86.0" font-size="12" fill="#222">+ 7.400</text></g>
+<g class="plot-boundary"><rect x="100.0" y="100.0" width="400.0" height="2500.0" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/><text x="300.0" y="94.0" font-size="10" text-anchor="middle" fill="#555">Ranh lộ giới</text></g>
+<g transform="translate(70.0,60.0)"><path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/><text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text></g>
+<g transform="translate(70.0,2640.0)">
+<rect x="0.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="50.0" y="26" font-size="10" text-anchor="middle" fill="#222">1</text>
+<rect x="100.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="150.0" y="26" font-size="10" text-anchor="middle" fill="#222">2</text>
+<rect x="200.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="250.0" y="26" font-size="10" text-anchor="middle" fill="#222">3</text>
+<rect x="300.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="350.0" y="26" font-size="10" text-anchor="middle" fill="#222">4</text>
+<rect x="400.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="450.0" y="26" font-size="10" text-anchor="middle" fill="#222">5</text>
+<text x="-6" y="26" font-size="10" text-anchor="end" fill="#222">0</text>
+<text x="250.0" y="42" font-size="10" text-anchor="middle" fill="#666">m</text>
+</g>
+<rect x="200.0" y="2560.0" width="360.0" height="100.0" fill="white" stroke="#222" stroke-width="1.2"/>
+<text x="212.0" y="2582.0" font-size="11" fill="#222">tubehouse-dream</text>
+<text x="212.0" y="2602.0" font-size="11" fill="#222">Floor 2 - Living, Kitchen &amp; Dining</text>
+<text x="212.0" y="2622.0" font-size="11" fill="#222">Plot 4.0 m x 25.0 m</text>
+<text x="212.0" y="2642.0" font-size="11" fill="#222">Scale: use the graphic bar</text>
+</svg></div></div><div class="plan" data-floor="3"><div class="plan-sheet"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 2700" preserveAspectRatio="xMidYMid meet" font-family="sans-serif">
+<rect x="0" y="0" width="600" height="2700" fill="white"/>
+<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>
+<rect x="400.0" y="1200.0" width="100.0" height="140.0" fill="#c9c9d9" stroke="none"/>
+<text x="450.0" y="1270.0" font-size="12" text-anchor="middle" fill="#333">elevator</text>
+<text x="450.0" y="1284.0" font-size="10" text-anchor="middle" fill="#666">1.4 m&#178;</text>
+<rect x="100.0" y="1200.0" width="190.0" height="370.0" fill="#d9d9d9" stroke="none"/>
+<text x="195.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">stair</text>
+<text x="195.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">7.0 m&#178;</text>
+<rect x="290.0" y="1200.0" width="110.0" height="370.0" fill="#eeeeee" stroke="none"/>
+<text x="345.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">hall</text>
+<text x="345.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">4.1 m&#178;</text>
+<rect x="100.0" y="100.0" width="400.0" height="150.0" fill="#d9e8d0" stroke="none"/>
+<text x="300.0" y="175.0" font-size="12" text-anchor="middle" fill="#333">balcony_f3</text>
+<text x="300.0" y="189.0" font-size="10" text-anchor="middle" fill="#666">6.0 m&#178;</text>
+<rect x="100.0" y="250.0" width="260.0" height="950.0" fill="#e8d9c3" stroke="none"/>
+<text x="230.0" y="725.0" font-size="12" text-anchor="middle" fill="#333">master_f3</text>
+<text x="230.0" y="739.0" font-size="10" text-anchor="middle" fill="#666">24.7 m&#178;</text>
+<rect x="360.0" y="250.0" width="140.0" height="475.0" fill="#cfe3e8" stroke="none"/>
+<text x="430.0" y="487.5" font-size="12" text-anchor="middle" fill="#333">ensuite_f3</text>
+<text x="430.0" y="501.5" font-size="10" text-anchor="middle" fill="#666">6.6 m&#178;</text>
+<rect x="360.0" y="725.0" width="140.0" height="475.0" fill="#dcdcdc" stroke="none"/>
+<text x="430.0" y="962.5" font-size="12" text-anchor="middle" fill="#333">walkin_f3</text>
+<text x="430.0" y="976.5" font-size="10" text-anchor="middle" fill="#666">6.6 m&#178;</text>
+<rect x="100.0" y="1570.0" width="280.0" height="680.0" fill="#e8d9c3" stroke="none"/>
+<text x="240.0" y="1910.0" font-size="12" text-anchor="middle" fill="#333">kid_bed_f3</text>
+<text x="240.0" y="1924.0" font-size="10" text-anchor="middle" fill="#666">19.0 m&#178;</text>
+<rect x="380.0" y="1570.0" width="120.0" height="300.0" fill="#cfe3e8" stroke="none"/>
+<text x="440.0" y="1720.0" font-size="12" text-anchor="middle" fill="#333">bath_f3</text>
+<text x="440.0" y="1734.0" font-size="10" text-anchor="middle" fill="#666">3.6 m&#178;</text>
+<rect x="380.0" y="1870.0" width="120.0" height="380.0" fill="#dcdcdc" stroke="none"/>
+<text x="440.0" y="2060.0" font-size="12" text-anchor="middle" fill="#333">laundry_f3</text>
+<text x="440.0" y="2074.0" font-size="10" text-anchor="middle" fill="#666">4.6 m&#178;</text>
+<rect x="100.0" y="2250.0" width="400.0" height="350.0" fill="#e3e8cf" stroke="none"/>
+<text x="300.0" y="2425.0" font-size="12" text-anchor="middle" fill="#333">flex_lounge_f3</text>
+<text x="300.0" y="2439.0" font-size="10" text-anchor="middle" fill="#666">14.0 m&#178;</text>
+<rect x="395.0" y="1200.0" width="10.0" height="140.0" fill="#888"/>
+<rect x="380.0" y="1340.0" width="20.0" height="230.0" fill="#222"/>
+<rect x="480.0" y="100.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="480.0" y="250.0" width="20.0" height="475.0" fill="#222"/>
+<rect x="480.0" y="725.0" width="20.0" height="475.0" fill="#222"/>
+<rect x="480.0" y="1200.0" width="20.0" height="140.0" fill="#222"/>
+<rect x="480.0" y="1570.0" width="20.0" height="300.0" fill="#222"/>
+<rect x="480.0" y="1870.0" width="20.0" height="380.0" fill="#222"/>
+<rect x="480.0" y="2250.0" width="20.0" height="350.0" fill="#222"/>
+<rect x="100.0" y="1195.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1195.0" width="70.0" height="10.0" fill="#888"/>
+<rect x="360.0" y="1195.0" width="40.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1195.0" width="100.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1320.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="100.0" y="250.0" width="20.0" height="950.0" fill="#222"/>
+<rect x="100.0" y="1200.0" width="20.0" height="370.0" fill="#222"/>
+<rect x="100.0" y="1570.0" width="20.0" height="680.0" fill="#222"/>
+<rect x="100.0" y="2250.0" width="20.0" height="350.0" fill="#222"/>
+<rect x="285.0" y="1200.0" width="10.0" height="370.0" fill="#888"/>
+<rect x="100.0" y="1565.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1565.0" width="90.0" height="10.0" fill="#888"/>
+<rect x="380.0" y="1565.0" width="20.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1570.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="400.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="245.0" width="260.0" height="10.0" fill="#888"/>
+<rect x="360.0" y="245.0" width="140.0" height="10.0" fill="#888"/>
+<rect x="355.0" y="250.0" width="10.0" height="475.0" fill="#888"/>
+<rect x="355.0" y="725.0" width="10.0" height="475.0" fill="#888"/>
+<rect x="360.0" y="720.0" width="140.0" height="10.0" fill="#888"/>
+<rect x="375.0" y="1570.0" width="10.0" height="300.0" fill="#888"/>
+<rect x="375.0" y="1870.0" width="10.0" height="380.0" fill="#888"/>
+<rect x="100.0" y="2245.0" width="280.0" height="10.0" fill="#888"/>
+<rect x="380.0" y="2245.0" width="120.0" height="10.0" fill="#888"/>
+<rect x="380.0" y="1865.0" width="120.0" height="10.0" fill="#888"/>
+<rect x="100.0" y="2580.0" width="400.0" height="20.0" fill="#222"/>
+<line x1="400.0" y1="1220.0" x2="500.0" y2="1220.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 400.0 1220.0 A 100.0 100.0 0 0 1 400.0 1320.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1340.0" x2="380.0" y2="1340.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1340.0 A 90.0 90.0 0 0 1 290.0 1430.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="110.0" y1="250.0" x2="110.0" y2="490.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 110.0 250.0 A 240.0 240.0 0 0 1 350.0 250.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1200.0" x2="290.0" y2="1270.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1200.0 A 70.0 70.0 0 0 1 360.0 1200.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="360.0" y1="442.5" x2="450.0" y2="442.5" stroke="#c0392b" stroke-width="1.2"/><path d="M 360.0 442.5 A 90.0 90.0 0 0 1 360.0 532.5" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="360.0" y1="917.5" x2="450.0" y2="917.5" stroke="#c0392b" stroke-width="1.2"/><path d="M 360.0 917.5 A 90.0 90.0 0 0 1 360.0 1007.5" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1570.0" x2="290.0" y2="1660.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1570.0 A 90.0 90.0 0 0 1 380.0 1570.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="380.0" y1="1680.0" x2="460.0" y2="1680.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 380.0 1680.0 A 80.0 80.0 0 0 1 380.0 1760.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="380.0" y1="2015.0" x2="470.0" y2="2015.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 380.0 2015.0 A 90.0 90.0 0 0 1 380.0 2105.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="180.0" y1="2250.0" x2="180.0" y2="2370.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 180.0 2250.0 A 120.0 120.0 0 0 1 300.0 2250.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="130.0" y1="110.0" x2="470.0" y2="110.0" stroke="#3a7bd5" stroke-width="3"/><line x1="130.0" y1="107.0" x2="470.0" y2="107.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="130.0" y1="113.0" x2="470.0" y2="113.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="450.0" x2="110.0" y2="570.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="450.0" x2="107.0" y2="570.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="450.0" x2="113.0" y2="570.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="1720.0" x2="110.0" y2="1840.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="1720.0" x2="107.0" y2="1840.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="1720.0" x2="113.0" y2="1840.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="2370.0" x2="110.0" y2="2490.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="2370.0" x2="107.0" y2="2490.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="2370.0" x2="113.0" y2="2490.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">
+<rect data-furniture="bed" x="167.0" y="265.0" width="141.0" height="200.0"/>
+<rect data-furniture="wardrobe" x="295.0" y="255.0" width="60.0" height="180.0"/>
+<rect data-furniture="wc" x="385.0" y="680.0" width="40.0" height="60.0"/>
+<rect data-furniture="shelving" x="375.0" y="740.0" width="60.0" height="445.0"/>
+<rect data-furniture="bed" x="171.0" y="1585.0" width="153.0" height="200.0"/>
+<rect data-furniture="wardrobe" x="315.0" y="1575.0" width="60.0" height="180.0"/>
+<rect data-furniture="wc" x="405.0" y="1825.0" width="40.0" height="60.0"/>
+<rect data-furniture="shelving" x="395.0" y="1885.0" width="60.0" height="350.0"/>
+<rect data-furniture="sofa" x="150.0" y="2490.0" width="216.0" height="90.0"/>
+<rect data-furniture="coffee_table" x="208.0" y="2400.0" width="100.0" height="60.0"/>
+<rect data-furniture="dining_table" x="300.0" y="2285.0" width="160.0" height="90.0"/>
+<rect data-furniture="chair" x="305.0" y="2395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="355.0" y="2395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="405.0" y="2395.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="410.0" y="2395.0" width="45.0" height="45.0"/>
+</g>
+<rect x="100.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">1</text>
+<rect x="100.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">2</text>
+<rect x="100.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">3</text>
+<rect x="100.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">4</text>
+<rect x="100.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">5</text>
+<rect x="100.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">6</text>
+<rect x="100.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">7</text>
+<rect x="100.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">8</text>
+<rect x="100.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">9</text>
+<rect x="100.0" y="1425.0" width="190.0" height="145.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="195.0" y="1500.5" font-size="7" text-anchor="middle" fill="#555">10</text>
+<rect x="200.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">11</text>
+<rect x="200.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">12</text>
+<rect x="200.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">13</text>
+<rect x="200.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">14</text>
+<rect x="200.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">15</text>
+<rect x="200.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">16</text>
+<rect x="200.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">17</text>
+<rect x="200.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">18</text>
+<rect x="200.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">19</text>
+<g class="dim-chain" data-tier="1" data-axis="h">
+<rect x="100.0" y="59.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="57.0" x2="100.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="290.0" y1="57.0" x2="290.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="360.0" y1="57.0" x2="360.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="380.0" y1="57.0" x2="380.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="400.0" y1="57.0" x2="400.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="57.0" x2="500.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<text x="195.0" y="54.0" font-size="10" text-anchor="middle">1900</text>
+<text x="325.0" y="54.0" font-size="10" text-anchor="middle">700</text>
+<text x="370.0" y="54.0" font-size="10" text-anchor="middle">200</text>
+<text x="390.0" y="54.0" font-size="10" text-anchor="middle">200</text>
+<text x="450.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="h">
+<rect x="100.0" y="19.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="17.0" x2="100.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="17.0" x2="500.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<text x="300.0" y="14.0" font-size="10" text-anchor="middle">4000</text>
+</g>
+<g class="dim-chain" data-tier="1" data-axis="v">
+<rect x="59.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="57.0" y1="100.0" x2="63.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="250.0" x2="63.0" y2="250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="725.0" x2="63.0" y2="725.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1200.0" x2="63.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1340.0" x2="63.0" y2="1340.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1570.0" x2="63.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1870.0" x2="63.0" y2="1870.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2250.0" x2="63.0" y2="2250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2600.0" x2="63.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="54.0" y="175.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 175.0)">1500</text>
+<text x="54.0" y="487.5" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 487.5)">4750</text>
+<text x="54.0" y="962.5" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 962.5)">4750</text>
+<text x="54.0" y="1270.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1270.0)">1400</text>
+<text x="54.0" y="1455.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1455.0)">2300</text>
+<text x="54.0" y="1720.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1720.0)">3000</text>
+<text x="54.0" y="2060.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2060.0)">3800</text>
+<text x="54.0" y="2425.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2425.0)">3500</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="v">
+<rect x="19.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="17.0" y1="100.0" x2="23.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="250.0" x2="23.0" y2="250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1200.0" x2="23.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1570.0" x2="23.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2250.0" x2="23.0" y2="2250.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2600.0" x2="23.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="14.0" y="175.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 175.0)">1500</text>
+<text x="14.0" y="725.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 725.0)">9500</text>
+<text x="14.0" y="1385.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1385.0)">3700</text>
+<text x="14.0" y="1910.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1910.0)">6800</text>
+<text x="14.0" y="2425.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2425.0)">3500</text>
+</g>
+<g class="dim-chain" data-tier="3" data-axis="v">
+<rect x="-20.2" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="-23.0" y1="100.0" x2="-17.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="-23.0" y1="2600.0" x2="-17.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="-26.0" y="1350.0" font-size="10" text-anchor="middle" transform="rotate(-90 -26.0 1350.0)">25000</text>
+</g>
+
+<g class="level-marker"><text x="100.0" y="86.0" font-size="12" fill="#222">+ 10.800</text></g>
+<g class="plot-boundary"><rect x="100.0" y="100.0" width="400.0" height="2500.0" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/><text x="300.0" y="94.0" font-size="10" text-anchor="middle" fill="#555">Ranh lộ giới</text></g>
+<g transform="translate(70.0,60.0)"><path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/><text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text></g>
+<g transform="translate(70.0,2640.0)">
+<rect x="0.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="50.0" y="26" font-size="10" text-anchor="middle" fill="#222">1</text>
+<rect x="100.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="150.0" y="26" font-size="10" text-anchor="middle" fill="#222">2</text>
+<rect x="200.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="250.0" y="26" font-size="10" text-anchor="middle" fill="#222">3</text>
+<rect x="300.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="350.0" y="26" font-size="10" text-anchor="middle" fill="#222">4</text>
+<rect x="400.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="450.0" y="26" font-size="10" text-anchor="middle" fill="#222">5</text>
+<text x="-6" y="26" font-size="10" text-anchor="end" fill="#222">0</text>
+<text x="250.0" y="42" font-size="10" text-anchor="middle" fill="#666">m</text>
+</g>
+<rect x="200.0" y="2560.0" width="360.0" height="100.0" fill="white" stroke="#222" stroke-width="1.2"/>
+<text x="212.0" y="2582.0" font-size="11" fill="#222">tubehouse-dream</text>
+<text x="212.0" y="2602.0" font-size="11" fill="#222">Floor 3 - Master Suite &amp; Kid&apos;s Room</text>
+<text x="212.0" y="2622.0" font-size="11" fill="#222">Plot 4.0 m x 25.0 m</text>
+<text x="212.0" y="2642.0" font-size="11" fill="#222">Scale: use the graphic bar</text>
+</svg></div></div><div class="plan" data-floor="4"><div class="plan-sheet"><svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 2700" preserveAspectRatio="xMidYMid meet" font-family="sans-serif">
+<rect x="0" y="0" width="600" height="2700" fill="white"/>
+<defs><pattern id="voidhatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#888" stroke-width="1.5"/></pattern></defs>
+<rect x="400.0" y="1200.0" width="100.0" height="140.0" fill="#c9c9d9" stroke="none"/>
+<text x="450.0" y="1270.0" font-size="12" text-anchor="middle" fill="#333">elevator</text>
+<text x="450.0" y="1284.0" font-size="10" text-anchor="middle" fill="#666">1.4 m&#178;</text>
+<rect x="100.0" y="1200.0" width="190.0" height="370.0" fill="#d9d9d9" stroke="none"/>
+<text x="195.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">stair</text>
+<text x="195.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">7.0 m&#178;</text>
+<rect x="290.0" y="1200.0" width="110.0" height="370.0" fill="#eeeeee" stroke="none"/>
+<text x="345.0" y="1385.0" font-size="12" text-anchor="middle" fill="#333">hall</text>
+<text x="345.0" y="1399.0" font-size="10" text-anchor="middle" fill="#666">4.1 m&#178;</text>
+<rect x="100.0" y="100.0" width="400.0" height="1100.0" fill="#d9e8d0" stroke="none"/>
+<text x="300.0" y="650.0" font-size="12" text-anchor="middle" fill="#333">terrace_f4</text>
+<text x="300.0" y="664.0" font-size="10" text-anchor="middle" fill="#666">44.0 m&#178;</text>
+<rect x="100.0" y="1570.0" width="400.0" height="500.0" fill="#e0e0d0" stroke="none"/>
+<text x="300.0" y="1820.0" font-size="12" text-anchor="middle" fill="#333">office_f4</text>
+<text x="300.0" y="1834.0" font-size="10" text-anchor="middle" fill="#666">20.0 m&#178;</text>
+<rect x="100.0" y="2070.0" width="400.0" height="380.0" fill="#e8d9c3" stroke="none"/>
+<text x="300.0" y="2260.0" font-size="12" text-anchor="middle" fill="#333">guestbed_f4</text>
+<text x="300.0" y="2274.0" font-size="10" text-anchor="middle" fill="#666">15.2 m&#178;</text>
+<rect x="100.0" y="2450.0" width="200.0" height="150.0" fill="#cfe3e8" stroke="none"/>
+<text x="200.0" y="2525.0" font-size="12" text-anchor="middle" fill="#333">guestbath_f4</text>
+<text x="200.0" y="2539.0" font-size="10" text-anchor="middle" fill="#666">3.0 m&#178;</text>
+<rect x="300.0" y="2450.0" width="200.0" height="150.0" fill="#dcdcdc" stroke="none"/>
+<text x="400.0" y="2525.0" font-size="12" text-anchor="middle" fill="#333">storage_f4</text>
+<text x="400.0" y="2539.0" font-size="10" text-anchor="middle" fill="#666">3.0 m&#178;</text>
+<rect x="395.0" y="1200.0" width="10.0" height="140.0" fill="#888"/>
+<rect x="380.0" y="1340.0" width="20.0" height="230.0" fill="#222"/>
+<rect x="480.0" y="100.0" width="20.0" height="1100.0" fill="#222"/>
+<rect x="480.0" y="1200.0" width="20.0" height="140.0" fill="#222"/>
+<rect x="480.0" y="1570.0" width="20.0" height="500.0" fill="#222"/>
+<rect x="480.0" y="2070.0" width="20.0" height="380.0" fill="#222"/>
+<rect x="480.0" y="2450.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="100.0" y="1195.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1195.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1195.0" width="100.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1320.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="20.0" height="1100.0" fill="#222"/>
+<rect x="100.0" y="1200.0" width="20.0" height="370.0" fill="#222"/>
+<rect x="100.0" y="1570.0" width="20.0" height="500.0" fill="#222"/>
+<rect x="100.0" y="2070.0" width="20.0" height="380.0" fill="#222"/>
+<rect x="100.0" y="2450.0" width="20.0" height="150.0" fill="#222"/>
+<rect x="285.0" y="1200.0" width="10.0" height="370.0" fill="#888"/>
+<rect x="100.0" y="1565.0" width="190.0" height="10.0" fill="#888"/>
+<rect x="290.0" y="1565.0" width="110.0" height="10.0" fill="#888"/>
+<rect x="400.0" y="1570.0" width="100.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="100.0" width="400.0" height="20.0" fill="#222"/>
+<rect x="100.0" y="2065.0" width="400.0" height="10.0" fill="#888"/>
+<rect x="100.0" y="2445.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="300.0" y="2445.0" width="200.0" height="10.0" fill="#888"/>
+<rect x="295.0" y="2450.0" width="10.0" height="150.0" fill="#888"/>
+<rect x="100.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<rect x="300.0" y="2580.0" width="200.0" height="20.0" fill="#222"/>
+<line x1="400.0" y1="1220.0" x2="500.0" y2="1220.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 400.0 1220.0 A 100.0 100.0 0 0 1 400.0 1320.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="290.0" y1="1340.0" x2="380.0" y2="1340.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 290.0 1340.0 A 90.0 90.0 0 0 1 290.0 1430.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1200.0" x2="300.0" y2="1290.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1200.0 A 90.0 90.0 0 0 1 390.0 1200.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="300.0" y1="1570.0" x2="300.0" y2="1660.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 300.0 1570.0 A 90.0 90.0 0 0 1 390.0 1570.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="255.0" y1="2070.0" x2="255.0" y2="2160.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 255.0 2070.0 A 90.0 90.0 0 0 1 345.0 2070.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="160.0" y1="2450.0" x2="160.0" y2="2530.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 160.0 2450.0 A 80.0 80.0 0 0 1 240.0 2450.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="355.0" y1="2450.0" x2="355.0" y2="2540.0" stroke="#c0392b" stroke-width="1.2"/><path d="M 355.0 2450.0 A 90.0 90.0 0 0 1 445.0 2450.0" fill="none" stroke="#c0392b" stroke-width="0.8"/>
+<line x1="405.0" y1="1580.0" x2="495.0" y2="1580.0" stroke="#3a7bd5" stroke-width="3"/><line x1="405.0" y1="1577.0" x2="495.0" y2="1577.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="405.0" y1="1583.0" x2="495.0" y2="1583.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<line x1="110.0" y1="2220.0" x2="110.0" y2="2340.0" stroke="#3a7bd5" stroke-width="3"/><line x1="107.0" y1="2220.0" x2="107.0" y2="2340.0" stroke="#3a7bd5" stroke-width="0.8"/><line x1="113.0" y1="2220.0" x2="113.0" y2="2340.0" stroke="#3a7bd5" stroke-width="0.8"/>
+<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">
+<rect data-furniture="chair" x="140.0" y="140.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="415.0" y="1130.0" width="45.0" height="45.0"/>
+<rect data-furniture="planter" x="275.0" y="632.5" width="50.0" height="50.0"/>
+<rect data-furniture="desk" x="140.0" y="1610.0" width="140.0" height="70.0"/>
+<rect data-furniture="bed" x="220.0" y="2085.0" width="160.0" height="200.0"/>
+<rect data-furniture="wardrobe" x="420.0" y="2075.0" width="60.0" height="148.0"/>
+<rect data-furniture="wc" x="140.0" y="2540.0" width="40.0" height="60.0"/>
+<rect data-furniture="basin" x="235.0" y="2465.0" width="50.0" height="40.0"/>
+<rect data-furniture="shelving" x="315.0" y="2465.0" width="155.0" height="60.0"/>
+</g>
+<rect x="100.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">1</text>
+<rect x="100.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">2</text>
+<rect x="100.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">3</text>
+<rect x="100.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">4</text>
+<rect x="100.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">5</text>
+<rect x="100.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">6</text>
+<rect x="100.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">7</text>
+<rect x="100.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">8</text>
+<rect x="100.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="145.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">9</text>
+<rect x="100.0" y="1425.0" width="190.0" height="145.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="195.0" y="1500.5" font-size="7" text-anchor="middle" fill="#555">10</text>
+<rect x="200.0" y="1400.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1415.5" font-size="7" text-anchor="middle" fill="#555">11</text>
+<rect x="200.0" y="1375.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1390.5" font-size="7" text-anchor="middle" fill="#555">12</text>
+<rect x="200.0" y="1350.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1365.5" font-size="7" text-anchor="middle" fill="#555">13</text>
+<rect x="200.0" y="1325.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1340.5" font-size="7" text-anchor="middle" fill="#555">14</text>
+<rect x="200.0" y="1300.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1315.5" font-size="7" text-anchor="middle" fill="#555">15</text>
+<rect x="200.0" y="1275.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1290.5" font-size="7" text-anchor="middle" fill="#555">16</text>
+<rect x="200.0" y="1250.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1265.5" font-size="7" text-anchor="middle" fill="#555">17</text>
+<rect x="200.0" y="1225.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1240.5" font-size="7" text-anchor="middle" fill="#555">18</text>
+<rect x="200.0" y="1200.0" width="90.0" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
+<text class="tread-number" x="245.0" y="1215.5" font-size="7" text-anchor="middle" fill="#555">19</text>
+<g class="dim-chain" data-tier="1" data-axis="h">
+<rect x="100.0" y="59.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="57.0" x2="100.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="290.0" y1="57.0" x2="290.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="300.0" y1="57.0" x2="300.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="400.0" y1="57.0" x2="400.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="57.0" x2="500.0" y2="63.0" stroke="#000" stroke-width="0.5"/>
+<text x="195.0" y="54.0" font-size="10" text-anchor="middle">1900</text>
+<text x="295.0" y="54.0" font-size="10" text-anchor="middle">100</text>
+<text x="350.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+<text x="450.0" y="54.0" font-size="10" text-anchor="middle">1000</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="h">
+<rect x="100.0" y="19.8" width="400.0" height="0.5" fill="#000"/>
+<line x1="100.0" y1="17.0" x2="100.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<line x1="500.0" y1="17.0" x2="500.0" y2="23.0" stroke="#000" stroke-width="0.5"/>
+<text x="300.0" y="14.0" font-size="10" text-anchor="middle">4000</text>
+</g>
+<g class="dim-chain" data-tier="1" data-axis="v">
+<rect x="59.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="57.0" y1="100.0" x2="63.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1200.0" x2="63.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1340.0" x2="63.0" y2="1340.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="1570.0" x2="63.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2070.0" x2="63.0" y2="2070.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2450.0" x2="63.0" y2="2450.0" stroke="#000" stroke-width="0.5"/>
+<line x1="57.0" y1="2600.0" x2="63.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="54.0" y="650.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 650.0)">11000</text>
+<text x="54.0" y="1270.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1270.0)">1400</text>
+<text x="54.0" y="1455.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1455.0)">2300</text>
+<text x="54.0" y="1820.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 1820.0)">5000</text>
+<text x="54.0" y="2260.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2260.0)">3800</text>
+<text x="54.0" y="2525.0" font-size="10" text-anchor="middle" transform="rotate(-90 54.0 2525.0)">1500</text>
+</g>
+<g class="dim-chain" data-tier="2" data-axis="v">
+<rect x="19.8" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="17.0" y1="100.0" x2="23.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1200.0" x2="23.0" y2="1200.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="1570.0" x2="23.0" y2="1570.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2070.0" x2="23.0" y2="2070.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2450.0" x2="23.0" y2="2450.0" stroke="#000" stroke-width="0.5"/>
+<line x1="17.0" y1="2600.0" x2="23.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="14.0" y="650.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 650.0)">11000</text>
+<text x="14.0" y="1385.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1385.0)">3700</text>
+<text x="14.0" y="1820.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 1820.0)">5000</text>
+<text x="14.0" y="2260.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2260.0)">3800</text>
+<text x="14.0" y="2525.0" font-size="10" text-anchor="middle" transform="rotate(-90 14.0 2525.0)">1500</text>
+</g>
+<g class="dim-chain" data-tier="3" data-axis="v">
+<rect x="-20.2" y="100.0" width="0.5" height="2500.0" fill="#000"/>
+<line x1="-23.0" y1="100.0" x2="-17.0" y2="100.0" stroke="#000" stroke-width="0.5"/>
+<line x1="-23.0" y1="2600.0" x2="-17.0" y2="2600.0" stroke="#000" stroke-width="0.5"/>
+<text x="-26.0" y="1350.0" font-size="10" text-anchor="middle" transform="rotate(-90 -26.0 1350.0)">25000</text>
+</g>
+
+<g class="level-marker"><text x="100.0" y="86.0" font-size="12" fill="#222">+ 14.200</text></g>
+<g class="plot-boundary"><rect x="100.0" y="100.0" width="400.0" height="2500.0" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/><text x="300.0" y="94.0" font-size="10" text-anchor="middle" fill="#555">Ranh lộ giới</text></g>
+<g transform="translate(70.0,60.0)"><path d="M 0 26 L -9 -8 L 0 -2 L 9 -8 Z" fill="#222"/><text x="0" y="-14" font-size="12" text-anchor="middle" fill="#222" font-weight="bold">N</text></g>
+<g transform="translate(70.0,2640.0)">
+<rect x="0.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="50.0" y="26" font-size="10" text-anchor="middle" fill="#222">1</text>
+<rect x="100.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="150.0" y="26" font-size="10" text-anchor="middle" fill="#222">2</text>
+<rect x="200.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="250.0" y="26" font-size="10" text-anchor="middle" fill="#222">3</text>
+<rect x="300.0" y="0" width="100.0" height="14" fill="#fff" stroke="#222" stroke-width="0.8"/>
+<text x="350.0" y="26" font-size="10" text-anchor="middle" fill="#222">4</text>
+<rect x="400.0" y="0" width="100.0" height="14" fill="#222" stroke="#222" stroke-width="0.8"/>
+<text x="450.0" y="26" font-size="10" text-anchor="middle" fill="#222">5</text>
+<text x="-6" y="26" font-size="10" text-anchor="end" fill="#222">0</text>
+<text x="250.0" y="42" font-size="10" text-anchor="middle" fill="#666">m</text>
+</g>
+<rect x="200.0" y="2560.0" width="360.0" height="100.0" fill="white" stroke="#222" stroke-width="1.2"/>
+<text x="212.0" y="2582.0" font-size="11" fill="#222">tubehouse-dream</text>
+<text x="212.0" y="2602.0" font-size="11" fill="#222">Floor 4 - Office, Guest Room &amp; Roof Terrace</text>
+<text x="212.0" y="2622.0" font-size="11" fill="#222">Plot 4.0 m x 25.0 m</text>
+<text x="212.0" y="2642.0" font-size="11" fill="#222">Scale: use the graphic bar</text>
+</svg></div></div></div>
+    <div id="viewer-pane">
+      <canvas id="viewer"></canvas>
+      <div id="overlay">
+        <div class="spinner" id="overlay-spinner"></div>
+        <div class="title" id="overlay-title">Loading tubehouse-dream&hellip;</div>
+        <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
+      </div>
+      <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; tap a spot to step closer &middot; pick a floor above</div>
+      <button id="reset-btn" type="button">Reset view</button>
+    </div>
   </div>
-  <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; two-finger or right-drag to pan &middot; tap a spot to step closer</div>
-  <button id="reset-btn" type="button">Reset view</button>
 </div>
 <script>/**
  * @license
@@ -4727,6 +5726,8 @@
 </script>
 <script>
 (function () {
+  var FLOOR_BANDS = [{"name": "Ground Floor - Garage & Lease", "z0": 0.0, "z1": 4.0}, {"name": "Floor 1 - Lease Studio", "z0": 4.0, "z1": 7.4}, {"name": "Floor 2 - Living, Kitchen & Dining", "z0": 7.4, "z1": 10.8}, {"name": "Floor 3 - Master Suite & Kid's Room", "z0": 10.8, "z1": 14.2}, {"name": "Floor 4 - Office, Guest Room & Roof Terrace", "z0": 14.2, "z1": 1000000000.0}];
+
   var overlay = document.getElementById('overlay');
   var overlayTitle = document.getElementById('overlay-title');
   var overlayHint = document.getElementById('overlay-hint');
@@ -4734,6 +5735,9 @@
   var hud = document.getElementById('hud');
   var resetBtn = document.getElementById('reset-btn');
   var canvas = document.getElementById('viewer');
+  var viewerPane = document.getElementById('viewer-pane');
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll('#tabs button'));
+  var planPanels = Array.prototype.slice.call(document.querySelectorAll('.plan'));
 
   function showMessage(title, hint) {
     overlaySpinner.style.display = 'none';
@@ -4753,19 +5757,18 @@
 
   if (!hasWebGL()) {
     showMessage("This browser can't display 3D models",
-      'Open this page in Chrome, Safari or Edge instead of an in-app browser (e.g. Zalo, Messenger, Instagram), then try again.');
+      'Open this page in Chrome, Safari or Edge instead of an in-app browser (e.g. Zalo, Messenger, Instagram), then try again. The floor plans on the left still work here.');
     hud.style.display = 'none';
     resetBtn.style.display = 'none';
-    return;
   }
 
   var isCoarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
   var scene = new THREE.Scene();
 
-  // A vertical sky gradient instead of a flat void: zenith blue through
-  // horizon haze into a muted ground tone below the horizon line, so the
-  // model sits in a plausible atmosphere rather than on a black backdrop.
+  // Same sky-gradient presentation as the whole-building viewer: a plausible
+  // atmosphere instead of a flat void, so an isolated floor reads as a
+  // designed slice, not a debug export.
   function makeSkyTexture() {
     var c = document.createElement('canvas');
     c.width = 2; c.height = 512;
@@ -4782,73 +5785,196 @@
   }
   scene.background = makeSkyTexture();
 
-  var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 500);
+  var camera = new THREE.PerspectiveCamera(50, 1, 0.05, 500);
   // The GLB is exported Blender-native (export_yup=False): Z is vertical,
   // not three.js's default Y. Without this, OrbitControls orbits around the
-  // wrong pole -- easy to miss on a roughly cubic whole building, but it
-  // shows up as sideways/tumbled framing on flatter selections.
+  // wrong pole and "up" on screen is actually the model's Y (depth) axis --
+  // harmless for a roughly-cubic whole building, but it flattens a single
+  // storey (long in Y, short in Z) into a tall sliver instead of a plan.
   camera.up.set(0, 0, 1);
 
-  var renderer;
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isCoarsePointer, powerPreference: 'high-performance' });
-  } catch (e) {
-    showMessage("Couldn't start 3D rendering", String((e && e.message) || e));
-    hud.style.display = 'none';
-    resetBtn.style.display = 'none';
-    return;
+  var renderer = null;
+  if (hasWebGL()) {
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isCoarsePointer, powerPreference: 'high-performance' });
+    } catch (e) {
+      showMessage("Couldn't start 3D rendering", String((e && e.message) || e));
+      hud.style.display = 'none';
+      resetBtn.style.display = 'none';
+    }
   }
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isCoarsePointer ? 1.5 : 2));
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // Lights: sky/ground bounce (hemisphere) plus one warm sun that casts
-  // soft contact shadows, so massing reads as solid instead of floating.
-  scene.add(new THREE.HemisphereLight(0xcfe0ee, 0x8f887a, 0.85));
-  var key = new THREE.DirectionalLight(0xfff2dd, 1.35);
-  key.castShadow = !isCoarsePointer;
-  key.shadow.mapSize.set(isCoarsePointer ? 1024 : 2048, isCoarsePointer ? 1024 : 2048);
-  key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.02;
-  scene.add(key);
-
-  var controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.screenSpacePanning = true;
-  controls.minDistance = 0.2;
-  controls.maxDistance = 400;
-
-  var loader = new THREE.GLTFLoader();
+  var controls = null;
+  var loader = null;
   var modelRoot = null;
-  var sceneRadius = 10;
-  var homeState = null;
+  var floorRadius = 10;
+  var currentFloor = 0;
+  var floorHome = {};
+  var tintedMats = {};
 
   // Site-context props (ground slab, street strip, neighbour massing) are
-  // exported much larger than the building itself so they read as
-  // "surroundings" in the full render -- but that makes them dominate a
-  // naive bounding-box fit, framing a tiny house against a huge empty plane.
-  // Fit on everything except those; still render and still raycast-able.
+  // exported much larger than the building itself, so they never belong to
+  // a single floor -- the ground plane is only shown under the Ground tab.
   var SITE_CONTEXT_NAME = /^(ground|street|neighbour)/i;
 
-  function fitBox(root) {
+  // A mesh belongs to a floor if its Z-extent overlaps that floor's band at
+  // all, not just whichever band its centre happens to land in: the
+  // stairwell/light-well core runs as continuous multi-storey wall meshes
+  // (by design -- it is an intentionally undivided void), so a centre-point
+  // test would arbitrarily assign the whole shaft to one floor and make it
+  // vanish, or loom oversized, on every other floor it actually passes
+  // through. Overlap keeps it visible on every floor it really spans.
+  function overlapsBand(zMin, zMax, band) {
+    return zMax > band.z0 + 1e-6 && zMin < band.z1 - 1e-6;
+  }
+
+  // A stricter version for framing only: a mesh that merely grazes this
+  // band by a few centimetres (e.g. a railing that is 90% Floor 5 and just
+  // clips Floor 4's ceiling datum) shouldn't blow the camera frame out to
+  // cover both floors -- it still renders (overlapsBand keeps it visible),
+  // it just doesn't get to size the shot.
+  function substantialOverlap(zMin, zMax, band) {
+    var overlap = Math.min(zMax, band.z1) - Math.max(zMin, band.z0);
+    if (overlap <= 0) return false;
+    var meshH = zMax - zMin;
+    var bandH = isFinite(band.z1) ? band.z1 - band.z0 : meshH;
+    var refH = Math.min(meshH, bandH) || 1e-6;
+    return overlap / refH >= 0.4;
+  }
+
+  function floorFitBox(i) {
+    var band = FLOOR_BANDS[i];
     var box = new THREE.Box3();
     var any = false;
-    root.traverse(function (obj) {
-      if (!obj.isMesh || SITE_CONTEXT_NAME.test(obj.name)) return;
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh || obj.userData.floorIndex === -1) return;
+      if (!substantialOverlap(obj.userData.zMin, obj.userData.zMax, band)) return;
       box.expandByObject(obj);
       any = true;
     });
-    if (!any) box.setFromObject(root);
-    return box;
+    return any ? box : null;
   }
+
+  function selectFloor(i, instant) {
+    currentFloor = i;
+    tabButtons.forEach(function (btn, idx) {
+      var active = idx === i;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    planPanels.forEach(function (div, idx) { div.classList.toggle('active', idx === i); });
+
+    if (!modelRoot) return;
+
+    var band = FLOOR_BANDS[i];
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      // Site context (ground slab etc.) is huge relative to a single floor
+      // and would swamp the frame -- never show it here.
+      if (obj.userData.floorIndex === -1) { obj.visible = false; return; }
+      var inBand = overlapsBand(obj.userData.zMin, obj.userData.zMax, band);
+      // Adjacent floors stay visible as 7%-opacity ghosts: the slice floats
+      // in a meaningless void without them, and you can't tell where in the
+      // building you are. Ghost materials are cloned per mesh (GLB materials
+      // are shared, so mutating them would ghost every floor at once).
+      obj.visible = true;
+      if (inBand) {
+        obj.userData.ghosted = false;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        if (obj.userData.origMat) {
+          obj.material = obj.userData.origMat;
+          delete obj.userData.ghostMat;
+        }
+        // Drop white massing just below pure so sunlit faces still clip to
+        // white but shade lines between walls/slabs read against the sky.
+        // Guard per MATERIAL, not per mesh: GLB materials are shared, and a
+        // per-mesh guard multiplies one shared colour ~once per mesh --
+        // 0.94^N compounds to pitch black within a couple of floors.
+        if (!tintedMats[obj.material.uuid]) {
+          tintedMats[obj.material.uuid] = true;
+          if (obj.material.color) obj.material.color.multiplyScalar(0.94);
+        }
+      } else {
+        obj.userData.ghosted = true;
+        // Ghosts must not cast or receive: shadow maps ignore opacity, so a
+        // transparent 7% floor above still umbra'd the whole slice black.
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+        if (!obj.userData.ghostMat) {
+          obj.userData.origMat = obj.material;
+          var g = obj.material.clone();
+          g.transparent = true;
+          g.opacity = 0.045;
+          g.depthWrite = false;
+          obj.userData.ghostMat = g;
+        }
+        obj.material = obj.userData.ghostMat;
+      }
+    });
+
+    var box = floorFitBox(i);
+    if (!box) return;
+    var size = new THREE.Vector3();
+    box.getSize(size);
+    var centre = new THREE.Vector3();
+    box.getCenter(centre);
+    floorRadius = Math.max(size.x, size.y, size.z) || 5;
+    controls.minDistance = floorRadius * 0.01;
+    controls.maxDistance = floorRadius * 10;
+
+    // Fit the sun and its shadow frustum to the visible floor slice. The
+    // default broadside camera looks from -X/-Y, so a sun from +X/+Y high
+    // rakes shadows toward the viewer for solid, readable depth.
+    key.position.set(centre.x + floorRadius * 0.9, centre.y + floorRadius * 1.2, centre.z + floorRadius * 1.6);
+    if (key.target) {
+      key.target.position.copy(centre);
+      scene.add(key.target);
+    }
+    var s = key.shadow.camera;
+    s.left = -floorRadius * 1.6; s.right = floorRadius * 1.6;
+    s.top = floorRadius * 1.6; s.bottom = -floorRadius * 1.6;
+    s.near = floorRadius * 0.05; s.far = floorRadius * 6;
+    s.updateProjectionMatrix();
+
+    // A single floor is long and narrow (Y, the tube house's long axis,
+    // dominates X by 5x+): broadside from X so the full length reads across
+    // the frame. dist is FOV-derived off size.y so the slice fills ~60% of
+    // the pane no matter how long the floor actually is.
+    var vFov = camera.fov * Math.PI / 180;
+    var hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    // The floor's long axis (Y) reads across the screen WIDTH, so it fits
+    // against the horizontal FOV; only the slice height fits against the
+    // vertical FOV. Fitting a horizontal extent with vFov over-stood ~40%.
+    var distY = (size.y * 0.5) / Math.tan(hFov / 2);
+    var distZ = (size.z * 0.5) / Math.tan(vFov / 2);
+    var dist = Math.max(distY, distZ) / 0.62;
+    // Steep, near-top-down oblique: a floor slice read from eye level is
+    // distorted like 3D yet as unreadable as 2D -- the plan-like angle lets
+    // rooms and walls read while the ghosted floors keep vertical context.
+    var toPos = new THREE.Vector3(0.6, -0.15, 0.78).normalize().multiplyScalar(dist).add(centre);
+
+    floorHome[i] = { position: toPos.clone(), target: centre.clone() };
+    if (instant) {
+      camera.position.copy(toPos);
+      controls.target.copy(centre);
+      controls.update();
+    } else {
+      animateCamera(toPos, centre, 420);
+    }
+  }
+
+  tabButtons.forEach(function (btn, idx) {
+    btn.addEventListener('click', function () { selectFloor(idx, false); });
+  });
 
   function onModel(gltf) {
     var root = gltf.scene || gltf.scenes[0];
+    scene.add(root);
+    root.updateMatrixWorld(true);
+    modelRoot = root;
+
+    var tmpBox = new THREE.Box3();
     root.traverse(function (obj) {
       if (!obj.isMesh) return;
       obj.castShadow = true;
@@ -4859,74 +5985,16 @@
         if (m && m.roughness !== undefined && m.roughness < 0.55) m.roughness = 0.75;
         if (m && m.metalness !== undefined && m.metalness > 0.2) m.metalness = 0.0;
       });
-    });
-    scene.add(root);
-    modelRoot = root;
-
-    var box = fitBox(root);
-    var size = new THREE.Vector3();
-    box.getSize(size);
-    var centre = new THREE.Vector3();
-    box.getCenter(centre);
-    var radius = Math.max(size.x, size.y, size.z) || 10;
-    sceneRadius = radius;
-
-    // Loose enough to walk right up to a wall, tight enough to stay oriented.
-    controls.minDistance = radius * 0.01;
-    controls.maxDistance = radius * 8;
-
-    // Fit the sun and its shadow frustum to the real site extent (including
-    // ground/street context), so contact shadows land where the building is.
-    // The default hero camera stands south-west of the model looking north:
-    // putting the sun east-high throws raking shadows toward the viewer,
-    // which is what makes massing read as solid instead of floating.
-    key.position.set(centre.x + radius * 0.9, centre.y + radius * 1.3, centre.z + radius * 1.7);
-    if (key.target) {
-      key.target.position.copy(centre);
-      scene.add(key.target);
-    }
-    var s = key.shadow.camera;
-    s.left = -radius * 1.6; s.right = radius * 1.6;
-    s.top = radius * 1.6; s.bottom = -radius * 1.6;
-    s.near = radius * 0.05; s.far = radius * 6;
-    s.updateProjectionMatrix();
-
-    // Depth cue + edge blend: haze the far reaches of the site plane into
-    // the horizon so the exported ground rectangle doesn't end on a hard
-    // line, and calm the site-context greens so white massing keeps
-    // contrast against its surroundings.
-    scene.fog = new THREE.Fog(0xd8e2e6, radius * 3, radius * 16);
-    root.traverse(function (obj) {
-      if (!obj.isMesh || !SITE_CONTEXT_NAME.test(obj.name)) return;
-      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(function (m) {
-        if (m && m.color) m.color.multiplyScalar(0.82);
-      });
+      if (SITE_CONTEXT_NAME.test(obj.name)) { obj.userData.floorIndex = -1; return; }
+      tmpBox.setFromObject(obj);
+      obj.userData.floorIndex = 0; // sentinel: "not site context", see zMin/zMax for the real extent
+      obj.userData.zMin = tmpBox.min.z;
+      obj.userData.zMax = tmpBox.max.z;
     });
 
-    // Hero framing: three-quarter view with the building filling ~60% of the
-    // frame height, derived from the actual FOV instead of a fixed distance
-    // multiple that leaves it a speck on tall/narrow models.
-    var vFov = camera.fov * Math.PI / 180;
-    var hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-    var distH = (size.z * 0.5) / Math.tan(vFov / 2);
-    var distW = (Math.max(size.x, size.y) * 0.5) / Math.tan(hFov / 2);
-    var dist = Math.max(distH, distW) / 0.6;
-    // Unit hero direction scaled by the fitted distance, not per-axis
-    // multiples of it (which compounded to ~1.4x too far).
-    var dir = new THREE.Vector3(0.62, -0.55, 0).normalize();
-    camera.position.set(
-      centre.x + dir.x * dist,
-      centre.y + dir.y * dist,
-      centre.z + size.z * 0.35
-    );
-    controls.target.set(centre.x, centre.y, centre.z - size.z * 0.06);
-    controls.update();
-
-    homeState = { position: camera.position.clone(), target: controls.target.clone() };
-    // Debug/testing handle: lets automation inspect or drive the scene
-    // (shadow toggles, camera moves) without reaching into the IIFE.
-    window.__viewer = { scene: scene, camera: camera, renderer: renderer, controls: controls, key: key, modelRoot: root };
+    selectFloor(currentFloor, true);
+    // Debug/testing handle for automation (same as the whole-building viewer).
+    window.__viewer = { scene: scene, camera: camera, renderer: renderer, controls: controls, key: key, modelRoot: root, selectFloor: selectFloor };
     overlay.classList.add('hidden');
   }
 
@@ -4934,7 +6002,31 @@
     showMessage('This model failed to load', (err && err.message) ? err.message : String(err));
   }
 
-  var _b64=['Z2xURgIAAAB0LgUA0JIEAEpTT057ImFzc2V0Ijp7ImdlbmVyYXRvciI6ImdsVEYtVHJhbnNmb3JtIHY0LjQuMiIsInZlcnNpb24iOiIyLjAifSwiYWNjZXNzb3JzIjpbeyJ0eXBlIjoiU0NBTEFSIiwiY29tcG9uZW50VHlwZSI6NTEyMywiY291bnQiOjM2LCJidWZmZXJWaWV3IjowLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNzI0LDI0MTQyLDMyNzY3XSwibWluIjpbLTE3MjQsLTI0MTQyLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjEsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjEsImJ5dGVPZmZzZXQiOjh9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE1NjAsMzEyMCwzMjc2N10sIm1pbiI6Wy0xNTYwLC0zMTIwLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjIsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE1NjAsOTM2LDMyNzY3XSwibWluIjpbLTE1NjAsLTkzNiwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjozLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls1MjQ0LDMyNzY3LDE5NjRdLCJtaW4iOlstNTI0NCwtMzI3NjcsLTE5NjRdLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3Ijo0LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls1MzY4LDEzMTQxLDMyNzY3XSwibWluIjpbLTUzNjgsLTEzMTQxLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjUsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjUsImJ5dGVPZmZzZXQiOjh9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE2NDAsMTg4NDIsMzI3NjddLCJtaW4iOlstMTY0MCwtMTg4NDIsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6NiwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbOTM2LDMyNzY3LDE4NzI2XSwibWluIjpbLTkzNiwtMzI3NjcsLTE4NzI2XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6NywiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTY0MCwzMjc2NywzMjc2N10sIm1pbiI6Wy0xNjQwLC0zMjc2NywtMzI3Njdd',
+  if (renderer) {
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    scene.add(new THREE.HemisphereLight(0xcfe0ee, 0x8f887a, 0.85));
+    var key = new THREE.DirectionalLight(0xfff2dd, 1.35);
+    key.castShadow = !isCoarsePointer;
+    key.shadow.mapSize.set(isCoarsePointer ? 1024 : 2048, isCoarsePointer ? 1024 : 2048);
+    key.shadow.bias = -0.0004;
+    key.shadow.normalBias = 0.02;
+    scene.add(key);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 0.2;
+    controls.maxDistance = 400;
+
+    loader = new THREE.GLTFLoader();
+
+    var _b64=['Z2xURgIAAAB0LgUA0JIEAEpTT057ImFzc2V0Ijp7ImdlbmVyYXRvciI6ImdsVEYtVHJhbnNmb3JtIHY0LjQuMiIsInZlcnNpb24iOiIyLjAifSwiYWNjZXNzb3JzIjpbeyJ0eXBlIjoiU0NBTEFSIiwiY29tcG9uZW50VHlwZSI6NTEyMywiY291bnQiOjM2LCJidWZmZXJWaWV3IjowLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNzI0LDI0MTQyLDMyNzY3XSwibWluIjpbLTE3MjQsLTI0MTQyLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjEsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjEsImJ5dGVPZmZzZXQiOjh9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE1NjAsMzEyMCwzMjc2N10sIm1pbiI6Wy0xNTYwLC0zMTIwLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjIsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE1NjAsOTM2LDMyNzY3XSwibWluIjpbLTE1NjAsLTkzNiwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjozLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls1MjQ0LDMyNzY3LDE5NjRdLCJtaW4iOlstNTI0NCwtMzI3NjcsLTE5NjRdLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3Ijo0LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls1MzY4LDEzMTQxLDMyNzY3XSwibWluIjpbLTUzNjgsLTEzMTQxLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjUsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjUsImJ5dGVPZmZzZXQiOjh9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzE2NDAsMTg4NDIsMzI3NjddLCJtaW4iOlstMTY0MCwtMTg4NDIsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6NiwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbOTM2LDMyNzY3LDE4NzI2XSwibWluIjpbLTkzNiwtMzI3NjcsLTE4NzI2XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6NywiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTY0MCwzMjc2NywzMjc2N10sIm1pbiI6Wy0xNjQwLC0zMjc2NywtMzI3Njdd',
 'LCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3Ijo4LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNjQwLDExNDY5LDMyNzY3XSwibWluIjpbLTE2NDAsLTExNDY5LC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjksImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzYzNiwzMjc2NywxMjcyNV0sIm1pbiI6Wy02MzYsLTMyNzY3LC0xMjcyNV0sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjEwLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNTU2NSw4MjAsMzI3NjddLCJtaW4iOlstMTU1NjUsLTgyMCwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoxMSwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTg5NzAsMTcyNCwzMjc2N10sIm1pbiI6Wy0xODk3MCwtMTcyNCwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoxMiwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTU2MCwxNTYwLDMyNzY3XSwibWluIjpbLTE1NjAsLTE1NjAsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MTMsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzkzNiwxNTYwLDMyNzY3XSwibWluIjpbLTkzNiwtMTU2MCwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoxNCwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMzI3NjcsNTgyNCwyMTg0XSwibWluIjpbLTMyNzY3LC01ODI0LC0yMTg0XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MTUsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzExNjczLDQ4MzIsMzI3NjddLCJtaW4iOlstMTE2NzMsLTQ4MzIsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MTYsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjE2LCJieXRlT2Zmc2V0Ijo4fSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls4MTkzLDgyMCwzMjc2N10sIm1pbiI6Wy04MTkzLC04MjAsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MTcsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21w',
 'b25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzgxOTMsMTY0MCwzMjc2N10sIm1pbiI6Wy04MTkzLC0xNjQwLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjE4LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls5MzYsMzI3NjcsODQyNV0sIm1pbiI6Wy05MzYsLTMyNzY3LC04NDI1XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MTksImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzkzNiwzMjc2Nyw4ODkzXSwibWluIjpbLTkzNiwtMzI3NjcsLTg4OTNdLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoyMCwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMjE4NCwzMjc2NywzMjc2XSwibWluIjpbLTIxODQsLTMyNzY3LC0zMjc2XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MjEsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzIxODQ2LDY1NTIsMzI3NjddLCJtaW4iOlstMjE4NDYsLTY1NTIsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MjIsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6Wzg1MjEsMzI3NjcsMTk2NF0sIm1pbiI6Wy04NTIxLC0zMjc2NywtMTk2NF0sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjIzLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls4NTIxLDMyNzY3LDgyMF0sIm1pbiI6Wy04NTIxLC0zMjc2NywtODIwXSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MjQsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzQ0OCwzMjc2Nyw2NzAwXSwibWluIjpbLTQ0OCwtMzI3NjcsLTY3MDBdLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoyNSwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTY0MCwzMDMxMSwzMjc2N10sIm1pbiI6Wy0xNjQwLC0zMDMxMSwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjoyNiwiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbODg0LDMyNzY3LDE2ODI2XSwibWluIjpbLTg4NCwtMzI3NjcsLTE2ODI2XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MjcsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6',
 'MjQsIm1heCI6WzE1NjAsMjE4NDYsMzI3NjddLCJtaW4iOlstMTU2MCwtMjE4NDYsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MjgsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzU4MjQsMzI3NjcsMjE4NF0sIm1pbiI6Wy01ODI0LC0zMjc2NywtMjE4NF0sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjI5LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOls0ODMyLDExNjczLDMyNzY3XSwibWluIjpbLTQ4MzIsLTExNjczLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjMwLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlszMjc2Nyw2NTUyLDMyNzY3XSwibWluIjpbLTMyNzY3LC02NTUyLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjMxLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNzI0NiwzNDQ4LDMyNzY3XSwibWluIjpbLTE3MjQ2LC0zNDQ4LC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjMyLCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlsxNDg4LDU5NTYsMzI3NjddLCJtaW4iOlstMTQ4OCwtNTk1NiwtMzI3NjddLCJub3JtYWxpemVkIjp0cnVlLCJidWZmZXJWaWV3IjozMywiYnl0ZU9mZnNldCI6MH0seyJ0eXBlIjoiVkVDMyIsImNvbXBvbmVudFR5cGUiOjUxMjIsImNvdW50IjoyNCwibWF4IjpbMTc4OCw1OTU2LDMyNzY3XSwibWluIjpbLTE3ODgsLTU5NTYsLTMyNzY3XSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MzQsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzMyNzY3LDk0NjUsMjE4NF0sIm1pbiI6Wy0zMjc2NywtOTQ2NSwtMjE4NF0sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjM1LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlszMjc2Nyw5NDY1LDkxMl0sIm1pbiI6Wy0zMjc2NywtOTQ2NSwtOTEyXSwibm9ybWFsaXplZCI6dHJ1ZSwiYnVmZmVyVmlldyI6MzYsImJ5dGVPZmZzZXQiOjB9LHsidHlwZSI6IlZFQzMiLCJjb21wb25lbnRUeXBlIjo1MTIyLCJjb3VudCI6MjQsIm1heCI6WzI2MDc5LDQwMCwzMjc2N10sIm1pbiI6Wy0yNjA3OSwtNDAwLC0zMjc2N10sIm5vcm1hbGl6ZWQiOnRydWUsImJ1ZmZlclZpZXciOjM3LCJieXRlT2Zmc2V0IjowfSx7InR5cGUiOiJWRUMzIiwiY29tcG9uZW50VHlwZSI6NTEyMiwiY291bnQiOjI0LCJtYXgiOlszMjc2',
@@ -5162,121 +6254,122 @@
 'm9kzc_9_AABlJjNz_38AAGUmM3MBgAAAZSYzcwGAAABlJjNz_38AAGUmzYz_fwAAZSbNjAGAAABlJs2MAYAAAGUmzYz_fwAAm9nNjP9_AACb2c2MAYAAAJvZM3MBgAAAZSYzcwGAAABlJs2MAYAAAJvZzYwBgAAAZSYzc_9_AACb2TNz_38AAJvZzYz_fwAAZSbNjP9_AADA7gGAe8YAAMDuAYCFOQAAwO7_f4U5AADA7v9_e8YAAMDu_397xgAAwO7_f4U5AABAEf9_hTkAAEAR_397xgAAQBH_f3vGAABAEf9_hTkAAEARAYCFOQAAQBEBgHvGAABAEQGAe8YAAEARAYCFOQAAwO4BgIU5AADA7gGAe8YAAMDu_397xgAAQBH_f3vGAABAEQGAe8YAAMDuAYB7xgAAQBH_f4U5AADA7v9_hTkAAMDuAYCFOQAAQBEBgIU5AAAVngGAAPAAABWeAYAAEAAAFZ7_fwAQAAAVnv9_APAAABWe_38A8AAAFZ7_fwAQAADrYf9_ABAAAOth_38A8AAA62H_fwDwAADrYf9_ABAAAOthAYAAEAAA62EBgADwAADrYQGAAPAAAOthAYAAEAAAFZ4BgAAQAAAVngGAAPAAABWe_38A8AAA62H_fwDwAADrYQGAAPAAABWeAYAA8AAA62H_fwAQAAAVnv9_ABAAABWeAYAAEAAA62EBgAAQAAABnwGA0PIAAAGfAYAwDQAAAZ__fzANAAABn_9_0PIAAAGf_3_Q8gAAAZ__fzANAAD_YP9_MA0AAP9g_3_Q8gAA_2D_f9DyAAD_YP9_MA0AAP9gAYAwDQAA_2ABgNDyAAD_YAGA0PIAAP9gAYAwDQAAAZ8BgDANAAABnwGA0PIAAAGf_3_Q8gAA_2D_f9DyAAD_YAGA0PIAAAGfAYDQ8gAA_2D_fzANAAABn_9_MA0AAAGfAYAwDQAA_2ABgDANAAABgEq4GOgAAAGASrjoFwAAAYC2R-gXAAABgLZHGOgAAAGAtkcY6AAAAYC2R-gXAAD_f7ZH6BcAAP9_tkcY6AAA_3-2RxjoAAD_f7ZH6BcAAP9_SrjoFwAA_39KuBjoAAD_f0q4GOgAAP9_SrjoFwAAAYBKuOgXAAABgEq4GOgAAAGAtkcY6AAA_3-2RxjoAAD_f0q4GOgAAAGASrgY6AAA_3-2R-gXAAABgLZH6BcAAAGASrjoFwAA_39KuOgXAAAQ6gGA2rYAABDqAYAmSQAAEOr_fyZJAAAQ6v9_2rYAABDq_3_atgAAEOr_fyZJAADwFf9_JkkAAPAV_3_atgAA8BX_f9q2AADwFf9_JkkAAPAVAYAmSQAA8BUBgNq2AADwFQGA2rYAAPAVAYAmSQAAEOoBgCZJAAAQ6gGA2rYAABDq_3_atgAA8BX_f9q2AADwFQGA2rYAABDqAYDatgAA8BX_fyZJAAAQ6v9_JkkAABDqAYAmSQAA8BUBgCZJAAABgAGAAYAAAAGAAYD_fwAAAYD_f_9_AAABgP9_AYAAAAGA_38BgAAAAYD_f_9_AAD_f_9__38AAP9__38BgAAA_3__fwGAAAD_f_9__38AAP9_AYD_fwAA_38BgAGAAAD_fwGAAYAAAP9_AYD_fwAAAYABgP9_AAABgAGAAYAAAAGA_38BgAAA_3__fwGAAAD_fwGAAYAAAAGAAYABgAAA_3__f_9_AAABgP9__38AAAGAAYD_fwAA_38BgP9_AACZmQGAAPAAAJmZAYAAEAAAmZn_fwAQAACZmf9_APAAAJmZ_38A8AAAmZn_fwAQAABnZv9_ABAAAGdm_38A8AAAZ2b_fwDwAABnZv9_ABAAAGdmAYAAEAAAZ2YBgADwAABnZgGAAPAAAGdmAYAAEAAAmZkBgAAQAACZmQGAAPAAAJmZ_38A8AAAZ2b_fwDwAABnZgGAAPAAAJmZAYAA8AAAZ2b_fwAQAACZmf9_ABAAAJmZAYAAEAAAZ2YBgAAQAABlmgGA',
 '0PIAAGWaAYAwDQAAZZr_fzANAABlmv9_0PIAAGWa_3_Q8gAAZZr_fzANAACbZf9_MA0AAJtl_3_Q8gAAm2X_f9DyAACbZf9_MA0AAJtlAYAwDQAAm2UBgNDyAACbZQGA0PIAAJtlAYAwDQAAZZoBgDANAABlmgGA0PIAAGWa_3_Q8gAAm2X_f9DyAACbZQGA0PIAAGWaAYDQ8gAAm2X_fzANAABlmv9_MA0AAGWaAYAwDQAAm2UBgDANAAABgG67JOkAAAGAbrvcFgAAAYCSRNwWAAABgJJEJOkAAAGAkkQk6QAAAYCSRNwWAAD_f5JE3BYAAP9_kkQk6QAA_3-SRCTpAAD_f5JE3BYAAP9_brvcFgAA_39uuyTpAAD_f267JOkAAP9_brvcFgAAAYBuu9wWAAABgG67JOkAAAGAkkQk6QAA_3-SRCTpAAD_f267JOkAAAGAbrsk6QAA_3-SRNwWAAABgJJE3BYAAAGAbrvcFgAA_39uu9wWAACb2UqhAYAAAJvZSqH_fwAAm9m2Xv9_AACb2bZeAYAAAJvZtl4BgAAAm9m2Xv9_AABlJrZe_38AAGUmtl4BgAAAZSa2XgGAAABlJrZe_38AAGUmSqH_fwAAZSZKoQGAAABlJkqhAYAAAGUmSqH_fwAAm9lKof9_AACb2UqhAYAAAJvZtl4BgAAAZSa2XgGAAABlJkqhAYAAAJvZSqEBgAAAZSa2Xv9_AACb2bZe_38AAJvZSqH_fwAAZSZKof9_AAA='].join('');_b64=_b64.replace(/-/g,'+').replace(/_/g,'/');var _bin=atob(_b64);var _buf=new Uint8Array(_bin.length);for(var _i=0;_i<_bin.length;_i++){_buf[_i]=_bin.charCodeAt(_i);}loader.parse(_buf.buffer, '', onModel, onModelError);
 
-  // -- Reset view: back to the framing computed when the model loaded. --
-  resetBtn.addEventListener('click', function () {
-    if (homeState) animateCamera(homeState.position, homeState.target, 450);
-  });
+    resetBtn.addEventListener('click', function () {
+      var home = floorHome[currentFloor];
+      if (home) animateCamera(home.position, home.target, 450);
+    });
 
-  // -- Tap/click a point on the model: re-centre orbiting there and step
-  // closer, so you can walk into a room instead of fighting a pivot that
-  // stays pinned to the building's centre. A drag (or a second finger, for
-  // pinch/pan) is never mistaken for a tap. --
-  var raycaster = new THREE.Raycaster();
-  var pointer = new THREE.Vector2();
-  var downPos = null;
-  var downTime = 0;
-  var activePointers = 0;
-  var gestureIsMulti = false;
+    // -- Tap/click a point on the model: re-centre orbiting there and step
+    // closer. Only the current floor's meshes are visible/raycastable in
+    // practice; hidden floors are skipped even though three.js would
+    // otherwise raycast straight through them. --
+    var raycaster = new THREE.Raycaster();
+    var pointer = new THREE.Vector2();
+    var downPos = null;
+    var downTime = 0;
+    var activePointers = 0;
+    var gestureIsMulti = false;
 
-  function pointerNdc(ev) {
-    var rect = canvas.getBoundingClientRect();
-    return {
-      x: ((ev.clientX - rect.left) / rect.width) * 2 - 1,
-      y: -((ev.clientY - rect.top) / rect.height) * 2 + 1
-    };
-  }
-
-  canvas.addEventListener('pointerdown', function (ev) {
-    activePointers += 1;
-    if (activePointers === 1) {
-      gestureIsMulti = false;
-      downPos = { x: ev.clientX, y: ev.clientY };
-      downTime = performance.now();
-    } else {
-      gestureIsMulti = true;
-      downPos = null;
+    function pointerNdc(ev) {
+      var rect = canvas.getBoundingClientRect();
+      return {
+        x: ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+        y: -((ev.clientY - rect.top) / rect.height) * 2 + 1
+      };
     }
-  }, { passive: true });
 
-  canvas.addEventListener('pointerup', function (ev) {
-    activePointers = Math.max(0, activePointers - 1);
-    var wasTap = downPos && !gestureIsMulti && modelRoot &&
-      Math.hypot(ev.clientX - downPos.x, ev.clientY - downPos.y) <= 8 &&
-      (performance.now() - downTime) <= 400;
-    downPos = null;
-    if (!wasTap) return;
-
-    var ndc = pointerNdc(ev);
-    pointer.set(ndc.x, ndc.y);
-    raycaster.setFromCamera(pointer, camera);
-    var hits = raycaster.intersectObject(modelRoot, true);
-    if (!hits.length) return;
-
-    var hit = hits[0].point;
-    var curDist = camera.position.distanceTo(controls.target);
-    var hitDist = camera.position.distanceTo(hit);
-    var newDist = Math.max(controls.minDistance * 3, Math.min(curDist, hitDist) * 0.4);
-    var dir = camera.position.clone().sub(hit);
-    if (dir.lengthSq() < 1e-6) dir.set(0.5, 0.4, 0.7);
-    dir.normalize();
-    var newPos = hit.clone().add(dir.multiplyScalar(newDist));
-
-    animateCamera(newPos, hit, 380);
-  }, { passive: true });
-
-  canvas.addEventListener('pointercancel', function () {
-    activePointers = Math.max(0, activePointers - 1);
-    downPos = null;
-  }, { passive: true });
-
-  var animId = null;
-  function animateCamera(toPos, toTarget, ms) {
-    if (animId) cancelAnimationFrame(animId);
-    var fromPos = camera.position.clone();
-    var fromTarget = controls.target.clone();
-    var start = performance.now();
-    controls.enabled = false;
-    function step(now) {
-      var t = Math.min(1, (now - start) / ms);
-      var e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
-      camera.position.lerpVectors(fromPos, toPos, e);
-      controls.target.lerpVectors(fromTarget, toTarget, e);
-      controls.update();
-      if (t < 1) {
-        animId = requestAnimationFrame(step);
+    canvas.addEventListener('pointerdown', function (ev) {
+      activePointers += 1;
+      if (activePointers === 1) {
+        gestureIsMulti = false;
+        downPos = { x: ev.clientX, y: ev.clientY };
+        downTime = performance.now();
       } else {
-        controls.enabled = true;
-        animId = null;
+        gestureIsMulti = true;
+        downPos = null;
       }
-    }
-    animId = requestAnimationFrame(step);
-  }
+    }, { passive: true });
 
-  function resize() {
-    var w = window.innerWidth, h = window.innerHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  }
-  window.addEventListener('resize', resize);
-  window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
+    canvas.addEventListener('pointerup', function (ev) {
+      activePointers = Math.max(0, activePointers - 1);
+      var wasTap = downPos && !gestureIsMulti && modelRoot &&
+        Math.hypot(ev.clientX - downPos.x, ev.clientY - downPos.y) <= 8 &&
+        (performance.now() - downTime) <= 400;
+      downPos = null;
+      if (!wasTap) return;
 
-  function animate() {
-    requestAnimationFrame(animate);
-    // Keep the near/far planes tight around the current dolly distance so
-    // walking up close to a wall doesn't clip it, while still covering the
-    // whole building when zoomed out.
-    var dist = camera.position.distanceTo(controls.target);
-    var nearWanted = Math.max(sceneRadius / 2000, dist / 200);
-    if (Math.abs(camera.near - nearWanted) > camera.near * 0.2) {
-      camera.near = nearWanted;
-      camera.far = Math.max(sceneRadius * 50, dist * 10);
+      var ndc = pointerNdc(ev);
+      pointer.set(ndc.x, ndc.y);
+      raycaster.setFromCamera(pointer, camera);
+      var hits = raycaster.intersectObject(modelRoot, true).filter(function (h) {
+        return h.object.visible && !h.object.userData.ghosted;
+      });
+      if (!hits.length) return;
+
+      var hit = hits[0].point;
+      var curDist = camera.position.distanceTo(controls.target);
+      var hitDist = camera.position.distanceTo(hit);
+      var newDist = Math.max(controls.minDistance * 3, Math.min(curDist, hitDist) * 0.4);
+      var dir = camera.position.clone().sub(hit);
+      if (dir.lengthSq() < 1e-6) dir.set(0.5, 0.4, 0.7);
+      dir.normalize();
+      var newPos = hit.clone().add(dir.multiplyScalar(newDist));
+
+      animateCamera(newPos, hit, 380);
+    }, { passive: true });
+
+    canvas.addEventListener('pointercancel', function () {
+      activePointers = Math.max(0, activePointers - 1);
+      downPos = null;
+    }, { passive: true });
+
+    var animId = null;
+    function animateCamera(toPos, toTarget, ms) {
+      if (animId) cancelAnimationFrame(animId);
+      var fromPos = camera.position.clone();
+      var fromTarget = controls.target.clone();
+      var start = performance.now();
+      controls.enabled = false;
+      function step(now) {
+        var t = Math.min(1, (now - start) / ms);
+        var e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+        camera.position.lerpVectors(fromPos, toPos, e);
+        controls.target.lerpVectors(fromTarget, toTarget, e);
+        controls.update();
+        if (t < 1) {
+          animId = requestAnimationFrame(step);
+        } else {
+          controls.enabled = true;
+          animId = null;
+        }
+      }
+      animId = requestAnimationFrame(step);
+    };
+
+    function resize() {
+      var w = viewerPane.clientWidth || 1, h = viewerPane.clientHeight || 1;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
     }
-    controls.update();
-    renderer.render(scene, camera);
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
+    resize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      var dist = camera.position.distanceTo(controls.target);
+      var nearWanted = Math.max(floorRadius / 2000, dist / 200);
+      if (Math.abs(camera.near - nearWanted) > camera.near * 0.2) {
+        camera.near = nearWanted;
+        camera.far = Math.max(floorRadius * 50, dist * 10);
+        camera.updateProjectionMatrix();
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
   }
-  animate();
 })();
 </script>
 </body>

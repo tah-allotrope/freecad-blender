@@ -137,6 +137,51 @@ Completed in full (127 tests, ruff clean, skill mirror synced). Summary:
 
 ## Review
 
+### 2026-08-22 — Viewer gauntlet (gloop, bar A: Matterport live showcase) — rounds 1–3 delivered; per-floor presentation rebuilt
+
+**Goal:** realistic 3D presentation of the contractor-as-drawn model in HTML viewers —
+whole building + per floor. Bar A was set after bar B (Archilogic) proved **unfetchable**:
+every public Archilogic demo scene is decommissioned or auth-gated (verified live:
+default `?s=` scene loads zero data; docs' demoSceneId rejected by their own API;
+webflow-embedded scene → `404 Floor not found`; no 3D canvas anywhere on their marketing/docs).
+Matterport's public "Construction Site" showcase (`my.matterport.com/show/?m=SxQL3iGyoDo`)
+loads and screenshots cleanly — that is the bar.
+
+**Builder changes (all in `src/homedesign/assets/*_template.html` + one plan2d fix):**
+- Whole-building viewer: sky-gradient background (canvas texture) replacing the black void;
+  hemisphere + warm directional sun with PCFSoft shadow maps fitted to the real site extent;
+  sun repositioned across the camera axis so contact shadows rake toward the viewer;
+  FOV-derived hero framing (~60% fill, unit-direction × fitted distance); material
+  roughness/metalness clamp on quantized GLB materials; HUD hint de-jargoned.
+- Per-floor viewer: slice framing fixed twice (vFov-for-horizontal-extent over-standing ~40%,
+  then non-normalized direction vector compounding distance); near-top-down oblique camera
+  so slices read like furnished plans; **ghost context** — adjacent storeys stay visible at
+  4.5% opacity instead of vanishing (per-mesh cloned ghost materials, castShadow/receiveShadow
+  off — shadow maps ignore opacity, an early attempt umbra'd the whole slice black);
+  shared-material tint guarded per-material uuid, not per mesh (0.94^N over ~267 meshes
+  compounded to pitch black — found via a live-scene probe, not guessed).
+- `plan2d._dimension_chain`: SVG rejects negative rect heights (element silently dropped),
+  so the dim-chain run rects are now min/max-normalised — after the rear-at-TOP flip every
+  v-chain rect had been invalid; `output/svg` regenerated, 0 negative rects remain.
+- `window.__viewer` debug handle exposed by both templates for automation probes.
+
+**Verification:** 226 tests pass, ruff clean, floors page loads with **0 console/page errors**,
+plan panel verified to track tab selection programmatically (`data-floor` 0→6, distinct SVGs).
+
+**Critic record (blind, fresh-context):** rounds 1–3 all returned BAR > CANDIDATE, but lead
+re-verification refuted several stale claims each round (e.g. "plan panel ignores floor tabs"
+— false, proven via DOM probe). Round 3's single named closable gap — per-floor presentation
+(top-down camera, ghosted adjacent floors, value separation) — was implemented and visually
+confirmed this session. **Remaining verdict gap is structural, not closable:** Matterport's
+photorealism comes from real-world 360° capture, not rendering; a synthetic untextured GLB
+cannot cross that line without new assets (textured re-render or photo capture), which is out
+of scope for this loop. Further blind rounds would measure the medium, not our execution.
+
+**Not done / next levers if wanted:** EEVEE-textured GLB re-export (bake lighting into vertex/
+texture data) would close most of the remaining realism gap at the cost of a full render cycle
+(~25 min at final profile); AO would need EffectComposer passes not present in the inlined
+three.min.js bundle.
+
 ### 2026-08-19 — SVG/PDF fidelity pass against the contractor drawings + a real PDF pipeline bug found along the way
 
 Triggered by `contractor/approval drawing.jpg`, a new phone photo of the full
