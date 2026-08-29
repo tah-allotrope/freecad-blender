@@ -1,5 +1,5 @@
 name: Deploy Pages
-on:
+"on":
   push:
     branches: [master]
 jobs:

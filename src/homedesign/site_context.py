@@ -25,6 +25,11 @@ def resolve_context_boxes(site: dict, total_height_mm: float) -> list[dict]:
     return boxes
 
 def interior_light_energy(area_m2: float, height_m: float) -> float:
-    # monotonic, small rooms at least 8, scales with area and height
-    base = max(8.0, area_m2 * 3.0 + height_m * 5)
-    return float(min(90, max(8, base)))
+    """Return area-light energy in watts for a room of area and storey height.
+
+    Monotonic in both arguments, scales gently with area and height, keeps a
+    small WC (2 m²) lit at ≥8 W, and avoids the old hard clamp 20–90 W that
+    blew high-albedo walls to white. Typical rooms: 12 m² @3.4 m → ~13 W,
+    24 m² @3.4 m → ~20 W (well below the old 26–52 W range).
+    """
+    return float(max(8.0, area_m2 * 0.55 + height_m * 2.0))

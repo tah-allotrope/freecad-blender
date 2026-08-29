@@ -31,7 +31,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body><div id="top-nav" style="position:sticky;top:0;height:44px;min-height:44px;background:#0f1115;display:flex;align-items:center;gap:6px;padding:0 10px;z-index:1000;border-bottom:1px solid rgba(255,255,255,0.08);font-size:12px;color:#9aa0a6;box-sizing:border-box"><a href="viewers.html" style="color:#8ab4ff;text-decoration:none;padding:8px 10px;border-radius:6px;min-height:28px;display:flex;align-items:center">Home</a><span style="opacity:0.35">/</span><span style="color:#d8dbe0;white-space:nowrap">contractor-as-drawn</span><span style="opacity:0.35">/</span><span style="color:#d8dbe0">Viewers</span><span style="opacity:0.35">/</span><span id="build-badge" style="background:rgba(255,255,255,0.08);color:#d8dbe0;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);white-space:nowrap">PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH</span><span style="margin-left:auto;display:flex;gap:6px;align-items:center"><button id="copy-link" type="button" style="background:rgba(255,255,255,0.06);color:#d8dbe0;border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;min-height:32px;font:inherit;font-size:12px;cursor:pointer">Copy link</button><span id="floor-counter" style="background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08)">7 tầng • +19.0m</span></span></div>
 <div id="app">
   <canvas id="viewer"></canvas>
   <div id="overlay">
@@ -39,9 +39,9 @@
     <div class="title" id="overlay-title">Loading contractor-as-drawn&hellip;</div>
     <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
   </div>
-  <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; two-finger or right-drag to pan &middot; tap a spot to step closer</div>
-  <button id="reset-btn" type="button">Reset view</button>
+  <div id="hud">drag/tap-drag to orbit · pinch/scroll to zoom · two-finger or right-drag to pan · tap a spot to step closer — <a href="#" id="hud-dismiss" style="color:#8ab4ff">Ẩn</a></div>
 </div>
+<div id="bottom-bar" style="position:absolute;left:0;right:0;bottom:0;height:44px;min-height:44px;background:rgba(10,12,16,0.96);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 10px;z-index:998;box-sizing:border-box;gap:8px"><button id="reset-btn" type="button" style="padding:8px 14px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#d8dbe0;font:inherit;font-size:12px;cursor:pointer">Reset view</button><span id="bottom-floor" style="font-size:12px;color:#9aa0a6">Tầng 1/7 • +0.00m</span><button id="help-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Trợ giúp điều hướng">?</button></div>
 <script>/**
  * @license
  * Copyright 2010-2021 Three.js Authors
@@ -5331,6 +5331,24 @@
     }
     animId = requestAnimationFrame(step);
   }
+
+  // --- Top-bar: copy link ---
+  var copyBtn = document.getElementById('copy-link');
+  if (copyBtn) copyBtn.addEventListener('click', function(){ try{ navigator.clipboard.writeText(location.href); copyBtn.textContent='Đã copy!'; setTimeout(function(){copyBtn.textContent='Copy link';},1500);}catch(e){ prompt('Copy link:', location.href); }});
+
+  // --- Bottom bar: help toggle (recallable NavigationHelp) ---
+  var helpBtn = document.getElementById('help-btn');
+  var hudDismiss = document.getElementById('hud-dismiss');
+  var hudEl = document.getElementById('hud');
+  if (helpBtn && hudEl) {
+    helpBtn.addEventListener('click', function(){ hudEl.style.display = (hudEl.style.display==='none' ? 'block' : 'none'); hudEl.style.pointerEvents = (hudEl.style.display==='none' ? 'none' : 'auto'); });
+  }
+  if (hudDismiss && hudEl) {
+    hudDismiss.addEventListener('click', function(e){ e.preventDefault(); hudEl.style.display='none'; });
+  }
+  // Auto-hide HUD after 6s, recallable via ?
+  setTimeout(function(){ if(hudEl) hudEl.style.opacity='0.0'; hudEl.style.transition='opacity 0.3s'; }, 6000);
+  if(hudEl) hudEl.addEventListener('click', function(){ hudEl.style.opacity='0.85'; });
 
   function resize() {
     var w = window.innerWidth, h = window.innerHeight;

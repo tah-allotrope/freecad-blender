@@ -53,7 +53,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body><div id="top-nav" style="position:sticky;top:0;height:44px;min-height:44px;background:#0f1115;display:flex;align-items:center;gap:6px;padding:0 10px;z-index:1000;border-bottom:1px solid rgba(255,255,255,0.08);font-size:12px;color:#9aa0a6;box-sizing:border-box"><a href="viewers.html" style="color:#8ab4ff;text-decoration:none;padding:8px 10px;border-radius:6px;min-height:28px;display:flex;align-items:center">Home</a><span style="opacity:0.35">/</span><span style="color:#d8dbe0;white-space:nowrap">contractor-as-drawn</span><span style="opacity:0.35">/</span><span style="color:#d8dbe0">Floors</span><span style="opacity:0.35">/</span><span id="build-badge" style="background:rgba(255,255,255,0.08);color:#d8dbe0;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);white-space:nowrap">PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH</span><span style="margin-left:auto;display:flex;gap:6px;align-items:center"><button id="copy-link" type="button" style="background:rgba(255,255,255,0.06);color:#d8dbe0;border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;min-height:32px;font:inherit;font-size:12px;cursor:pointer">Copy link</button><span id="floor-counter" style="background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08)">Tầng 1/7</span></span></div>
 <div id="app">
   <div id="tabs"><button type="button" aria-pressed="true" class="active">Ground</button><button type="button" aria-pressed="false">Mezzanine</button><button type="button" aria-pressed="false">Floor 2</button><button type="button" aria-pressed="false">Floor 3</button><button type="button" aria-pressed="false">Floor 4</button><button type="button" aria-pressed="false">Floor 5</button><button type="button" aria-pressed="false">Roof Terrace</button></div>
   <div id="main">
@@ -134,7 +134,7 @@
 <rect data-furniture="chair" x="301.0" y="1560.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="351.0" y="1560.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="401.0" y="1560.0" width="45.0" height="45.0"/>
-<rect data-furniture="chair" x="406.0" y="1560.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="406.0" y="1510.0" width="45.0" height="45.0"/>
 <rect data-furniture="console" x="130.0" y="820.0" width="151.0" height="35.0"/>
 <rect data-furniture="wc" x="140.0" y="535.0" width="40.0" height="60.0"/>
 <rect data-furniture="basin" x="416.0" y="635.0" width="50.0" height="40.0"/>
@@ -337,7 +337,7 @@
 <rect data-furniture="chair" x="301.0" y="500.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="351.0" y="500.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="401.0" y="500.0" width="45.0" height="45.0"/>
-<rect data-furniture="chair" x="406.0" y="500.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="406.0" y="450.0" width="45.0" height="45.0"/>
 </g>
 <rect x="100.0" y="1245.0" width="145.2" height="25.0" fill="none" stroke="#555" stroke-width="1"/>
 <text class="tread-number" x="172.6" y="1260.5" font-size="7" text-anchor="middle" fill="#555">1</text>
@@ -1291,7 +1291,7 @@
 <rect data-furniture="chair" x="301.0" y="1820.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="351.0" y="1820.0" width="45.0" height="45.0"/>
 <rect data-furniture="chair" x="401.0" y="1820.0" width="45.0" height="45.0"/>
-<rect data-furniture="chair" x="406.0" y="1820.0" width="45.0" height="45.0"/>
+<rect data-furniture="chair" x="406.0" y="1770.0" width="45.0" height="45.0"/>
 <rect data-furniture="console" x="130.0" y="1285.0" width="35.0" height="310.0"/>
 <rect data-furniture="wc" x="321.0" y="1440.0" width="40.0" height="60.0"/>
 <rect data-furniture="basin" x="416.0" y="1555.0" width="50.0" height="40.0"/>
@@ -1625,10 +1625,10 @@
         <div class="title" id="overlay-title">Loading contractor-as-drawn&hellip;</div>
         <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
       </div>
-      <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; tap a spot to step closer &middot; pick a floor above</div>
-      <button id="reset-btn" type="button">Reset view</button>
+      <div id="hud">drag/tap-drag to orbit · pinch/scroll to zoom · tap a spot to step closer — <a href="#" id="hud-dismiss" style="color:#8ab4ff">Ẩn</a> · chọn tầng ở trên</div>
     </div>
   </div>
+  <div id="bottom-bar" style="position:absolute;left:0;right:0;bottom:0;height:44px;min-height:44px;background:rgba(10,12,16,0.96);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 10px;z-index:998;box-sizing:border-box;gap:8px"><button id="reset-btn" type="button" style="padding:8px 14px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#d8dbe0;font:inherit;font-size:12px;cursor:pointer">Reset view</button><span id="bottom-floor" style="font-size:12px;color:#9aa0a6">Tầng 1/7 • +0.00m</span><button id="help-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Trợ giúp điều hướng">?</button></div>
 </div>
 <script>/**
  * @license
@@ -7015,7 +7015,29 @@
       animId = requestAnimationFrame(step);
     };
 
-    function resize() {
+    // --- Top-bar: copy link ---
+  var copyBtn = document.getElementById('copy-link');
+  if (copyBtn) copyBtn.addEventListener('click', function(){ try{ navigator.clipboard.writeText(location.href); copyBtn.textContent='Đã copy!'; setTimeout(function(){copyBtn.textContent='Copy link';},1500);}catch(e){ prompt('Copy link:', location.href); }});
+  var helpBtn = document.getElementById('help-btn');
+  var hudDismiss = document.getElementById('hud-dismiss');
+  var hudEl2 = document.getElementById('hud');
+  if (helpBtn && hudEl2) { helpBtn.addEventListener('click', function(){ hudEl2.style.display = (hudEl2.style.display==='none' ? 'block' : 'none'); }); }
+  if (hudDismiss && hudEl2) { hudDismiss.addEventListener('click', function(e){ e.preventDefault(); hudEl2.style.display='none'; }); }
+  // Floor counter update
+  var floorCounter = document.getElementById('floor-counter');
+  var bottomFloor = document.getElementById('bottom-floor');
+  function updateFloorCounter(idx){
+    var total = tabButtons.length || 7;
+    var names = ["+0.00m","+0.30m","+3.60m","+6.90m","+10.20m","+13.50m","+16.80m"];
+    var txt = "Tầng " + (idx+1) + "/" + total + " • " + (names[idx]||"");
+    if(floorCounter) floorCounter.textContent = txt;
+    if(bottomFloor) bottomFloor.textContent = txt;
+  }
+  tabButtons.forEach(function(btn, idx){
+    btn.addEventListener('click', function(){ updateFloorCounter(idx); });
+  });
+  updateFloorCounter(0);
+  function resize() {
       var w = viewerPane.clientWidth || 1, h = viewerPane.clientHeight || 1;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();

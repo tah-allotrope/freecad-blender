@@ -53,7 +53,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body><div id="build-badge" style="position:absolute;top:10px;left:10px;background:#000;color:#fff;padding:4px 8px;font-size:12px;z-index:999">PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH</div>
+<body><div id="top-nav" style="position:sticky;top:0;height:44px;min-height:44px;background:#0f1115;display:flex;align-items:center;gap:6px;padding:0 10px;z-index:1000;border-bottom:1px solid rgba(255,255,255,0.08);font-size:12px;color:#9aa0a6;box-sizing:border-box"><a href="viewers.html" style="color:#8ab4ff;text-decoration:none;padding:8px 10px;border-radius:6px;min-height:28px;display:flex;align-items:center">Home</a><span style="opacity:0.35">/</span><span style="color:#d8dbe0;white-space:nowrap">__TITLE__</span><span style="opacity:0.35">/</span><span style="color:#d8dbe0">Floors</span><span style="opacity:0.35">/</span><span id="build-badge" style="background:rgba(255,255,255,0.08);color:#d8dbe0;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);white-space:nowrap">__BUILD_BADGE__</span><span style="margin-left:auto;display:flex;gap:6px;align-items:center"><button id="copy-link" type="button" style="background:rgba(255,255,255,0.06);color:#d8dbe0;border:1px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;min-height:32px;font:inherit;font-size:12px;cursor:pointer">Copy link</button><span id="floor-counter" style="background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08)">Tầng 1/7</span></span></div>
 <div id="app">
   <div id="tabs">__FLOOR_TABS__</div>
   <div id="main">
@@ -65,10 +65,10 @@
         <div class="title" id="overlay-title">Loading __TITLE__&hellip;</div>
         <div class="hint" id="overlay-hint">First load can take a few seconds &mdash; the model is embedded in this page.</div>
       </div>
-      <div id="hud">drag/tap-drag to orbit &middot; pinch/scroll to zoom &middot; tap a spot to step closer &middot; pick a floor above</div>
-      <button id="reset-btn" type="button">Reset view</button>
+      <div id="hud">drag/tap-drag to orbit · pinch/scroll to zoom · tap a spot to step closer — <a href="#" id="hud-dismiss" style="color:#8ab4ff">Ẩn</a> · chọn tầng ở trên</div>
     </div>
   </div>
+  <div id="bottom-bar" style="position:absolute;left:0;right:0;bottom:0;height:44px;min-height:44px;background:rgba(10,12,16,0.96);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 10px;z-index:998;box-sizing:border-box;gap:8px"><button id="reset-btn" type="button" style="padding:8px 14px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#d8dbe0;font:inherit;font-size:12px;cursor:pointer">Reset view</button><span id="bottom-floor" style="font-size:12px;color:#9aa0a6">Tầng 1/7 • +0.00m</span><button id="help-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Trợ giúp điều hướng">?</button></div>
 </div>
 <script>__THREE_JS__</script>
 <script>__GLTF_LOADER__</script>
@@ -354,12 +354,12 @@
   if (renderer) {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.22;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    scene.add(new THREE.HemisphereLight(0xcfe0ee, 0x8f887a, 0.85));
-    var key = new THREE.DirectionalLight(0xfff2dd, 1.35);
+    scene.add(new THREE.HemisphereLight(0xcfe0ee, 0x8f887a, 0.92));
+    var key = new THREE.DirectionalLight(0xfff2dd, 1.62);
     key.castShadow = !isCoarsePointer;
     key.shadow.mapSize.set(isCoarsePointer ? 1024 : 2048, isCoarsePointer ? 1024 : 2048);
     key.shadow.bias = -0.0004;
@@ -469,7 +469,29 @@
       animId = requestAnimationFrame(step);
     };
 
-    function resize() {
+    // --- Top-bar: copy link ---
+  var copyBtn = document.getElementById('copy-link');
+  if (copyBtn) copyBtn.addEventListener('click', function(){ try{ navigator.clipboard.writeText(location.href); copyBtn.textContent='Đã copy!'; setTimeout(function(){copyBtn.textContent='Copy link';},1500);}catch(e){ prompt('Copy link:', location.href); }});
+  var helpBtn = document.getElementById('help-btn');
+  var hudDismiss = document.getElementById('hud-dismiss');
+  var hudEl2 = document.getElementById('hud');
+  if (helpBtn && hudEl2) { helpBtn.addEventListener('click', function(){ hudEl2.style.display = (hudEl2.style.display==='none' ? 'block' : 'none'); }); }
+  if (hudDismiss && hudEl2) { hudDismiss.addEventListener('click', function(e){ e.preventDefault(); hudEl2.style.display='none'; }); }
+  // Floor counter update
+  var floorCounter = document.getElementById('floor-counter');
+  var bottomFloor = document.getElementById('bottom-floor');
+  function updateFloorCounter(idx){
+    var total = tabButtons.length || 7;
+    var names = ["+0.00m","+0.30m","+3.60m","+6.90m","+10.20m","+13.50m","+16.80m"];
+    var txt = "Tầng " + (idx+1) + "/" + total + " • " + (names[idx]||"");
+    if(floorCounter) floorCounter.textContent = txt;
+    if(bottomFloor) bottomFloor.textContent = txt;
+  }
+  tabButtons.forEach(function(btn, idx){
+    btn.addEventListener('click', function(){ updateFloorCounter(idx); });
+  });
+  updateFloorCounter(0);
+  function resize() {
       var w = viewerPane.clientWidth || 1, h = viewerPane.clientHeight || 1;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();

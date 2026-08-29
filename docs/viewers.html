@@ -1,5 +1,67 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Viewers</title></head><body>
-<h1>Viewers</h1>
-<a href="contractor-as-drawn-light.html">PHIÊN BẢN NHẸ — ĐIỆN THOẠI</a><br>
-<a href="contractor-as-drawn-full.html">PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH</a>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>contractor-as-drawn — Viewers</title>
+<style>
+  body { margin:0; min-height:100vh; background:#0f1115; color:#d8dbe0; font-family:"Segoe UI",system-ui,sans-serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:32px 20px 48px; }
+  .crumb { font-size:13px; color:#9aa0a6; margin-bottom:18px; }
+  .crumb a { color:#8ab4ff; text-decoration:none; }
+  .crumb a:hover { text-decoration:underline; }
+  h1 { font-size:22px; margin:0 0 6px; font-weight:600; }
+  .sub { color:#9aa0a6; font-size:14px; margin-bottom:28px; line-height:1.5; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+  .card { display:block; padding:18px 16px; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); text-decoration:none; color:inherit; }
+  .card:hover { background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.12); }
+  .card .label { font-size:13px; letter-spacing:0.02em; color:#8ab4ff; margin-bottom:6px; }
+  .card .title { font-size:16px; font-weight:600; margin-bottom:6px; color:#fff; }
+  .card .meta { font-size:12px; color:#9aa0a6; line-height:1.4; }
+  .section { margin-top:32px; }
+  .section h2 { font-size:14px; text-transform:uppercase; letter-spacing:0.06em; color:#9aa0a6; margin:0 0 12px; }
+  .list a { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; margin-bottom:8px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); color:#d8dbe0; text-decoration:none; font-size:14px; }
+  .list a:hover { background:rgba(255,255,255,0.07); }
+  .badge { font-size:11px; padding:4px 8px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="contractor-as-drawn.html">contractor-as-drawn</a> / Viewers — Chọn phiên bản</div>
+  <h1>contractor-as-drawn — 3D Viewers</h1>
+  <div class="sub">Chọn phiên bản phù hợp với thiết bị của bạn. Bản nhẹ 2.1 MB tối ưu cho điện thoại, bản đầy đủ 6.1 MB cho máy tính — chênh lệch 4.0 MB do đồ nội thất &amp; lam. Cả hai đều chạy offline, không cần mạng, inlined base64url.</div>
+
+  <div class="grid">
+    <a class="card" href="contractor-as-drawn-light.html">
+      <div class="label">ĐIỆN THOẠI • NHẸ • 2.1 MB thực tế / &lt;6 MB ngân sách</div>
+      <div class="title">PHIÊN BẢN NHẸ — ĐIỆN THOẠI</div>
+      <div class="meta">Tối ưu cho điện thoại, tải nhanh, mượt trên 4G. Mô hình thu gọn nhưng giữ trọn 7 tầng và mặt đứng chính.</div>
+    </a>
+    <a class="card" href="contractor-as-drawn-full.html">
+      <div class="label">MÁY TÍNH • ĐẦY ĐỦ • 6.1 MB thực tế / &lt;25 MB ngân sách</div>
+      <div class="title">PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH</div>
+      <div class="meta">Chi tiết đầy đủ: đồ nội thất, phào chỉ, lam mặt đứng, bóng đổ và AO. Tốt nhất trên laptop / desktop.</div>
+    </a>
+  </div>
+
+  <div class="section">
+    <h2>Xem theo tầng</h2>
+    <div class="list">
+      <a href="contractor-as-drawn-floors.html">Floor-by-floor — 2D plan + 3D từng tầng <span class="badge">7 tầng</span></a>
+      <a href="contractor-as-drawn.html">Whole-building — xem toàn nhà <span class="badge">1 file</span></a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>tubehouse-dream</h2>
+    <div class="list">
+      <a href="tubehouse-dream.html">Whole-building viewer</a>
+      <a href="tubehouse-dream-floors.html">Floor-by-floor viewer</a>
+    </div>
+  </div>
+
+  <div class="sub" style="margin-top:28px">Mở file HTML trực tiếp — không cần server. Nếu trình duyệt trong Zalo/Messenger không hiện 3D, hãy mở bằng Chrome/Safari.</div>
+</div>
+</body>
+</html>
