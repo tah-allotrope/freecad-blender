@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apartment Sale Execution Pack — Fund the Tubehouse Build</title>
+  <meta name="color-scheme" content="dark light">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    async function initMermaid() {
+      const blocks = document.querySelectorAll('.mermaid');
+      if (!blocks.length) { return; }
+      mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose',
+        themeVariables: { primaryColor: '#f3ead9', primaryTextColor: '#1f1912', primaryBorderColor: '#9d6b37',
+          lineColor: '#3b6f76', secondaryColor: '#efe4d0', tertiaryColor: '#ffffff', background: '#fbf7f1',
+          mainBkg: '#fbf7f1', nodeBorder: '#9d6b37', clusterBkg: '#f7efdf', clusterBorder: '#3b6f76',
+          edgeLabelBackground: '#fbf7f1' } });
+      await mermaid.run({ nodes: blocks });
+    }
+    const run = () => initMermaid().catch((error) => console.error('Mermaid render failed', error));
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run, { once: true }); }
+    else { run(); }
+  </script>
+  <style>
+    :root {
+      --paper: #fbf7f1; --paper-strong: #fffdf9; --ink: #1f1912; --ink-soft: #5f564c;
+      --line: #dccdb6; --line-strong: #bfa37d; --accent: #9d6b37; --accent-soft: #efe4d0;
+      --accent-2: #3b6f76; --shadow: 0 18px 40px rgba(49, 33, 16, 0.08);
+      --radius-lg: 24px; --radius-md: 18px; --radius-sm: 12px; --page-width: 1040px;
+      --display-font: Georgia, "Times New Roman", serif;
+      --body-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono-font: "Cascadia Code", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--ink);
+      background: radial-gradient(circle at top left, rgba(157,107,55,0.09), transparent 26%),
+                  radial-gradient(circle at 88% 10%, rgba(59,111,118,0.08), transparent 22%),
+                  linear-gradient(180deg, #f7f1e7 0%, #fbf7f1 28%, #f6efe5 100%);
+      font-family: var(--body-font); line-height: 1.65; letter-spacing: 0.01em; }
+    a { color: var(--accent-2); }
+    code, pre, .technical, .meta-chip, .section-index, .eyebrow, .stat-label, .stat-value, .mermaid { font-family: var(--mono-font); }
+    .page-shell { width: min(var(--page-width), calc(100vw - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .hero { padding: 34px; border: 1px solid rgba(159,123,79,0.28); border-radius: 30px;
+      background: linear-gradient(135deg, rgba(157,107,55,0.1), transparent 34%),
+                  linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.86)), var(--paper-strong);
+      box-shadow: var(--shadow); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.85fr); gap: 24px; align-items: end; }
+    .eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+    .title { margin: 0; max-width: 14ch; font-family: var(--display-font); font-size: clamp(2.6rem, 5vw, 4.2rem); line-height: 0.95; letter-spacing: -0.04em; text-wrap: balance; }
+    .lede { margin: 18px 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1rem; }
+    .takeaway { margin-top: 22px; padding: 18px 20px; border-left: 4px solid var(--accent-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: rgba(59,111,118,0.08); color: #20373a; font-size: 1.02rem; }
+    .meta-grid { display: grid; gap: 12px; }
+    .meta-card, .section, .subcard, .empty-state { border: 1px solid rgba(95,72,46,0.12); background: rgba(255,253,249,0.88); box-shadow: var(--shadow); }
+    .meta-card { padding: 16px 18px; border-radius: var(--radius-md); }
+    .meta-label { color: var(--ink-soft); font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .meta-chip { margin-top: 8px; color: var(--accent); font-size: 1rem; font-weight: 700; word-break: break-word; }
+    .section { margin-top: 22px; padding: 24px; border-radius: var(--radius-lg); break-inside: avoid; page-break-inside: avoid; }
+    .section-header { display: flex; justify-content: space-between; gap: 12px 18px; align-items: end; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .section-index { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+    .section-title { margin: 0; font-family: var(--display-font); font-size: clamp(1.45rem, 2vw, 2rem); line-height: 1.05; }
+    .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { display: grid; gap: 16px; }
+    .summary-grid, .dual-grid, .phase-grid, .appendix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .subcard { padding: 18px; border-radius: var(--radius-md); break-inside: avoid; page-break-inside: avoid; }
+    .subcard h3, .subcard h4 { margin: 0 0 10px; font-size: 1rem; line-height: 1.2; }
+    .subcard p:first-child, .subcard ul:first-child, .subcard ol:first-child { margin-top: 0; }
+    .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px; }
+    .stat { padding: 14px 16px; border: 1px solid rgba(59,111,118,0.16); border-radius: var(--radius-sm); background: rgba(59,111,118,0.06); break-inside: avoid; page-break-inside: avoid; }
+    .stat-label { color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .stat-value { margin-top: 8px; color: var(--accent-2); font-size: 1.18rem; font-weight: 700; }
+    .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,0.54); break-inside: avoid; page-break-inside: avoid; }
+    .diagram-frame { overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; overscroll-behavior-y: contain; max-height: min(70vh, 720px); }
+    .chart-frame, .viz-frame { overflow: hidden; }
+    .mermaid { width: 100%; max-width: 100%; min-width: 0; color: var(--ink); }
+    .mermaid svg { display: block; width: auto !important; min-width: 100%; max-width: none !important; height: auto !important; }
+    .diagram-frame.compact-diagram { padding: 12px; max-height: min(62vh, 560px); }
+    .diagram-frame.compact-diagram .mermaid { min-width: 900px; }
+    .chart-frame canvas, .technical-frame > canvas, .viz-frame canvas, canvas.report-chart { display: block; width: 100% !important; max-width: 100%; height: 300px !important; min-height: 300px; max-height: 300px; }
+    .technical-frame table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    .technical-frame th, .technical-frame td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .technical-frame th { color: var(--accent); font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    p:last-child, li:last-child { margin-bottom: 0; }
+    .footer-note { margin-top: 18px; color: rgba(95,86,76,0.74); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; text-align: right; }
+    @media (max-width: 920px) { .hero-grid, .summary-grid, .dual-grid, .phase-grid, .stat-grid, .appendix-grid { grid-template-columns: 1fr; } .title { max-width: none; } }
+    @media (max-width: 640px) { .page-shell { width: min(100vw - 20px, var(--page-width)); padding-top: 16px; padding-bottom: 36px; } .hero, .section { padding: 18px; border-radius: 20px; } .title { font-size: clamp(2.1rem, 12vw, 3.2rem); } }
+    @media print {
+      :root { --paper: #ffffff; --paper-strong: #ffffff; --ink: #111111; --ink-soft: #444444; --line: #d6d1c8; }
+      @page { size: A4; margin: 14mm; }
+      body { background: #ffffff; }
+      .page-shell { width: 100%; max-width: none; padding: 0; }
+      .hero, .meta-card, .section, .subcard, .narrative, .chart-frame, .technical-frame, .diagram-frame, .viz-frame, .empty-state, .stat { background: #ffffff; box-shadow: none; }
+      .hero, .section { margin-top: 0; margin-bottom: 10mm; }
+      .diagram-frame { overflow: visible; max-height: none; }
+      .diagram-frame.compact-diagram .mermaid { min-width: 0; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero" id="title-hero">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Execution Pack / Apartment Sale — Fund the Tubehouse Build</p>
+          <h1 class="title">Sell the Apartment, Fund the Build</h1>
+          <p class="lede">
+            A complete sale execution pack for the 72 m2 river-view 2-bedroom at Saigon South Residences — comparable-priced at 5.95 ty, floored at 5.35 ty, and reconciled against the 4.075 ty medium-finish tubehouse.
+          </p>
+          <div class="takeaway">
+            At the published floor of <strong>5.35 ty</strong> the sale nets <strong>5.143 ty</strong> against a build-plus-contingency of <strong>4.075 ty</strong>, leaving <strong>1.068 ty</strong> — 750 tr held as hard reserve, 318 tr free surplus. The build is funded with margin at every price down to the hard floor.
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="meta-label">Project</div><div class="meta-chip">SSR 72 m2 river view — 5-storey tubehouse</div></div>
+          <div class="meta-card"><div class="meta-label">Repository</div><div class="meta-chip">freecad-blender</div></div>
+          <div class="meta-card"><div class="meta-label">Date</div><div class="meta-chip">2026-08-29</div></div>
+          <div class="meta-card"><div class="meta-label">Plan</div><div class="meta-chip">2026-08-29-apartment-sale-execution-pack-plan.md</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="executive-summary">
+      <div class="section-header">
+        <div><div class="section-index">01 / Executive Summary</div><h2 class="section-title">Executive Summary</h2></div>
+      </div>
+      <div class="summary-grid">
+        <div class="subcard">
+          <h3>The asset</h3>
+          <p>72.0 m2, 2BR/2WC, river view, high floor at Saigon South Residences (Nguyen Huu Tho, Phuoc Kien, Nha Be). Sổ hồng issued, no mortgage, empty and fully furnished. Trades above the District 7 median of 59.8 tr/m2 on Phu My Hung branding.</p>
+        </div>
+        <div class="subcard">
+          <h3>The pricing</h3>
+          <p>List <strong>5.95 ty</strong> (82.6 tr/m2), target settlement <strong>5.45–5.60 ty</strong>, published floor <strong>5.35 ty</strong>. Anchored to the August 2026 live river-view comparable at 71 m2 / 5.95 ty / 83.8 tr/m2 — not to lagging aggregator tables.</p>
+        </div>
+        <div class="subcard">
+          <h3>The mechanism</h3>
+          <p>Open panel of exactly three agents from day one, on three non-negotiable discipline rules: one fixed price, seller-owned photo/video/floorplan pack, and a 30-day first-registration buyer attribution rule. Winner-takes-all 1.5% + 0.3% speed bonus.</p>
+        </div>
+        <div class="subcard">
+          <h3>The funded conclusion</h3>
+          <p>Medium-finish tubehouse (500 m2 at 6.5 tr/m2) costs 3.25 ty construction, 3.75 ty all-in, <strong>4.075 ty</strong> with 10% contingency. At the 5.35 ty floor the sale nets 5.143 ty — the build is funded with <strong>1.068 ty</strong> of headroom, 750 tr held as reserve.</p>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">List price</div><div class="stat-value">5.95 ty</div></div>
+        <div class="stat"><div class="stat-label">Published floor</div><div class="stat-value">5.35 ty</div></div>
+        <div class="stat"><div class="stat-label">Build + contingency</div><div class="stat-value">4.075 ty</div></div>
+        <div class="stat"><div class="stat-label">Net at floor</div><div class="stat-value">5.143 ty</div></div>
+        <div class="stat"><div class="stat-label">Headroom at floor</div><div class="stat-value">1.068 ty</div></div>
+        <div class="stat"><div class="stat-label">Days to reassess</div><div class="stat-value">90</div></div>
+      </div>
+    </section>
+
+    <section class="section" id="pricing">
+      <div class="section-header">
+        <div><div class="section-index">02 / Pricing — The Comparable Fact Base</div><h2 class="section-title">Pricing &amp; Comparables</h2></div>
+      </div>
+      <div class="narrative">
+        <p>As of <strong>2026-08-29 (Asia/Ho_Chi_Minh)</strong> — see <code>deliverables/apartment-sale/01-price-fact-base.md</code> for the full sourced fact base. Automated re-pull of six portals failed on this date (firecrawl credits + batdongsan.com.vn 403); the table below rests on the August 2026 live dated listings (housenow.com.vn, 06–27 Aug) inlined in the plan. Median of the nine live comparables is <strong>80.0 tr/m2</strong>, matching the 80.0 tr/m2 baseline — deviation 0.0%, no price-movement alert triggered. Aggregator reference tables (5.0–5.6 ty) lag the live market by ~0.5 ty and are excluded from the anchor.</p>
+      </div>
+      <div class="technical-frame" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Area</th><th>Asking</th><th>tr/m2</th><th>Posted</th><th>Source</th><th>River view</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>71.0 m2</td><td>5.65 ty</td><td>79.6 tr/m2</td><td>2026-08-06</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>2</td><td>71.0 m2</td><td>5.75 ty</td><td>81.0 tr/m2</td><td>2026-08-10</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>3</td><td>71.0 m2</td><td>5.90 ty</td><td>83.1 tr/m2</td><td>2026-08-18</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>4</td><td>71.0 m2</td><td>5.95 ty</td><td>83.8 tr/m2</td><td>2026-08-12</td><td>housenow.com.vn</td><td>Yes</td></tr>
+            <tr><td>5</td><td>75.0 m2</td><td>5.70 ty</td><td>76.0 tr/m2</td><td>2026-08-08</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>6</td><td>75.0 m2</td><td>5.85 ty</td><td>78.0 tr/m2</td><td>2026-08-15</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>7</td><td>75.0 m2</td><td>6.00 ty</td><td>80.0 tr/m2</td><td>2026-08-20</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>8</td><td>76.0 m2</td><td>5.50 ty</td><td>72.4 tr/m2</td><td>2026-08-27</td><td>housenow.com.vn</td><td>—</td></tr>
+            <tr><td>9</td><td>71.0 m2</td><td>5.80 ty</td><td>81.7 tr/m2</td><td>2026-08-22</td><td>nasaland.vn</td><td>—</td></tr>
+            <tr style="background: rgba(157,107,55,0.08); font-weight: 700;"><td>—</td><td>72.0 m2 (subject)</td><td>5.95 ty</td><td>82.6 tr/m2</td><td>list</td><td>this pack</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:12px; color: var(--ink-soft); font-size: 0.85rem;">Excluded before the median: four bait / HDMB-balance listings below 4.0 ty (2.3–3.6 ty) from nhadat.cafeland.vn. District 7 median ~59.8 tr/m2; project rental band 12–22 tr/month.</p>
+      </div>
+      <div class="dual-grid" style="margin-top:16px">
+        <div class="subcard"><h3>Decision</h3><p>Hold <strong>5.95 ty</strong> (DEC-003). Reassess only after day 90 against fresh signed-transaction CMAs — no automatic markdown. A 10.1% discount to the 5.35 ty floor is a normal Q3-2026 clearing outcome (7–12% band), not a lowball.</p></div>
+        <div class="subcard"><h3>River-view premium</h3><p>The highest comp — 71 m2 at 5.95 ty / 83.8 tr/m2 — is river-view. The subject prices against it. Pro-rating that comp to 72.0 m2 implies 6.03 ty; our 5.95 ty sits just below, leaving negotiation buffer inside the river-view tier.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="charts">
+      <div class="section-header">
+        <div><div class="section-index">03 / Visuals — Comparables &amp; Waterfall</div><h2 class="section-title">Charts</h2></div>
+      </div>
+      <div class="narrative">
+        <p>Two views of the same economics: where the listing sits in the market, and how the floor-price proceeds decompose. Each chart is preceded by the same data in a table so the report is legible if the CDN fails.</p>
+      </div>
+      <h3 style="margin: 18px 0 10px; font-family: var(--display-font); font-size: 1.1rem;">Asking price per m2 across comparables (tr/m2)</h3>
+      <div class="technical-frame">
+        <table>
+          <thead><tr><th>Unit</th><th>tr/m2</th></tr></thead>
+          <tbody>
+            <tr><td>76 m2 / 5.50 ty</td><td>72.4</td></tr>
+            <tr><td>75 m2 / 5.70 ty</td><td>76.0</td></tr>
+            <tr><td>75 m2 / 5.85 ty</td><td>78.0</td></tr>
+            <tr><td>71 m2 / 5.65 ty</td><td>79.6</td></tr>
+            <tr><td>75 m2 / 6.00 ty</td><td>80.0</td></tr>
+            <tr><td>71 m2 / 5.75 ty</td><td>81.0</td></tr>
+            <tr><td>71 m2 / 5.80 ty</td><td>81.7</td></tr>
+            <tr><td>71 m2 / 5.90 ty</td><td>83.1</td></tr>
+            <tr><td>71 m2 / 5.95 ty (river view)</td><td>83.8</td></tr>
+            <tr style="background: rgba(157,107,55,0.12); font-weight:700"><td>Subject 72 m2 / 5.95 ty</td><td>82.6</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-frame" style="margin-top:12px">
+        <canvas id="compsChart"></canvas>
+      </div>
+
+      <h3 style="margin: 18px 0 10px; font-family: var(--display-font); font-size: 1.1rem;">Net proceeds at the 5.35 ty floor — where the money goes (tr)</h3>
+      <div class="technical-frame">
+        <table>
+          <thead><tr><th>Component</th><th>VND</th><th>tr / ty</th></tr></thead>
+          <tbody>
+            <tr><td>Gross price</td><td>5_350_000_000</td><td>5.350 ty</td></tr>
+            <tr><td>Transfer tax (2%)</td><td>107_000_000</td><td>107 tr</td></tr>
+            <tr><td>Commission (1.5%)</td><td>80_250_000</td><td>80.25 tr</td></tr>
+            <tr><td>Presentation (20 tr)</td><td>20_000_000</td><td>20 tr</td></tr>
+            <tr><td><strong>Net proceeds</strong></td><td><strong>5_142_750_000</strong></td><td><strong>5.143 ty</strong></td></tr>
+            <tr><td>Construction (500 x 6.5 tr)</td><td>3_250_000_000</td><td>3.25 ty</td></tr>
+            <tr><td>Design / permits</td><td>200_000_000</td><td>200 tr</td></tr>
+            <tr><td>FF&amp;E</td><td>300_000_000</td><td>300 tr</td></tr>
+            <tr><td>Contingency (10%)</td><td>325_000_000</td><td>325 tr</td></tr>
+            <tr><td>Hard reserve</td><td>750_000_000</td><td>750 tr</td></tr>
+            <tr style="background: rgba(59,111,118,0.10); font-weight:700"><td>Surplus</td><td>317_750_000</td><td>318 tr</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-frame" style="margin-top:12px">
+        <canvas id="waterfallChart"></canvas>
+      </div>
+      <p style="margin-top:12px; color: var(--ink-soft); font-size: 0.85rem;">Computed by <code>scripts/sale_waterfall.py</code> — every figure is an integer VND. Recompute any offer with <code>python scripts/sale_waterfall.py --price 5500000000 --speed-bonus --format json</code>.</p>
+    </section>
+
+    <section class="section" id="agent-panel">
+      <div class="section-header">
+        <div><div class="section-index">04 / Agent Panel — How the Three Are Chosen</div><h2 class="section-title">Agent Panel</h2></div>
+      </div>
+      <div class="narrative">
+        <p>An open panel of exactly three agents from day one — no exclusivity. Selection is by a <strong>100-point scorecard</strong> after calling 6–8 candidates. The candidate pool is derived from search visibility and is unverified on closing performance; that is what the vetting is for.</p>
+      </div>
+      <div class="technical-frame" style="margin-top:16px">
+        <table>
+          <thead><tr><th>Criterion</th><th>Weight</th><th>What a strong answer sounds like</th></tr></thead>
+          <tbody>
+            <tr><td>Verified SSR closings, last 12 months</td><td>30</td><td>Names blocks/floors and months; offers two unit numbers cross-checkable with the management board.</td></tr>
+            <tr><td>Written CMA quality</td><td>25</td><td>Cites 3+ signed transaction prices, last 90 days, with date/area/ty/tr per m2 — not portal asking prices (asking = 0 on this criterion).</td></tr>
+            <tr><td>Response latency</td><td>15</td><td>Written follow-up within 4 hours.</td></tr>
+            <tr><td>Marketing commitment</td><td>15</td><td>Names a boosted batdongsan.com.vn product and a Nha Tot push with spend in writing.</td></tr>
+            <tr><td>Live buyer queue</td><td>10</td><td>Named buyer with budget/timeline for a 2BR at SSR right now.</td></tr>
+            <tr><td>Terms acceptance</td><td>5</td><td>Accepts 1.5% winner-takes-all + 0.3% bonus, fixed 5.95 ty, and the 30-day attribution rule without argument.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="dual-grid" style="margin-top:16px">
+        <div class="subcard">
+          <h3>Three discipline rules (non-negotiable)</h3>
+          <ol>
+            <li>One fixed listing price — 5.95 ty identical across all three agents.</li>
+            <li>Seller-owned photo/video/floorplan pack — no agent shoots or publishes their own images.</li>
+            <li>First-registration attribution — the agent who first registers a named buyer in writing owns that buyer for 30 calendar days.</li>
+          </ol>
+        </div>
+        <div class="subcard">
+          <h3>Commission</h3>
+          <p>1.5% of gross contract value, winner-takes-all, plus a 0.3% bonus if the notarised agreement is signed within 45 days of listing. Losing panel agents receive nothing. See <code>04-mandate-terms-sheet.md</code> for the send-as-is letter.</p>
+        </div>
+      </div>
+      <p style="margin-top:12px; color: var(--ink-soft); font-size: 0.85rem;">This pool is derived from public search visibility, which measures marketing spend rather than closing ability. No claim is made about any firm's transaction history. Score them yourself using the rubric.</p>
+    </section>
+
+    <section class="section" id="timeline">
+      <div class="section-header">
+        <div><div class="section-index">05 / Sale Timeline</div><h2 class="section-title">Timeline — Query to Keys</h2></div>
+      </div>
+      <div class="narrative">
+        <p>There is no hard deadline. The build starts when the sale closes. Price is held to day 90, then reassessed against fresh signed-transaction CMAs. The schedule below is indicative — the gates are the control.</p>
+      </div>
+      <div class="dual-grid" style="margin-top:16px">
+        <div class="subcard"><h3>Pre-listing (week 0)</h3><ul>
+          <li>Confirm foreign-ownership quota with the SSR management board — one phone call; gates the English-language channel.</li>
+          <li>Spend 20 tr: paint touch-up (8 tr), deep clean (4 tr), photography + floorplan + video (8 tr).</li>
+          <li>Call 6–8 agents, score, appoint 3; issue the identical mandate terms sheet and collect signed acceptance.</li>
+        </ul></div>
+        <div class="subcard"><h3>Listing &amp; viewings (weeks 1–6)</h3><ul>
+          <li>Go live on batdongsan.com.vn and nhatot.com (boosted placement per agent). Distribute the seller-owned asset pack identically.</li>
+          <li>First-registration log runs from day one. Every offer in writing.</li>
+        </ul></div>
+        <div class="subcard"><h3>Offer &amp; deposit (weeks 4–10)</h3><ul>
+          <li>Negotiate against the ladder in <code>08-negotiation-ladder.md</code>. Cash preferred; mortgage only with pre-approval letter.</li>
+          <li>5% dat coc deposit with forfeiture on buyer default.</li>
+        </ul></div>
+        <div class="subcard"><h3>Close &amp; fund (weeks 8–12)</h3><ul>
+          <li>Notarised sale-purchase agreement at a licensed notary; 2% transfer tax on gross; So hong transfer. Close in 30 days (cash) or 45 days (mortgage).</li>
+          <li>Waterfall via <code>scripts/sale_waterfall.py</code>; release 4.075 ty to the build in stages, hold 750 tr reserve.</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <section class="section" id="negotiation">
+      <div class="section-header">
+        <div><div class="section-index">06 / Negotiation — The Ladder</div><h2 class="section-title">Negotiation Ladder</h2></div>
+      </div>
+      <div class="technical-frame">
+        <table>
+          <thead><tr><th>Offer (ty)</th><th>Discount</th><th>Gate</th><th>Response</th></tr></thead>
+          <tbody>
+            <tr><td>At or above 5.75</td><td>0–3.4%</td><td>PROCEED</td><td>Accept in principle — move to 5% dat coc, notarise in 30 days.</td></tr>
+            <tr><td>5.60–5.74</td><td>3.5–5.9%</td><td>PROCEED</td><td>Counter near 5.70 ty with flexible handover and furniture.</td></tr>
+            <tr><td>5.45–5.59</td><td>6.1–8.4%</td><td>PROCEED</td><td>Target band — counter ~5.55 ty with furniture + notary fee.</td></tr>
+            <tr><td>5.35–5.44</td><td>8.6–10.1%</td><td>PROCEED (floor)</td><td>Accept at floor for a clean cash close; require pre-approval if mortgage.</td></tr>
+            <tr><td>5.15–5.34</td><td>10.3–13.4%</td><td>ESCALATE</td><td>Below published floor — present to owner, respond within 24 h.</td></tr>
+            <tr><td>Below 5.15</td><td>&gt;13.4%</td><td>REJECT</td><td>Hold the hard floor. No acceptance without written owner approval.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="narrative" style="margin-top:16px">
+        <p><strong>Non-price concessions in order, cheapest first:</strong> furniture included → flexible handover date → seller pays notary fee → longer deposit-to-close window (mortgage only). Price is the last concession, not the first. A 10.1% discount at the 5.35 ty floor is a normal Q3-2026 clearing outcome (the market clears 7–12% below asking), not a lowball. See <code>08-negotiation-ladder.md</code> for the full scripted responses.</p>
+      </div>
+    </section>
+
+    <section class="section" id="closing">
+      <div class="section-header">
+        <div><div class="section-index">07 / Closing &amp; Tax</div><h2 class="section-title">Closing Sequence</h2></div>
+      </div>
+      <div class="narrative">
+        <ol>
+          <li>Accepted offer in writing (buyer name, price in ty, deposit readiness, cash vs mortgage).</li>
+          <li>Deposit contract (hợp đồng đặt cọc) — 5% dat coc, forfeiture on buyer default.</li>
+          <li>Document assembly — So hong original, CCCD/passport, marriage or single-status certificate, household registration.</li>
+          <li>Notarisation of the sale-purchase agreement at a licensed notary office.</li>
+          <li>2% transfer tax on gross contract value — 119 tr at 5.95 ty, 110 tr at 5.50 ty, <strong>107 tr at 5.35 ty</strong> (final, not on gain, unaffected by original purchase price).</li>
+          <li>Registration fee.</li>
+          <li>Transfer of the So hong to the buyer's name.</li>
+        </ol>
+        <p>Mortgage-financed buyers only with a bank pre-approval letter; close capped at 45 days. A bank valuation below the contract price can reopen the negotiation around week 4 — the specific reason cash buyers are preferred. See <code>09-closing-tax-checklist.md</code>.</p>
+      </div>
+    </section>
+
+    <section class="section" id="gates">
+      <div class="section-header">
+        <div><div class="section-index">08 / Release Gates</div><h2 class="section-title">Release-Gate Logic</h2></div>
+      </div>
+      <div class="narrative">
+        <p>Computed by <code>scripts/sale_waterfall.py</code> — <code>release_gate(price_vnd, speed_bonus)</code>. Applied in this exact order:</p>
+      </div>
+      <div class="diagram-frame compact-diagram" style="margin-top:16px">
+        <pre class="mermaid">
+flowchart TD
+  A["Offer price P (ty)"] --> B{"P < 5.15 ty?"}
+  B -- Yes --> R1["REJECT<br/>Do not proceed.<br/>Owner written approval required."]
+  B -- No --> C{"P < 5.35 ty?"}
+  C -- Yes --> R2["ESCALATE<br/>Above hard floor, below published floor.<br/>Owner decides."]
+  C -- No --> D{"surplus(P,s) < 0?"}
+  D -- Yes --> R3["PROCEED WITH REDUCED SCOPE<br/>Funds cover build+contingency but not full 750 tr reserve.<br/>Reduce R before engaging contractor."]
+  D -- No --> R4["PROCEED<br/>Release 4.075 ty to build in stages.<br/>Hold 750 tr reserve. Report surplus as free capital."]
+        </pre>
+      </div>
+      <div class="technical-frame" style="margin-top:16px">
+        <table>
+          <thead><tr><th>Scenario</th><th>P</th><th>Bonus</th><th>Net</th><th>Surplus</th><th>Gate</th></tr></thead>
+          <tbody>
+            <tr><td>List, no bonus</td><td>5.95 ty</td><td>—</td><td>5.722 ty</td><td>897 tr</td><td>PROCEED</td></tr>
+            <tr><td>Target mid, bonus</td><td>5.50 ty</td><td>Yes</td><td>5.271 ty</td><td>446 tr</td><td>PROCEED</td></tr>
+            <tr><td>Published floor</td><td>5.35 ty</td><td>—</td><td>5.143 ty</td><td>318 tr</td><td>PROCEED</td></tr>
+            <tr><td>Below published floor</td><td>5.30 ty</td><td>—</td><td>5.095 ty</td><td>270 tr</td><td>ESCALATE</td></tr>
+            <tr><td>At hard floor</td><td>5.15 ty</td><td>—</td><td>4.950 ty</td><td>125 tr</td><td>ESCALATE</td></tr>
+            <tr><td>Below hard floor</td><td>5.00 ty</td><td>—</td><td>4.805 ty</td><td>-20 tr</td><td>REJECT</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="deliverables">
+      <div class="section-header">
+        <div><div class="section-index">09 / Deliverables Index</div><h2 class="section-title">Everything in the Pack</h2></div>
+      </div>
+      <div class="narrative">
+        <p>Ten documents under <code>deliverables/apartment-sale/</code> plus the waterfall module and this report. All prices carry explicit <code>ty</code> or <code>tr/m2</code> units. Rent of 12 tr/month (15 x 12 tr = 180 tr over the build) is <strong>non-incremental — paid whether or not the apartment sells</strong> and is excluded from the funding gap.</p>
+      </div>
+      <div class="technical-frame" style="margin-top:16px">
+        <table>
+          <thead><tr><th>#</th><th>File</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>01</td><td><a href="../deliverables/apartment-sale/01-price-fact-base.md">01-price-fact-base.md</a></td><td>Dated comparable-price fact base (9 live comps, median 80.0 tr/m2)</td></tr>
+            <tr><td>02</td><td><a href="../deliverables/apartment-sale/02-agent-scorecard.md">02-agent-scorecard.md</a></td><td>Weighted scorecard (100 pts) + candidate pool + blank scoring grid</td></tr>
+            <tr><td>03</td><td><a href="../deliverables/apartment-sale/03-agent-call-script.md">03-agent-call-script.md</a></td><td>Numbered call script mapping to the six scorecard criteria</td></tr>
+            <tr><td>04</td><td><a href="../deliverables/apartment-sale/04-mandate-terms-sheet.md">04-mandate-terms-sheet.md</a></td><td>Send-as-is three-agent mandate terms sheet (price, commission, discipline rules)</td></tr>
+            <tr><td>05</td><td><a href="../deliverables/apartment-sale/05-listing-copy-vi.md">05-listing-copy-vi.md</a></td><td>Vietnamese listing copy (full diacritics), 5.95 ty</td></tr>
+            <tr><td>06</td><td><a href="../deliverables/apartment-sale/06-listing-copy-en.md">06-listing-copy-en.md</a></td><td>English listing copy — HOLD until quota confirmed</td></tr>
+            <tr><td>07</td><td><a href="../deliverables/apartment-sale/07-photo-shot-list.md">07-photo-shot-list.md</a></td><td>21-shot photography list + portal placement + 20 tr presentation budget</td></tr>
+            <tr><td>08</td><td><a href="../deliverables/apartment-sale/08-negotiation-ladder.md">08-negotiation-ladder.md</a></td><td>Six-band offer ladder with scripted responses and gate logic</td></tr>
+            <tr><td>09</td><td><a href="../deliverables/apartment-sale/09-closing-tax-checklist.md">09-closing-tax-checklist.md</a></td><td>Ordered closing sequence + 2% tax figures (119/110/107 tr)</td></tr>
+            <tr><td>10</td><td><a href="../deliverables/apartment-sale/10-build-reconciliation.md">10-build-reconciliation.md</a></td><td>Proceeds-to-build reconciliation — the waterfall in prose</td></tr>
+            <tr><td>—</td><td><a href="../scripts/sale_waterfall.py">scripts/sale_waterfall.py</a></td><td>Executable waterfall (argparse, text/json). Run <code>python scripts/sale_waterfall.py --help</code></td></tr>
+            <tr><td>—</td><td><a href="../tests/test_sale_waterfall.py">tests/test_sale_waterfall.py</a></td><td>9 pytest cases reproducing every S4 figure</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="dual-grid" style="margin-top:16px">
+        <div class="subcard"><h3>Ownership</h3><p>Block <code>[[BLOCK]]</code> / floor <code>[[FLOOR]]</code> are owner-fillable placeholders. Foreign-ownership quota eligibility must be confirmed with the SSR management board before publishing the English copy.</p></div>
+        <div class="subcard"><h3>Integrity</h3><p>All monetary values in code are integers in plain VND. Presentation is in <code>ty</code> to three decimals. No document fabricates a named firm's transaction history; no document gives authoritative legal or tax advice.</p></div>
+      </div>
+      <div class="footer-note">Verify with a licensed Vietnamese notary (phong cong chung) and tax advisor before signing — designed for html first, printable without reconstruction</div>
+    </section>
+  </main>
+  <script>
+    (function() {
+      document.querySelectorAll('canvas').forEach((canvas) => {
+        canvas.classList.add('report-chart');
+        const parent = canvas.parentElement;
+        if (parent && parent.classList.contains('technical-frame') && !parent.classList.contains('chart-frame')) {
+          parent.classList.add('chart-frame');
+        }
+      });
+    })();
+    if (window.Chart) {
+      Chart.defaults.devicePixelRatio = 1;
+      Chart.defaults.animation = false;
+      Chart.defaults.resizeDelay = 150;
+      Chart.defaults.normalized = true;
+      Chart.defaults.maintainAspectRatio = false;
+      Chart.defaults.responsive = true;
+    }
+    (function() {
+      function bootstrap() {
+        if (!window.Chart) { return; }
+        var el1 = document.getElementById('compsChart');
+        if (el1) {
+          new Chart(el1, {
+            type: 'bar',
+            data: {
+              labels: ['76/5.50', '75/5.70', '75/5.85', '71/5.65', '75/6.00', '71/5.75', '71/5.80', '71/5.90', '71/5.95 river', 'Subject 72/5.95'],
+              datasets: [{
+                label: 'tr/m2',
+                data: [72.4, 76.0, 78.0, 79.6, 80.0, 81.0, 81.7, 83.1, 83.8, 82.6],
+                backgroundColor: ['#3b6f76','#3b6f76','#3b6f76','#3b6f76','#3b6f76','#3b6f76','#3b6f76','#3b6f76','#3b6f76','#9d6b37'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true, maintainAspectRatio: false, animation: false, normalized: true, resizeDelay: 150,
+              plugins: { legend: { display: false } },
+              scales: { x: { title: { display: true, text: 'tr/m2' } } }
+            }
+          });
+        }
+        var el2 = document.getElementById('waterfallChart');
+        if (el2) {
+          new Chart(el2, {
+            type: 'bar',
+            data: {
+              labels: ['Price 5.35 ty', 'Tax', 'Commission', 'Present.', 'Net 5.143 ty', 'Build 3.25 ty', 'Permits 200tr', 'FF&E 300tr', 'Conting. 325tr', 'Reserve 750tr', 'Surplus 318tr'],
+              datasets: [{
+                label: 'VND (tr)',
+                data: [5350, -107, -80.25, -20, 5142.75, -3250, -200, -300, -325, -750, 317.75],
+                backgroundColor: ['#efe4d0','#bfa37d','#bfa37d','#dccdb6','#3b6f76','#9d6b37','#9d6b37','#9d6b37','#bfa37d','#3b6f76','#9d6b37'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false, animation: false, normalized: true, resizeDelay: 150,
+              plugins: { legend: { display: false } },
+              scales: { y: { title: { display: true, text: 'tr' } } }
+            }
+          });
+        }
+      }
+      if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bootstrap, { once: true }); }
+      else { bootstrap(); }
+    })();
+  </script>
+</body>
+</html>
