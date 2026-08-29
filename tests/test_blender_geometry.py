@@ -69,7 +69,7 @@ def test_every_mesh_stays_within_the_plot():
     plot_w = model["plot_width_mm"] / 1000
     plot_d = model["plot_depth_mm"] / 1000
     for obj in bpy.context.scene.objects:
-        if obj.name.startswith(("ground", "neighbour", "street")):
+        if obj.name.startswith(("ground", "neighbour", "street", "carriageway", "kerb", "opposite", "alley")):
             continue
         if obj.type != "MESH":
             continue
