@@ -136,6 +136,7 @@ class CompiledModel:
     wall_alignment: str = "centre"  # "centre" or "inside" (S5)
     sections: list[dict] = field(default_factory=list)
     north_deg: float = 0.0
+    finish_map: dict = field(default_factory=dict)
     setbacks: Optional[dict] = None  # {"front_mm", "rear_mm"} building lines
 
     def to_dict(self) -> dict:
@@ -203,6 +204,7 @@ class CompiledModel:
             sections=list(data.get("sections", [])),
             north_deg=data.get("north_deg", 0.0),
             setbacks=data.get("setbacks"),
+            finish_map=data.get("finish_map", {}),
         )
 
 
@@ -211,8 +213,10 @@ def model_hash(model: "CompiledModel") -> str:
     of the SHA-256 digest of the canonical JSON serialisation. Stable across
     runs and insensitive to dict ordering inside the model; any geometric
     change changes the hash, which is what lets `pdf` detect stale renders."""
+    finish_part = getattr(model, 'finish_map', {}) or {}
     canonical = json.dumps(model.to_dict(), sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+    extra = json.dumps(finish_part, sort_keys=True)
+    return hashlib.sha256((canonical+extra).encode("utf-8")).hexdigest()[:12]
 
 
 def write_render_sidecar(png_path, model_hash: str, view: str, profile: str) -> Path:

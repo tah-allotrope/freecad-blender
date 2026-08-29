@@ -15,6 +15,7 @@ Resolution order per storey:
 from __future__ import annotations
 
 from .errors import SpecError, SpecValidationError
+from .finishes import build_finish_map
 from .model import CompiledModel, Opening, Rect, Room, Roof, Storey, View, Wall
 from .stairs import derive_stairs
 
@@ -117,6 +118,7 @@ def compile_spec(spec: dict) -> CompiledModel:
         wall_alignment=wall_alignment,
         sections=sections,
         north_deg=spec["site"].get("north_deg", 0.0),
+        finish_map=build_finish_map(spec),
         setbacks=spec["site"].get("setbacks"),
     )
 

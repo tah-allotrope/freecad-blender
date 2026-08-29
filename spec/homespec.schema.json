@@ -1,621 +1,741 @@
 {
- "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "homespec.schema.json",
- "title": "Home Design Spec",
- "type": "object",
- "required": [
-  "meta",
-  "site",
-  "storeys"
- ],
- "additionalProperties": false,
- "properties": {
-  "meta": {
-   "type": "object",
-   "required": [
-    "name"
-   ],
-   "additionalProperties": false,
-   "properties": {
-    "name": {
-     "type": "string",
-     "minLength": 1
-    },
-    "style": {
-     "type": "string",
-     "enum": [
-      "modern-minimal"
-     ],
-     "default": "modern-minimal"
-    },
-    "sections": {
-     "type": "array",
-     "items": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "homespec.schema.json",
+  "title": "Home Design Spec",
+  "type": "object",
+  "required": [
+    "meta",
+    "site",
+    "storeys"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
       "type": "object",
       "required": [
-       "name",
-       "axis",
-       "position_mm"
+        "name"
       ],
       "additionalProperties": false,
       "properties": {
-       "name": {
-        "type": "string",
-        "minLength": 1
-       },
-       "axis": {
-        "type": "string",
-        "enum": [
-         "x",
-         "y"
-        ]
-       },
-       "position_mm": {
-        "type": "number",
-        "minimum": 0
-       },
-       "label": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Optional drawing label printed at both ends of the section cut line, e.g. 'A-A'. Falls back to the uppercased name."
-       }
-      }
-     }
-    },
-    "views": {
-     "type": "array",
-     "items": {
-      "type": "object",
-      "required": [
-       "name",
-       "kind"
-      ],
-      "additionalProperties": false,
-      "properties": {
-       "name": {
-        "type": "string",
-        "minLength": 1
-       },
-       "kind": {
-        "type": "string",
-        "enum": [
-         "exterior_front",
-         "exterior_aerial",
-         "room"
-        ]
-       },
-       "room_id": {
-        "type": "string"
-       }
-      },
-      "if": {
-       "properties": {
-        "kind": {
-         "const": "room"
-        }
-       }
-      },
-      "then": {
-       "required": [
-        "name",
-        "kind",
-        "room_id"
-       ]
-      }
-     }
-    }
-   }
-  },
-  "site": {
-   "type": "object",
-   "required": [
-    "plot_width_mm",
-    "plot_depth_mm"
-   ],
-   "additionalProperties": false,
-   "properties": {
-    "plot_width_mm": {
-     "type": "number",
-     "exclusiveMinimum": 0
-    },
-    "plot_depth_mm": {
-     "type": "number",
-     "exclusiveMinimum": 0
-    },
-    "context": {
-     "type": "object",
-     "additionalProperties": false,
-     "properties": {
-      "neighbours": {
-       "type": "boolean",
-       "default": true,
-       "description": "Build neighbouring party-wall massing flanking the plot. When absent, neighbours are built only when plot_width_mm <= 6000 (the sandwiched-urban-lot case)."
-      },
-      "street_depth_mm": {
-       "type": "number",
-       "exclusiveMinimum": 0,
-       "default": 6000,
-       "description": "Depth of the street strip modelled south of the plot."
-      }
-     }
-    },
-    "wall_alignment": {
-     "type": "string",
-     "enum": [
-      "centre",
-      "inside"
-     ],
-     "default": "centre",
-     "description": "How exterior walls sit relative to the room edge: 'centre' straddles it (today's geometry); 'inside' lies wholly on the room side so the outer face lands on the plot line."
-    },
-    "north_deg": {
-     "type": "number",
-     "minimum": 0,
-     "exclusiveMaximum": 360,
-     "default": 0,
-     "description": "Compass bearing of north in degrees clockwise from model -y toward model +x; rotates the sun rig and the plan north arrow."
-    },
-    "setbacks": {
-     "type": "object",
-     "additionalProperties": false,
-     "properties": {
-      "front_mm": {
-       "type": "number",
-       "minimum": 0,
-       "description": "Building line distance from the street boundary (y=0)."
-      },
-      "rear_mm": {
-       "type": "number",
-       "minimum": 0,
-       "description": "Building line distance from the rear boundary (y=plot_depth_mm)."
-      }
-     }
-    }
-   }
-  },
-  "storeys": {
-   "type": "array",
-   "minItems": 1,
-   "items": {
-    "type": "object",
-    "required": [
-     "level",
-     "height_mm",
-     "rooms"
-    ],
-    "additionalProperties": false,
-    "properties": {
-     "level": {
-      "type": "integer",
-      "minimum": 0
-     },
-     "name": {
-      "type": "string"
-     },
-     "height_mm": {
-      "type": "number",
-      "exclusiveMinimum": 0,
-      "default": 3000
-     },
-     "roof": {
-      "type": "object",
-      "required": [
-       "type"
-      ],
-      "additionalProperties": false,
-      "properties": {
-       "type": {
-        "type": "string",
-        "enum": [
-         "flat",
-         "gable",
-         "shed"
-        ]
-       },
-       "pitch_deg": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 60,
-        "default": 20
-       },
-       "overhang_mm": {
-        "type": "number",
-        "minimum": 0,
-        "default": 300
-       },
-       "rect": {
-        "type": "object",
-        "required": [
-         "x",
-         "y",
-         "w",
-         "d"
-        ],
-        "additionalProperties": false,
-        "properties": {
-         "x": {
-          "type": "number",
-          "minimum": 0
-         },
-         "y": {
-          "type": "number",
-          "minimum": 0
-         },
-         "w": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         },
-         "d": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         }
-        }
-       },
-       "voids": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "required": [
-          "x",
-          "y",
-          "w",
-          "d"
-         ],
-         "additionalProperties": false,
-         "properties": {
-          "x": {
-           "type": "number",
-           "minimum": 0
-          },
-          "y": {
-           "type": "number",
-           "minimum": 0
-          },
-          "w": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          },
-          "d": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          }
-         }
-        }
-       },
-       "structures": {
-        "type": "array",
-        "items": {
-         "type": "object",
-         "required": [
-          "x",
-          "y",
-          "w",
-          "d",
-          "height_mm"
-         ],
-         "additionalProperties": false,
-         "properties": {
-          "x": {
-           "type": "number",
-           "minimum": 0
-          },
-          "y": {
-           "type": "number",
-           "minimum": 0
-          },
-          "w": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          },
-          "d": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          },
-          "height_mm": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          },
-          "name": {
-           "type": "string"
-          }
-         }
-        }
-       }
-      }
-     },
-      "voids": {
-       "type": "array",
-       "items": {
-        "type": "object",
-        "required": [
-         "x",
-         "y",
-         "w",
-         "d"
-        ],
-        "additionalProperties": false,
-        "properties": {
-         "x": {
-          "type": "number",
-          "minimum": 0
-         },
-         "y": {
-          "type": "number",
-          "minimum": 0
-         },
-         "w": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         },
-         "d": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         },
-         "reason": {
-          "type": "string"
-         }
-        }
-       }
-      },
-      "annotations": {
-       "type": "array",
-       "description": "Text callouts drawn on the plan (dashed box when boxed). Callouts only -- they never affect checks, tiling or furniture.",
-       "items": {
-        "type": "object",
-        "required": [
-         "x",
-         "y",
-         "w",
-         "d",
-         "text"
-        ],
-        "additionalProperties": false,
-        "properties": {
-         "x": {
-          "type": "number",
-          "minimum": 0
-         },
-         "y": {
-          "type": "number",
-          "minimum": 0
-         },
-         "w": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         },
-         "d": {
-          "type": "number",
-          "exclusiveMinimum": 0
-         },
-         "text": {
+        "name": {
           "type": "string",
           "minLength": 1
-         },
-         "boxed": {
-          "type": "boolean",
-          "default": false
-         }
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "modern-minimal"
+          ],
+          "default": "modern-minimal"
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "axis",
+              "position_mm"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "axis": {
+                "type": "string",
+                "enum": [
+                  "x",
+                  "y"
+                ]
+              },
+              "position_mm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Optional drawing label printed at both ends of the section cut line, e.g. 'A-A'. Falls back to the uppercased name."
+              }
+            }
+          }
+        },
+        "views": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "kind"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "exterior_front",
+                  "exterior_aerial",
+                  "room"
+                ]
+              },
+              "room_id": {
+                "type": "string"
+              }
+            },
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "room"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "name",
+                "kind",
+                "room_id"
+              ]
+            }
+          }
         }
-       }
-      },
-     "stairs": {
+      }
+    },
+    "site": {
       "type": "object",
+      "required": [
+        "plot_width_mm",
+        "plot_depth_mm"
+      ],
       "additionalProperties": false,
       "properties": {
-       "room": {
-        "type": "string"
-       },
-       "direction": {
-        "type": "string",
-        "enum": [
-         "up",
-         "down",
-         "up_and_down"
-        ],
-        "default": "up"
-       },
-       "mode": {
-        "type": "string",
-        "enum": [
-         "auto",
-         "straight",
-         "u_return",
-         "none"
-        ],
-        "default": "auto"
-       }
+        "plot_width_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "plot_depth_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "neighbours": {
+              "type": "boolean",
+              "default": true,
+              "description": "Build neighbouring party-wall massing flanking the plot. When absent, neighbours are built only when plot_width_mm <= 6000 (the sandwiched-urban-lot case)."
+            },
+            "street_depth_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 6000,
+              "description": "Depth of the street strip modelled south of the plot."
+            },
+            "alley_width_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "kerb_height_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "kerb_width_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "opposite_height_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "opposite_depth_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "neighbour_west_height_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "neighbour_east_height_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "neighbour_width_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "neighbour_depth_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "wall_alignment": {
+          "type": "string",
+          "enum": [
+            "centre",
+            "inside"
+          ],
+          "default": "centre",
+          "description": "How exterior walls sit relative to the room edge: 'centre' straddles it (today's geometry); 'inside' lies wholly on the room side so the outer face lands on the plot line."
+        },
+        "north_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360,
+          "default": 0,
+          "description": "Compass bearing of north in degrees clockwise from model -y toward model +x; rotates the sun rig and the plan north arrow."
+        },
+        "setbacks": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "front_mm": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Building line distance from the street boundary (y=0)."
+            },
+            "rear_mm": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Building line distance from the rear boundary (y=plot_depth_mm)."
+            }
+          }
+        }
       }
-     },
-     "rooms": {
+    },
+    "storeys": {
       "type": "array",
       "minItems": 1,
       "items": {
-       "type": "object",
-       "required": [
-        "id",
-        "type"
-       ],
-       "additionalProperties": false,
-       "properties": {
-        "id": {
-         "type": "string",
-         "minLength": 1
-        },
-        "name": {
-         "type": "string",
-         "minLength": 1,
-         "description": "Optional human-readable room label, e.g. 'Master bedroom'. Plan labels and the PDF schedule use name when present, else id."
-        },
-        "level_mm": {
-         "type": "number",
-         "description": "Finished-floor offset from the storey's base_z; prints a per-room level marker on the plan (e.g. '+ 0.100')."
-        },
-        "type": {
-         "type": "string",
-         "enum": [
-          "bedroom",
-          "bathroom",
-          "kitchen",
-          "living",
-          "dining",
-          "hall",
-          "stairwell",
-          "garage",
-          "balcony",
-          "office",
-          "storage",
-          "elevator",
-          "terrace",
-          "wc",
-          "utility",
-          "courtyard"
-         ]
-        },
-        "rect": {
-         "type": "object",
-         "required": [
-          "x",
-          "y",
-          "w",
-          "d"
-         ],
-         "additionalProperties": false,
-         "properties": {
-          "x": {
-           "type": "number",
-           "minimum": 0
+        "type": "object",
+        "required": [
+          "level",
+          "height_mm",
+          "rooms"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 0
           },
-          "y": {
-           "type": "number",
-           "minimum": 0
+          "name": {
+            "type": "string"
           },
-          "w": {
-           "type": "number",
-           "exclusiveMinimum": 0
+          "height_mm": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "default": 3000
           },
-          "d": {
-           "type": "number",
-           "exclusiveMinimum": 0
+          "roof": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "flat",
+                  "gable",
+                  "shed"
+                ]
+              },
+              "pitch_deg": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 60,
+                "default": 20
+              },
+              "overhang_mm": {
+                "type": "number",
+                "minimum": 0,
+                "default": 300
+              },
+              "rect": {
+                "type": "object",
+                "required": [
+                  "x",
+                  "y",
+                  "w",
+                  "d"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "w": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "d": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              },
+              "voids": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y",
+                    "w",
+                    "d"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "w": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "d": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                }
+              },
+              "structures": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y",
+                    "w",
+                    "d",
+                    "height_mm"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "w": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "d": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "height_mm": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "voids": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "x",
+                "y",
+                "w",
+                "d"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "w": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "d": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "annotations": {
+            "type": "array",
+            "description": "Text callouts drawn on the plan (dashed box when boxed). Callouts only -- they never affect checks, tiling or furniture.",
+            "items": {
+              "type": "object",
+              "required": [
+                "x",
+                "y",
+                "w",
+                "d",
+                "text"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "w": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "d": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "boxed": {
+                  "type": "boolean",
+                  "default": false
+                }
+              }
+            }
+          },
+          "stairs": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "room": {
+                "type": "string"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down",
+                  "up_and_down"
+                ],
+                "default": "up"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "straight",
+                  "u_return",
+                  "none"
+                ],
+                "default": "auto"
+              }
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "type"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Optional human-readable room label, e.g. 'Master bedroom'. Plan labels and the PDF schedule use name when present, else id."
+                },
+                "level_mm": {
+                  "type": "number",
+                  "description": "Finished-floor offset from the storey's base_z; prints a per-room level marker on the plan (e.g. '+ 0.100')."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "bedroom",
+                    "bathroom",
+                    "kitchen",
+                    "living",
+                    "dining",
+                    "hall",
+                    "stairwell",
+                    "garage",
+                    "balcony",
+                    "office",
+                    "storage",
+                    "elevator",
+                    "terrace",
+                    "wc",
+                    "utility",
+                    "courtyard"
+                  ]
+                },
+                "rect": {
+                  "type": "object",
+                  "required": [
+                    "x",
+                    "y",
+                    "w",
+                    "d"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "w": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "d": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "relative": {
+                  "type": "object",
+                  "required": [
+                    "adjacent_to",
+                    "side",
+                    "w",
+                    "d"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "adjacent_to": {
+                      "type": "string"
+                    },
+                    "side": {
+                      "type": "string",
+                      "enum": [
+                        "north",
+                        "south",
+                        "east",
+                        "west"
+                      ]
+                    },
+                    "w": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "d": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "finish": {
+                  "type": "string"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "rect"
+                  ]
+                },
+                {
+                  "required": [
+                    "relative"
+                  ]
+                }
+              ]
+            }
+          },
+          "openings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type",
+                "between"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "door",
+                    "window"
+                  ]
+                },
+                "between": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "side": {
+                  "type": "string",
+                  "enum": [
+                    "north",
+                    "south",
+                    "east",
+                    "west"
+                  ],
+                  "description": "Only meaningful when one 'between' endpoint is 'exterior'; north=min-y, south=max-y, west=min-x, east=max-x."
+                },
+                "width_mm": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "default": 900
+                },
+                "sill_mm": {
+                  "type": "number",
+                  "minimum": 0,
+                  "default": 0
+                },
+                "head_mm": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "default": 2100
+                },
+                "align": {
+                  "type": "string",
+                  "enum": [
+                    "center",
+                    "start",
+                    "end"
+                  ],
+                  "default": "center",
+                  "description": "Where along the wall the opening sits: center, start (wall segment start), or end."
+                },
+                "offset_mm": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Explicit distance from the wall segment start; overrides align entirely."
+                }
+              }
+            }
+          },
+          "facade_elements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "fin",
+                    "band",
+                    "panel",
+                    "awning"
+                  ]
+                },
+                "side": {
+                  "type": "string",
+                  "enum": [
+                    "north",
+                    "south",
+                    "east",
+                    "west"
+                  ]
+                },
+                "x_mm": {
+                  "type": "number"
+                },
+                "z_mm": {
+                  "type": "number"
+                },
+                "w_mm": {
+                  "type": "number"
+                },
+                "h_mm": {
+                  "type": "number"
+                },
+                "projection_mm": {
+                  "type": "number"
+                },
+                "storey_level": {
+                  "type": "integer"
+                },
+                "finish": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "side",
+                "x_mm",
+                "z_mm",
+                "w_mm",
+                "h_mm",
+                "projection_mm"
+              ]
+            }
           }
-         }
-        },
-        "relative": {
-         "type": "object",
-         "required": [
-          "adjacent_to",
-          "side",
-          "w",
-          "d"
-         ],
-         "additionalProperties": false,
-         "properties": {
-          "adjacent_to": {
-           "type": "string"
-          },
-          "side": {
-           "type": "string",
-           "enum": [
-            "north",
-            "south",
-            "east",
-            "west"
-           ]
-          },
-          "w": {
-           "type": "number",
-           "exclusiveMinimum": 0
-          },
-          "d": {
-           "type": "number",
-           "exclusiveMinimum": 0
+        }
+      }
+    },
+    "finishes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "by_element": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
-         }
-        }
-       },
-       "oneOf": [
-        {
-         "required": [
-          "rect"
-         ]
         },
-        {
-         "required": [
-          "relative"
-         ]
+        "by_room_type": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
-       ]
       }
-     },
-     "openings": {
-      "type": "array",
-      "items": {
-       "type": "object",
-       "required": [
-        "type",
-        "between"
-       ],
-       "additionalProperties": false,
-       "properties": {
-        "type": {
-         "type": "string",
-         "enum": [
-          "door",
-          "window"
-         ]
-        },
-        "between": {
-         "type": "array",
-         "minItems": 2,
-         "maxItems": 2,
-         "items": {
-          "type": "string"
-         }
-        },
-        "side": {
-         "type": "string",
-         "enum": [
-          "north",
-          "south",
-          "east",
-          "west"
-         ],
-         "description": "Only meaningful when one 'between' endpoint is 'exterior'; north=min-y, south=max-y, west=min-x, east=max-x."
-        },
-        "width_mm": {
-         "type": "number",
-         "exclusiveMinimum": 0,
-         "default": 900
-        },
-        "sill_mm": {
-         "type": "number",
-         "minimum": 0,
-         "default": 0
-        },
-        "head_mm": {
-         "type": "number",
-         "exclusiveMinimum": 0,
-         "default": 2100
-        },
-        "align": {
-         "type": "string",
-         "enum": [
-          "center",
-          "start",
-          "end"
-         ],
-         "default": "center",
-         "description": "Where along the wall the opening sits: center, start (wall segment start), or end."
-        },
-        "offset_mm": {
-         "type": "number",
-         "minimum": 0,
-         "description": "Explicit distance from the wall segment start; overrides align entirely."
-        }
-       }
-      }
-     }
     }
-   }
   }
- }
 }

@@ -24,31 +24,100 @@ class FurnitureItem:
     h: float
 
 
+def _footprint(item: FurnitureItem) -> tuple[float, float, float, float]:
+    """Axis-aligned footprint (x,y,w,d) accounting for rot_deg 90."""
+    if item.rot_deg == 90:
+        return (item.x, item.y, item.d, item.w)
+    return (item.x, item.y, item.w, item.d)
+
+
+def _overlaps(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
+    ax, ay, aw, ad = a
+    bx, by, bw, bd = b
+    return not (ax + aw <= bx or bx + bw <= ax or ay + ad <= by or by + bd <= ay)
+
+
+def resolve_collisions(
+    items: list[FurnitureItem], room_w_m: float, room_d_m: float, door_swings: list[tuple[float, float, float, float]] | None = None
+) -> list[FurnitureItem]:
+    """Shift overlapping footprints apart, preserving order and length.
+    Door swings are (x,y,w,d) rectangles to avoid."""
+    if door_swings is None:
+        door_swings = []
+    # Work on mutable copies
+    result = [FurnitureItem(i.kind, i.x, i.y, i.z, i.rot_deg, i.w, i.d, i.h) for i in items]
+    for idx in range(len(result)):
+        # Clamp inside room
+        fx, fy, fw, fd = _footprint(result[idx])
+        # ensure within room bounds
+        nx = max(0.0, min(fx, room_w_m - fw))
+        ny = max(0.0, min(fy, room_d_m - fd))
+        result[idx].x, result[idx].y = nx, ny
+        # Resolve overlaps with earlier items
+        for j in range(idx):
+            for _attempt in range(10):
+                a = _footprint(result[idx])
+                b = _footprint(result[j])
+                if not _overlaps(a, b) and not any(_overlaps(a, s) for s in door_swings):
+                    break
+                # shift along y then x to separate
+                # try moving idx item away by small step
+                # Move to not overlap: push idx beyond j's footprint
+                ax, ay, aw, ad = a
+                bx, by, bw, bd = b
+                # push in y direction if possible, else x
+                try_y = by + bd + 0.05
+                if try_y + ad <= room_d_m:
+                    result[idx].y = try_y
+                else:
+                    try_x = bx + bw + 0.05
+                    if try_x + aw <= room_w_m:
+                        result[idx].x = try_x
+                    else:
+                        # cannot separate without leaving room: touch but not overlap
+                        result[idx].y = max(0.0, by - ad - 0.01)
+                        break
+            # after attempts, if still overlapping, nudge to edge
+        # also check door swings after pairwise
+        for s in door_swings:
+            a = _footprint(result[idx])
+            if _overlaps(a, s):
+                ax, ay, aw, ad = a
+                sx, sy, sw, sd = s
+                try_y = sy + sd + 0.05
+                if try_y + ad <= room_d_m:
+                    result[idx].y = try_y
+                else:
+                    result[idx].x = max(0.0, min(ax, room_w_m - aw))
+    return result
+
+
 def plan_room(room_type: str, w_m: float, d_m: float) -> list[FurnitureItem]:
     """Return furniture placements in room-local coordinates (origin at the
     room's x,y corner, +x along width, +y along depth)."""
     if room_type == "bedroom":
-        return _plan_bedroom(w_m, d_m)
-    if room_type == "bathroom":
-        return _plan_bathroom(w_m, d_m)
-    if room_type == "wc":
-        return _plan_wc(w_m, d_m)
-    if room_type == "kitchen":
-        return _plan_kitchen(w_m, d_m)
-    if room_type in ("living", "dining"):
-        return _plan_living(w_m, d_m)
-    if room_type == "office":
-        return _plan_office(w_m, d_m)
-    if room_type == "hall":
-        return _plan_hall(w_m, d_m)
-    if room_type in ("storage", "utility"):
-        return _plan_shelving(w_m, d_m)
-    if room_type == "garage":
-        return _plan_garage(w_m, d_m)
-    if room_type in ("balcony", "terrace"):
-        return _plan_outdoor(w_m, d_m)
-    return []
-
+        items = _plan_bedroom(w_m, d_m)
+    elif room_type == "bathroom":
+        items = _plan_bathroom(w_m, d_m)
+    elif room_type == "wc":
+        items = _plan_wc(w_m, d_m)
+    elif room_type == "kitchen":
+        items = _plan_kitchen(w_m, d_m)
+    elif room_type in ("living", "dining"):
+        items = _plan_living(w_m, d_m)
+    elif room_type == "office":
+        items = _plan_office(w_m, d_m)
+    elif room_type == "hall":
+        items = _plan_hall(w_m, d_m)
+    elif room_type in ("storage", "utility"):
+        items = _plan_shelving(w_m, d_m)
+    elif room_type == "garage":
+        items = _plan_garage(w_m, d_m)
+    elif room_type in ("balcony", "terrace"):
+        items = _plan_outdoor(w_m, d_m)
+    else:
+        items = []
+    return resolve_collisions(items, w_m, d_m, [])
 
 def _plan_bedroom(w: float, d: float) -> list[FurnitureItem]:
     items = []

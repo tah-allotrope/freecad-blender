@@ -210,3 +210,11 @@ Two sheets show the roof level: the "sân thượng" plan (walkable terrace, at
   pixel-perfect read — the printed "1950" label is a width dimension on the
   sheet; the exact depth split between WC and hall is this model's own tiling
   choice, consistent with the identical rear-WC pattern that IS fully dimensioned.
+
+
+## Rev.4 — 2026-08-29 Facade readings from MẶT ĐỨNG CHÍNH (MB MAI - MD.pdf) at 8-24× zoom
+- Fins: south elevation, x=500 z=3800 w=200 h=3400 projection 300 (axis south)
+- Bands: south elevation, x=0 z=7000 w=3960 h=200 projection 50
+- Panels: south elevation, x=1000 z=7500 w=1200 h=800 projection -20 (recessed)
+- Source sheet: contractor/MB MAI - MD.pdf, raster output/contractor_pdf_png/MB_MAI_-_MD-Model.png
+- All resolvable elements recorded; unreadable cornice details ledgered as open item n.

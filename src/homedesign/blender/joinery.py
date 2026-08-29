@@ -70,16 +70,19 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
                       width - 2 * FRAME_WIDTH, GLASS_THICKNESS, height - 2 * FRAME_WIDTH, collection, glass_mat)
     else:
         leaf_mat = get_material(style, "door_leaf")
-        # Leaf hinged open ~20deg for a livelier render: swing it about the
-        # near jamb rather than filling the void flat. Rotation is baked into
-        # the mesh about that hinge line (see make_hinged_box) -- rotating
-        # the object itself would pivot around the world origin instead.
         leaf_w = width - 2 * FRAME_WIDTH
+        # Leaf sits centred within the wall thickness so its plane is inside the
+        # frame depth (FRAME_DEPTH=0.06). Hinge edge coincides with the frame's
+        # inner jamb face.
         if span_axis == "y":
-            hinge_x, hinge_y = x0 + thickness / 2, y0 + FRAME_WIDTH
-            make_hinged_box(f"{name_base}_leaf", x0 + thickness / 2, y0 + FRAME_WIDTH, z,
+            hinge_y = y0 + FRAME_WIDTH
+            leaf_x = x0 + thickness / 2 - DOOR_LEAF_THICKNESS / 2
+            hinge_x = leaf_x
+            make_hinged_box(f"{name_base}_leaf", leaf_x, y0 + FRAME_WIDTH, z,
                              DOOR_LEAF_THICKNESS, leaf_w, height, hinge_x, hinge_y, 0.35, collection, leaf_mat)
         else:
-            hinge_x, hinge_y = x0 + FRAME_WIDTH, y0 + thickness / 2
-            make_hinged_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, y0 + thickness / 2, z,
+            hinge_x = x0 + FRAME_WIDTH
+            leaf_y = y0 + thickness / 2 - DOOR_LEAF_THICKNESS / 2
+            hinge_y = leaf_y
+            make_hinged_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, leaf_y, z,
                              leaf_w, DOOR_LEAF_THICKNESS, height, hinge_x, hinge_y, -0.35, collection, leaf_mat)

@@ -85,3 +85,18 @@ FURNITURE_MATERIAL_KEY = {
 def furniture_material_key(kind: str) -> str:
     """The palette key for a furniture kind, falling back to `furniture`."""
     return FURNITURE_MATERIAL_KEY.get(kind, "furniture")
+
+
+def make_procedural_material(name: str, family: str, base_color, roughness: float, scale_mm: float):
+    """Stub procedural material - returns flat Principled BSDF with base_color, no image textures."""
+    import bpy
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    # keep Principled, set base color
+    for n in nodes:
+        if n.type == "BSDF_PRINCIPLED":
+            n.inputs["Base Color"].default_value = (*base_color, 1.0)
+            n.inputs["Roughness"].default_value = roughness
+            break
+    return mat

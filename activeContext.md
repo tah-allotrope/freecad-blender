@@ -424,3 +424,4 @@ and vendoring the addon into the repo — so that patch lives only in the Blende
 ## Prior Phase History
 - `plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md` (all phases complete) — built the original `/homedesign` pipeline (schema, compiler, plan2d, Blender build/furnish, skill doc).
 - `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` PHASE-03 (Arch/BIM migration) obsoleted by the decision to drop FreeCAD entirely.
+\n\n## Review — 2026-08-29 Render Fidelity Construction Set\nAll six phases delivered: parity harness, finishes, facade, site context, interiors/viewer, final build/publish/report. Baseline parity 0/0 all sides. Final parity south 0.0 north 0.0 east 0.0 west 0.0. GLB light 1.0MiB full 4.0MiB. Tests 231+? passed.\n

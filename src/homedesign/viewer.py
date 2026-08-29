@@ -40,7 +40,7 @@ def optimize_glb(glb_path: Path) -> bool:
     since Node is not a hard dependency of this project.
     """
     if shutil.which("npx") is None:
-        return False
+        raise RuntimeError("npx not found: gltf-transform requires npx")
     glb_path = Path(glb_path)
     try:
         with tempfile.TemporaryDirectory() as td:
@@ -60,7 +60,7 @@ def optimize_glb(glb_path: Path) -> bool:
             shutil.copy2(c, glb_path)
         return True
     except Exception:
-        return False
+        raise RuntimeError("npx not found: gltf-transform requires npx")
 
 
 _B64_CHUNK_CHARS = 2000
@@ -189,3 +189,33 @@ def _relative_to(path: Path, base_dir: Path) -> str:
         return path.resolve().relative_to(base_dir.resolve()).as_posix()
     except ValueError:
         return path.resolve().as_posix()
+
+def glb_size_budget(build: str) -> int:
+    if build == "light":
+        return 6 * 1024 * 1024
+    if build == "full":
+        return 25 * 1024 * 1024
+    raise ValueError(f"unknown build {build!r}")
+
+def assert_within_budget(glb_path, build: str) -> None:
+    import pathlib
+    path = pathlib.Path(glb_path)
+    size = path.stat().st_size if path.exists() else 0
+    budget = glb_size_budget(build)
+    if size > budget:
+        raise ValueError(f"GLB size {size} exceeds budget {budget} for build {build!r} ({size/1024/1024:.1f} MiB > {budget/1024/1024:.0f} MiB)")
+
+def room_label_data(model) -> list[dict]:
+    out=[]
+    for storey in model.storeys:
+        for room in storey.rooms:
+            # center of room rect
+            x_m = (room.rect.x + room.rect.w/2)/1000
+            y_m = (room.rect.y + room.rect.d/2)/1000
+            z_m = (storey.base_z + (room.level_mm or 0))/1000
+            level_tag = f"+{storey.base_z/1000:.3f}" if room.level_mm is None else f"+{(storey.base_z + room.level_mm)/1000:.3f}"
+            # if level_mm present, make tag from base_z+level_mm else base_z
+            if room.level_mm is not None:
+                level_tag = f"+{(storey.base_z + room.level_mm)/1000:.3f}"
+            out.append({"text": room.name or room.id, "level_tag": level_tag, "x_m": x_m, "y_m": y_m, "z_m": z_m})
+    return out

@@ -393,3 +393,4 @@ on Windows and mangles `P.KHÁCH` → `P.KH╚CH` or raises. Fixed by pinning
 documented UTF-8 convention. No logic changed. This fix is still in effect and
 was re-verified this pass (`python -c "...json.load(...,encoding='utf-8')..."`
 prints every room name with correct diacritics).
+\n\n## Rev.4 — 2026-08-29 Render Fidelity\nClosed k,l,m. Added finishes, facade_elements, alley, neighbours. Ledger items a,c,g remain excluded.\n

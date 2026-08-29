@@ -86,8 +86,17 @@
       "rear_mm": 2500
     },
     "context": {
-      "neighbours": false,
-      "street_depth_mm": 6000
+      "neighbours": true,
+      "street_depth_mm": 6000,
+      "alley_width_mm": 4000,
+      "kerb_height_mm": 150,
+      "kerb_width_mm": 300,
+      "opposite_height_mm": 12000,
+      "opposite_depth_mm": 8000,
+      "neighbour_west_height_mm": 14000,
+      "neighbour_east_height_mm": 10500,
+      "neighbour_width_mm": 4000,
+      "neighbour_depth_mm": 20000
     }
   },
   "storeys": [
@@ -350,6 +359,17 @@
           "d": 560,
           "text": "SÂN SAU",
           "boxed": false
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 500,
+          "z_mm": 3800,
+          "w_mm": 200,
+          "h_mm": 3400,
+          "projection_mm": 300
         }
       ]
     },
@@ -1894,5 +1914,27 @@
         }
       ]
     }
-  ]
+  ],
+  "finishes": {
+    "by_element": {
+      "wall": "plaster_painted",
+      "floor": "ceramic_tile",
+      "ceiling": "plaster_painted",
+      "parapet": "concrete_formed",
+      "frame": "aluminium",
+      "glass": "glass_clear",
+      "leaf": "wood_board",
+      "neighbour": "plaster_painted",
+      "street": "concrete_formed",
+      "ground": "concrete_formed"
+    },
+    "by_room_type": {
+      "living": "wood_board",
+      "bedroom": "wood_board",
+      "bathroom": "ceramic_tile",
+      "wc": "ceramic_tile",
+      "kitchen": "ceramic_tile"
+    },
+    "overrides": {}
+  }
 }
