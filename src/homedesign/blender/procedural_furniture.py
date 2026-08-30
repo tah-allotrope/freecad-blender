@@ -8,6 +8,13 @@ import math
 from .geom import make_box, make_hinged_box
 from .materials import furniture_material_key, get_material
 
+_HAS_ASSET = False
+try:
+    from . import asset_library
+    _HAS_ASSET = True
+except Exception:
+    _HAS_ASSET = False
+
 
 class _Placer:
     """Bakes an item's rotation into its mesh vertices about a real pivot.
@@ -43,6 +50,13 @@ def _placer_for(item, x, y):
 def build_item(item, room_x, room_y, base_z, style, collection):
     """item is a placement.FurnitureItem (room-local meters); room_x/room_y
     offset it into world space; base_z is the storey floor elevation (m)."""
+    if _HAS_ASSET:
+        try:
+            obj = asset_library.build_from_asset(item, room_x, room_y, base_z, collection)
+            if obj is not None:
+                return obj
+        except Exception:
+            pass
     mat = get_material(style, furniture_material_key(item.kind))
     x = room_x + item.x
     y = room_y + item.y

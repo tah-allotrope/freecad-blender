@@ -134,3 +134,20 @@ def test_schema_rejects_unknown_room_type():
     errors = validate_schema(spec)
     assert errors
     assert any(e.code == "schema_error" for e in errors)
+def test_schema_accepts_column_facade_element():
+    spec = json.loads((REPO_ROOT / "spec/examples/demo-3br-2storey.json").read_text())
+    spec["storeys"][0]["facade_elements"] = [{"kind": "column", "side": "south", "x_mm": 0, "z_mm": 0, "w_mm": 300, "h_mm": 3000, "projection_mm": 200}]
+    assert validate_schema(spec) == []
+
+def test_schema_rejects_unknown_facade_kind():
+    spec = json.loads((REPO_ROOT / "spec/examples/demo-3br-2storey.json").read_text())
+    spec["storeys"][0]["facade_elements"] = [{"kind": "buttress", "side": "south", "x_mm": 0, "z_mm": 0, "w_mm": 300, "h_mm": 3000, "projection_mm": 200}]
+    errors = validate_schema(spec)
+    assert errors
+
+def test_schema_rejects_extra_division_prop():
+    spec = json.loads((REPO_ROOT / "spec/examples/demo-3br-2storey.json").read_text())
+    spec["storeys"][0]["openings"] = [{"type": "window", "between": ["living", "exterior"], "side": "south", "width_mm": 1200, "divisions": {"columns": 3, "panes": 4}}]
+    errors = validate_schema(spec)
+    assert errors
+

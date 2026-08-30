@@ -24,3 +24,5 @@ HABITABLE_TYPES = {"bedroom", "living", "kitchen", "dining", "office"}
 
 # Room types that are wet-service rooms (floor finish grouping).
 WET_ROOM_TYPES = {"bathroom", "wc"}
+SKIRTING_HEIGHT_MM = 100.0
+SKIRTING_PROJECTION_MM = 15.0

@@ -515,3 +515,49 @@ def test_north_deg_parses():
     spec["site"]["north_deg"] = 90
     model = compile_spec(spec)
     assert model.north_deg == 90.0
+def test_facade_elements_compile():
+    spec = {
+        "meta": {"name": "x", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 6000},
+        "storeys": [
+            {"level": 0, "height_mm": 3000, "rooms": [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 4000, "d": 3000}}],
+             "facade_elements": [{"kind": "column", "side": "south", "x_mm": 0, "z_mm": 0, "w_mm": 300, "h_mm": 3000, "projection_mm": 200}]},
+            {"level": 1, "height_mm": 3000, "rooms": [{"id": "b", "type": "bedroom", "rect": {"x": 0, "y": 0, "w": 4000, "d": 3000}}]},
+        ],
+    }
+    model = compile_spec(spec)
+    assert len(model.storeys[0].facade_elements) == 1
+    assert model.storeys[1].facade_elements == []
+
+def test_divisions_compile():
+    spec = {
+        "meta": {"name": "x", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 6000},
+        "storeys": [
+            {"level": 0, "height_mm": 3000,
+             "rooms": [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 2000, "d": 3000}}, {"id": "b", "type": "bedroom", "rect": {"x": 2000, "y": 0, "w": 2000, "d": 3000}}],
+             "openings": [{"type": "window", "between": ["a", "exterior"], "side": "south", "width_mm": 1200, "divisions": {"columns": 3, "rows": 2}}],
+            },
+        ],
+    }
+    model = compile_spec(spec)
+    assert model.storeys[0].openings[0].divisions == {"columns": 3, "rows": 2}
+
+def test_model_round_trips_facade_and_divisions():
+    spec = {
+        "meta": {"name": "x", "style": "modern-minimal"},
+        "site": {"plot_width_mm": 4000, "plot_depth_mm": 6000},
+        "storeys": [
+            {"level": 0, "height_mm": 3000,
+             "rooms": [{"id": "a", "type": "living", "rect": {"x": 0, "y": 0, "w": 2000, "d": 3000}}, {"id": "b", "type": "bedroom", "rect": {"x": 2000, "y": 0, "w": 2000, "d": 3000}}],
+             "openings": [{"type": "window", "between": ["a", "exterior"], "side": "south", "width_mm": 1200, "divisions": {"columns": 2, "rows": 1}}],
+             "facade_elements": [{"kind": "fin", "side": "south", "x_mm": 100, "z_mm": 0, "w_mm": 200, "h_mm": 3000, "projection_mm": 100}],
+            },
+        ],
+    }
+    model = compile_spec(spec)
+    from homedesign.model import CompiledModel
+    restored = CompiledModel.from_dict(model.to_dict())
+    assert len(restored.storeys[0].facade_elements) == 1
+    assert restored.storeys[0].openings[0].divisions == {"columns": 2, "rows": 1}
+

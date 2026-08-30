@@ -137,7 +137,7 @@ def exterior_front_camera(
     error and under-framed the facade. The camera stands south of the plot
     (negative y) looking north (+y) at the facade plane at y = 0.
     """
-    bbox = facade_bbox(model)
+    bbox = building_bbox(model)
     corners = corners_of(bbox)
     centre = (
         model["plot_width_mm"] / 2000,

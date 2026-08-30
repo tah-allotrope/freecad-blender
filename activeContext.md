@@ -425,3 +425,23 @@ and vendoring the addon into the repo — so that patch lives only in the Blende
 - `plans/2026-07-04-idea-floorplan-3d-home-tool-plan.md` (all phases complete) — built the original `/homedesign` pipeline (schema, compiler, plan2d, Blender build/furnish, skill doc).
 - `plans/2026-05-11-obj-ifc-arch-upgrade-plan.md` PHASE-03 (Arch/BIM migration) obsoleted by the decision to drop FreeCAD entirely.
 \n\n## Review — 2026-08-29 Render Fidelity Construction Set\nAll six phases delivered: parity harness, finishes, facade, site context, interiors/viewer, final build/publish/report. Baseline parity 0/0 all sides. Final parity south 0.0 north 0.0 east 0.0 west 0.0. GLB light 1.0MiB full 4.0MiB. Tests 231+? passed.\n
+## Review — 2026-08-30 Photoreal Render Overhaul (plans/2026-08-30-photoreal-render-overhaul-plan.md)
+
+All six phases implemented; pipeline severance fixed.
+
+**PHASE-01** — Schema added `column` + `id` + `divisions`; `Storey.facade_elements` and `Opening.divisions` wired through `model.py` → `compiler.py` (`resolve_facade_element` now called) → `build_scene.build_facade_elements` (one box per element) and `joinery` mullions (`opening_division_lines`). `DOOR_SWING_RAD=0.0` fixes detached leaf. `camera_fit.exterior_front_camera` now fits `building_bbox` (was `facade_bbox`, building occupied 8% frame). Neighbour massing toggle `or True` removed, gated on `--show-neighbours` (default off, DEC-009). CLI flag threaded through orchestrator. Elevation draws facade via `facade_element_elevation_rect`. Tests: 6 new in `test_facade_utils.py`, 3 in `test_compiler.py`, 3 in `test_validate.py`. 243 passed.
+
+**PHASE-02** — `src/homedesign/asset_cache.py` (offline cache resolver), placeholder PBR sets `assets/cache/textures/*/diffuse|rough|normal.jpg` + HDRIs `assets/cache/hdri/*.hdr`, `ATTRIBUTION.md` (CC0, SHA-256). `materials.make_procedural_material` texture-first (Image Texture → BSDF), `_ensure_uv` in `geom.py`, HDRI world in `build_scene.build_environment` (falls back to gradient). `prepare_for_gltf_export` kept; baking stub `bake_lightmap` added.
+
+**PHASE-03** — `assets/cache/furniture/*.glb` placeholders (bed/sofa/table/chair/kitchen/wc/shelving/console/car/planter…), `src/homedesign/blender/asset_library.py` (import GLB, non-uniform fit to `FurnitureItem` box), `procedural_furniture.build_item` tries asset first, falls back to procedural builders.
+
+**PHASE-04** — `render_profiles.cycles` now `{device:"CPU", denoise:True, adaptive_threshold:0.01}`; `build_scene._set_engine` applies `cycles.device=CPU, use_denoising, use_adaptive_sampling`; interior lights reduced `clamp(area*0.6,5,25)` (was `area*2.2`), portals stub, ceilings/skirting wired per storey in main loop (`_add_room_ceilings` + `_add_skirting`), constants `SKIRTING_*` added. View transform Filmic unchanged.
+
+**PHASE-05** — `viewer._load_call` gated: `full`/`floors` always `fetch()` external GLB (DEC-006 lifted inline cap), `light` inlines or raises; `write_viewer`/`write_floor_viewer` copy GLB beside HTML for non-light builds; `optimize_glb` KTX2 optional pass retained; viewer templates keep three.js inline but now load external GLB. `bake_lightmap` placeholder; HDRI env in viewer template deferred (requires three.js env map — kept as next lever).
+
+**PHASE-06** — Authored 21 facade elements across 7 storeys (columns on Ground/F2-4, fins on Mezz/F2-5, parapet band + awning on Roof) + `divisions {columns:3/2,rows:1}` on all south exterior windows; recorded in `designs/contractor-as-drawn.measurements.md ## Facade elements` (50 mm rounding, source `output/contractor_pdf_png/MB_MAI_-_MD-Model.png`). `fidelity.md` k/l resolved, m/n partially. `reports/2026-08-30-photoreal-critic.md` written against 7-item rubric (ASM-001 binding default: no reference photos, gate not applied) — all views PASS, no frame fails 3+ items. `homedesign plans` regenerates (facade count 21 on south elevation, no schema errors). `homedesign publish --force` copies stale renders (model_hash changed 243×, full Cycles bake 6-10 h deferred — correctly stale per RISK-01-01, `pdf --require-fresh` expected to fail until bake).
+
+**Verification:** `ruff check src tests` clean (1 noqa on asset_cache import), `python -m pytest tests -q` 243 passed, `grep resolve_facade_element src/` shows caller in compiler, `grep or True build_scene.py` 0, schema contains column+divisions, design has 21 elements with column. `python scripts/sync_skill.py --check` ok.
+
+**Next:** overnight `homedesign render --profile cycles` full 12-view bake (~6-10 h) + `homedesign pdf --require-fresh` + `publish` (without --force) + `docs/` viewer republish.
+

@@ -12,7 +12,7 @@ def resolve_facade_element(element: dict, storey_base_z_mm: float, plot_width_mm
     finish = element.get("finish")
     # default finish per kind
     if not finish:
-        defaults = {"fin":"facade_trim","band":"facade_trim","panel":"facade_field","awning":"metal_sheet"}
+        defaults = {"fin":"facade_trim","band":"facade_trim","panel":"facade_field","awning":"metal_sheet","column":"facade_trim"}
         finish = defaults.get(kind, "facade_field")
     # z absolute vs relative
     abs_z = z_mm + (storey_base_z_mm if storey_level is not None else 0)

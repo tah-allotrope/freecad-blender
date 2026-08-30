@@ -4,6 +4,7 @@ from .geom import make_box, make_hinged_box
 from .materials import get_material
 
 FRAME_DEPTH = 0.06
+DOOR_SWING_RAD = 0.0
 FRAME_WIDTH = 0.06
 GLASS_THICKNESS = 0.012
 DOOR_LEAF_THICKNESS = 0.045
@@ -68,6 +69,39 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
         else:
             make_box(f"{name_base}_glass", x0 + FRAME_WIDTH, y0 + thickness / 2 - GLASS_THICKNESS / 2, z + FRAME_WIDTH,
                       width - 2 * FRAME_WIDTH, GLASS_THICKNESS, height - 2 * FRAME_WIDTH, collection, glass_mat)
+    # Mullion / transom bars when divisions are authored
+    divisions = opening_mm.get("divisions")
+    if divisions:
+        try:
+            from homedesign.facade import opening_division_lines
+            bars = opening_division_lines(opening_mm["width_mm"], opening_mm["head_mm"] - opening_mm["sill_mm"], divisions)
+            bar_depth = GLASS_THICKNESS * 2
+            for idx, bar in enumerate(bars):
+                # bar offsets are relative to opening bottom-left
+                if span_axis == "y":
+                    bx = x0 + thickness / 2 - bar_depth / 2
+                    by = y0 + FRAME_WIDTH + bar["x_mm"] / 1000
+                    bw = bar_depth
+                    bd = bar["w_mm"] / 1000
+                    bh = bar["h_mm"] / 1000
+                    bz = z + FRAME_WIDTH + bar["y_mm"] / 1000
+                    # horizontal bars span full width: bar["x_mm"] is 0, so by corrected
+                    if bar["x_mm"] == 0.0:
+                        by = y0 + FRAME_WIDTH
+                        bd = width - 2 * FRAME_WIDTH
+                else:
+                    bx = x0 + FRAME_WIDTH + bar["x_mm"] / 1000
+                    by = y0 + thickness / 2 - bar_depth / 2
+                    bw = bar["w_mm"] / 1000
+                    bd = bar_depth
+                    bh = bar["h_mm"] / 1000
+                    bz = z + FRAME_WIDTH + bar["y_mm"] / 1000
+                    if bar["x_mm"] == 0.0:
+                        bx = x0 + FRAME_WIDTH
+                        bw = width - 2 * FRAME_WIDTH
+                make_box(f"{name_base}_bar_{idx}", bx, by, bz, bw, bd, bh, collection, frame_mat)
+        except Exception:
+            pass
     else:
         leaf_mat = get_material(style, "door_leaf")
         leaf_w = width - 2 * FRAME_WIDTH
@@ -79,10 +113,10 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
             leaf_x = x0 + thickness / 2 - DOOR_LEAF_THICKNESS / 2
             hinge_x = leaf_x
             make_hinged_box(f"{name_base}_leaf", leaf_x, y0 + FRAME_WIDTH, z,
-                             DOOR_LEAF_THICKNESS, leaf_w, height, hinge_x, hinge_y, 0.35, collection, leaf_mat)
+                             DOOR_LEAF_THICKNESS, leaf_w, height, hinge_x, hinge_y, DOOR_SWING_RAD, collection, leaf_mat)
         else:
             hinge_x = x0 + FRAME_WIDTH
             leaf_y = y0 + thickness / 2 - DOOR_LEAF_THICKNESS / 2
             hinge_y = leaf_y
             make_hinged_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, leaf_y, z,
-                             leaf_w, DOOR_LEAF_THICKNESS, height, hinge_x, hinge_y, -0.35, collection, leaf_mat)
+                             leaf_w, DOOR_LEAF_THICKNESS, height, hinge_x, hinge_y, -DOOR_SWING_RAD, collection, leaf_mat)

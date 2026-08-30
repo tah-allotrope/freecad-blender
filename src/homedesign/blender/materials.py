@@ -1,6 +1,11 @@
 """Principled-BSDF material definitions, keyed by style. Runs inside Blender."""
 
 import bpy
+try:
+    from homedesign import asset_cache  # noqa: F401
+    _HAS_CACHE = True
+except Exception:
+    _HAS_CACHE = False  # noqa: F401
 
 PALETTES = {
     "modern-minimal": {

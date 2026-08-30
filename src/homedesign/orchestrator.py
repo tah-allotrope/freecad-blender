@@ -67,7 +67,7 @@ def find_blender() -> str:
 
 def _build_command(model_path: Path, out_dir: Path, profile: str,
                    views: list[str] | None = None, skip_existing: bool = False,
-                   reuse_blend: bool = False, gltf: bool = False) -> list[str]:
+                   reuse_blend: bool = False, gltf: bool = False, show_neighbours: bool = False) -> list[str]:
     # Absolute, not `str(out_dir)` as-passed: a relative path here is resolved
     # by Blender's own process against whatever it thinks its working
     # directory is at the moment each save happens, which does not reliably
@@ -89,13 +89,15 @@ def _build_command(model_path: Path, out_dir: Path, profile: str,
         cmd += ["--reuse-blend"]
     if gltf:
         cmd += ["--export-gltf"]
+    if show_neighbours:
+        cmd += ["--show-neighbours"]
     return cmd
 
 
 def build_scene(model_path: Path, out_dir: Path, final: bool = False,
                 profile: str | None = None,
                 views: list[str] | None = None, skip_existing: bool = False,
-                reuse_blend: bool = False, gltf: bool = False) -> list[Path]:
+                reuse_blend: bool = False, gltf: bool = False, show_neighbours: bool = False) -> list[Path]:
     # `profile` ("preview"|"final"|"cycles") overrides the legacy `final` flag.
     profile = profile or ("final" if final else "preview")
 
@@ -127,7 +129,7 @@ def build_scene(model_path: Path, out_dir: Path, final: bool = False,
 
 def render_only(model_path: Path, out_dir: Path, profile: str = "preview",
                 views: list[str] | None = None, skip_existing: bool = False,
-                detach: bool = False, log_path: Path | None = None) -> list[Path] | int:
+                detach: bool = False, log_path: Path | None = None, show_neighbours: bool = False) -> list[Path] | int:
     """Render views of an already-built model.
 
     Synchronous mode returns the rendered PNG paths. With `detach=True`,
@@ -137,7 +139,7 @@ def render_only(model_path: Path, out_dir: Path, profile: str = "preview",
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "png").mkdir(parents=True, exist_ok=True)
 
-    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend=True)
+    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend=True, show_neighbours=show_neighbours)
 
     if not detach:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

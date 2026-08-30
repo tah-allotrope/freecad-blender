@@ -66,6 +66,7 @@ class Opening:
     width_mm: float
     sill_mm: float
     head_mm: float
+    divisions: Optional[dict] = None
 
 
 @dataclass
@@ -122,6 +123,7 @@ class Storey:
     authored_voids: list[Rect] = field(default_factory=list)
     authored_void_reasons: list[str] = field(default_factory=list)
     annotations: list[dict] = field(default_factory=list)  # text callouts, not rooms
+    facade_elements: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -189,6 +191,7 @@ class CompiledModel:
                     authored_voids=[Rect(**v) for v in s.get("authored_voids", [])],
                     authored_void_reasons=list(s.get("authored_void_reasons", [])),
                     annotations=list(s.get("annotations", [])),
+                    facade_elements=list(s.get("facade_elements", [])),
                 )
             )
         views = [View(**v) for v in data.get("views", [])]

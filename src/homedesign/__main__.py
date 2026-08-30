@@ -125,7 +125,7 @@ def cmd_build(args) -> int:
     model_path = _write_model_json(model, out_dir)
 
     t0 = time.time()
-    result = orchestrator.build_scene(model_path, out_dir, final=args.final, profile=args.profile, gltf=args.gltf)
+    result = orchestrator.build_scene(model_path, out_dir, final=args.final, profile=args.profile, gltf=args.gltf, show_neighbours=getattr(args, 'show_neighbours', False))
     elapsed = time.time() - t0
     print(f"blender build: {elapsed:.1f}s")
     for p in result:
@@ -180,13 +180,13 @@ def cmd_render(args) -> int:
     if args.detach:
         pid = orchestrator.render_only(
             model_path, out_dir, profile=args.profile, views=views,
-            skip_existing=args.skip_existing, detach=True,
+            skip_existing=args.skip_existing, detach=True, show_neighbours=getattr(args, 'show_neighbours', False),
         )
         print(f"render launched (pid {pid})")
         return 0
     pngs = orchestrator.render_only(
         model_path, out_dir, profile=args.profile, views=views,
-        skip_existing=args.skip_existing, detach=False,
+        skip_existing=args.skip_existing, detach=False, show_neighbours=getattr(args, 'show_neighbours', False),
     )
     for p in pngs:
         print(str(p))
@@ -258,6 +258,7 @@ def main(argv=None) -> int:
                          help="render profile; overrides --final")
     p_build.add_argument("--gltf", action="store_true",
                          help="also export a GLB and a self-contained web viewer")
+    p_build.add_argument("--show-neighbours", action="store_true", default=False, help="include neighbour massing")
     _add_out(p_build)
     p_build.set_defaults(func=cmd_build)
 
@@ -268,6 +269,7 @@ def main(argv=None) -> int:
     p_render.add_argument("--profile", default="preview", choices=["preview", "final", "cycles"])
     p_render.add_argument("--skip-existing", action="store_true", help="skip views whose PNG exists")
     p_render.add_argument("--detach", action="store_true", help="launch detached and return immediately")
+    p_render.add_argument("--show-neighbours", action="store_true", default=False, help="include neighbour massing")
     _add_out(p_render)
     p_render.set_defaults(func=cmd_render)
 

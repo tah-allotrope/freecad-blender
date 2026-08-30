@@ -18,6 +18,7 @@ from .constants import FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES, PARAPET_HEIGHT_M
 from .model import CompiledModel
 from .plan2d import MARGIN_MM, MM_PER_PX, _scale_bar, _title_block
 from .rects import open_edges, subtract_rects
+from . import facade
 from .xmltext import escape_text
 
 
@@ -168,6 +169,16 @@ def build_elevation(model: CompiledModel, side: str) -> list[dict]:
                     "h": 0.0, "label": None, "type": None, "depth": depth,
                 }]))
 
+        for fe in getattr(storey, "facade_elements", []):
+            rect = facade.facade_element_elevation_rect(fe, side, storey.base_z)
+            if rect is None:
+                continue
+            h0, w_h, depth = _project_box(side, model, rect["x_mm"], 0, rect["w_mm"], 1)
+            # Use rect's y as z, w/h as above; depth from projection
+            groups.append((depth, 1, h0, [{
+                "kind": "facade", "x": h0, "z": rect["y_mm"], "w": w_h, "h": rect["h_mm"],
+                "label": None, "type": fe.get("kind"), "depth": depth,
+            }]))
         if storey.roof:
             for prim in _roof_primitives(side, model, storey.roof):
                 groups.append((prim["depth"], 3, prim["x"], [prim]))

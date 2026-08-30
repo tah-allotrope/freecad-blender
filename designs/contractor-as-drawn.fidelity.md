@@ -196,6 +196,7 @@ The schema's entire geometric vocabulary is: rooms as axis-aligned rectangles
 `stairs`, `roof`, `voids` and `roof.structures`. Consequences:
 
 ### (k) Facade articulation is absent — the front elevation is flat massing
+> **Resolved (2026-08-30, photoreal overhaul PHASE-01/06).** `facade_elements` (column, fin, band, panel, awning) now authored across all 7 storeys (21 elements) and rendered as boxes via `build_facade_elements` plus elevation SVG via `facade_element_elevation_rect`. The front pillar (column) and middle-storey fins are visible in `exterior_front.png` and `south` elevation SVG. Remaining gap: cornice moulding profile is a rectangular band, not a true moulding.
 `MẶT ĐỨNG CHÍNH` carries vertical fins/pilasters running the height of the
 middle storeys, a cornice/coping band at the parapet, and framed panel
 treatments around the openings. **None of it is modelled**, because there is no
@@ -205,6 +206,7 @@ box with rectangular voids. **Yes — this is the single biggest visual departur
 in the set, and the reason the 3D reads as massing rather than as this building.**
 
 ### (l) Openings are undivided rectangles — no mullions, transoms or panelling
+> **Resolved (2026-08-30, PHASE-01/06).** Street-facing windows carry `divisions {columns: 3/2, rows: 1}` and `joinery.py` emits mullion bars via `opening_division_lines`. Visible as vertical bars in south elevation and close-up interior renders.
 Every window on the sheets is subdivided (multi-pane, with transoms; the ground
 floor entrance is a panelled door set). An opening in the model is one
 `width_mm` and renders as a single rectangular hole with a lintel and sill.
@@ -212,11 +214,13 @@ floor entrance is a panelled door set). An opening in the model is one
 subdivision, and none of it survives.**
 
 ### (m) Balcony railings are a plain parapet, not the drawn pattern
+> **Partially resolved (2026-08-30).** Parapet remains 1100 mm solid; slatted variant not yet authored (requires patterned railings). Exterior still reads as parapet, but facade articulation now provides scale.
 The elevations show a patterned railing/balustrade to each `BAN CÔNG`; the model
 auto-generates an unarticulated 1100mm solid parapet on open edges (see (e)).
 **Yes — visible on every balcony in every exterior view.**
 
 ### (n) No material, finish or colour information
+> **Partially resolved (2026-08-30, PHASE-02).** PBR texture cache (`assets/cache/textures/*`) and HDRI environment now provide image-based materials; `materials.make_procedural_material` uses texture-first path. Furniture still placeholder meshes; finish is no longer flat.
 The sheets note `KẾT CẤU: MÓNG - CỘT - SÀN BTCT, NỀN GẠCH, VÁCH GẠCH, MÁI BTCT`
 and imply finish zones on the elevation. The model carries a single `style`
 palette applied by element kind. **Partly — the renders are legible as form but

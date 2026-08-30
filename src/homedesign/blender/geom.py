@@ -4,11 +4,21 @@ import bpy
 import mathutils
 
 
+def _ensure_uv(obj) -> None:
+    try:
+        mesh = obj.data
+        if not mesh.uv_layers:
+            # Cheap smart project fallback: just ensure a UV layer exists
+            mesh.uv_layers.new(name="UVMap")
+    except Exception:
+        pass
+
 def make_box(name, x, y, z, w, d, h, collection, material=None):
     """Axis-aligned box: (x,y,z) is the min corner, in meters."""
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     collection.objects.link(obj)
+    _ensure_uv(obj)
 
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -35,6 +45,7 @@ def make_hinged_box(name, x, y, z, w, d, h, hinge_x, hinge_y, angle_rad, collect
     mesh = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, mesh)
     collection.objects.link(obj)
+    _ensure_uv(obj)
 
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)

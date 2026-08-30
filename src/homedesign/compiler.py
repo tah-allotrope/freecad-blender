@@ -15,6 +15,7 @@ Resolution order per storey:
 from __future__ import annotations
 
 from .errors import SpecError, SpecValidationError
+from .facade import resolve_facade_element
 from .finishes import build_finish_map
 from .model import CompiledModel, Opening, Rect, Room, Roof, Storey, View, Wall
 from .stairs import derive_stairs
@@ -64,6 +65,15 @@ def compile_spec(spec: dict) -> CompiledModel:
         stairs = derive_stairs(s.get("stairs"), rooms, height, s["level"], path, errors)
         roof = _derive_roof(s.get("roof"), plot_w, plot_d, s["level"], base_z + height)
 
+        facade_elems = []
+        for fe in s.get("facade_elements", []):
+            resolved = resolve_facade_element(fe, base_z, plot_w, plot_d)
+            # keep original kind/side alongside resolved box
+            resolved["kind"] = fe.get("kind")
+            resolved["side"] = fe.get("side")
+            if "id" in fe:
+                resolved["id"] = fe["id"]
+            facade_elems.append(resolved)
         storeys.append(
             Storey(
                 level=s["level"],
@@ -78,6 +88,7 @@ def compile_spec(spec: dict) -> CompiledModel:
                 authored_voids=[Rect(x=v["x"], y=v["y"], w=v["w"], d=v["d"]) for v in s.get("voids", [])],
                 authored_void_reasons=[v.get("reason", "") for v in s.get("voids", [])],
                 annotations=list(s.get("annotations", [])),
+                facade_elements=facade_elems,
             )
         )
         base_z += height
@@ -495,6 +506,7 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
                 width_mm=width,
                 sill_mm=0.0 if o["type"] == "door" else o.get("sill_mm", 900.0),
                 head_mm=o.get("head_mm", default_head),
+                divisions=o.get("divisions"),
             )
         )
     _check_opening_overlaps(result, path, errors)

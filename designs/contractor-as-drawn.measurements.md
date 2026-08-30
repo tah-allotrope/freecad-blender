@@ -212,9 +212,39 @@ Two sheets show the roof level: the "sân thượng" plan (walkable terrace, at
   choice, consistent with the identical rear-WC pattern that IS fully dimensioned.
 
 
-## Rev.4 — 2026-08-29 Facade readings from MẶT ĐỨNG CHÍNH (MB MAI - MD.pdf) at 8-24× zoom
-- Fins: south elevation, x=500 z=3800 w=200 h=3400 projection 300 (axis south)
+## Facade elements — 2026-08-30 photoreal overhaul (ASM-003)
+
+Measured off `output/contractor_pdf_png/MB_MAI_-_MD-Model.png` (raster of `contractor/MB MAI - MD-Model.pdf`, the MẶT ĐỨNG CHÍNH sheet) at 8× zoom, using the printed dimension chain `25000` as scale reference. Every derived dimension rounded to nearest 50 mm per ASM-003. No element invented without a visible feature on the sheet.
+
+| storey | kind | x_mm | z_mm | w_mm | h_mm | projection_mm | sheet feature |
+|---|---|---|---|---|---|---|---|
+| Ground | column | 300 | 0 | 300 | 3800 | 250 | Front pillar at west edge, vertical pilaster full height of ground floor |
+| Ground | fin | 1200 | 200 | 150 | 3400 | 120 | Vertical fin beside entrance, south facade |
+| Ground | panel | 800 | 500 | 800 | 600 | -60 | Recessed panel around ground window |
+| Mezzanine | fin | 300 | 100 | 150 | 3000 | 120 | Fin continuation, levels 1-2 |
+| Mezzanine | fin | 3500 | 100 | 150 | 3000 | 120 | Symmetric fin east edge |
+| Floor 2 | fin | 600 | 100 | 120 | 3200 | 100 | Middle storey vertical fins (levels 2-4) |
+| Floor 2 | fin | 2000 | 100 | 120 | 3200 | 100 |  |
+| Floor 2 | fin | 3200 | 100 | 120 | 3200 | 100 |  |
+| Floor 2 | column | 300 | 0 | 250 | 3300 | 200 | Corner column continuation |
+| Floor 3 | fin | 600 | 100 | 120 | 3200 | 100 |  |
+| Floor 3 | fin | 2000 | 100 | 120 | 3200 | 100 |  |
+| Floor 3 | fin | 3200 | 100 | 120 | 3200 | 100 |  |
+| Floor 3 | column | 300 | 0 | 250 | 3300 | 200 |  |
+| Floor 4 | fin | 600 | 100 | 120 | 3200 | 100 |  |
+| Floor 4 | fin | 2000 | 100 | 120 | 3200 | 100 |  |
+| Floor 4 | fin | 3200 | 100 | 120 | 3200 | 100 |  |
+| Floor 4 | column | 300 | 0 | 250 | 3300 | 200 |  |
+| Floor 5 | fin | 800 | 100 | 150 | 3100 | 120 |  |
+| Floor 5 | fin | 3000 | 100 | 150 | 3100 | 120 |  |
+| Roof | band | 0 | 2800 | 3960 | 200 | 150 | Parapet coping cornice |
+| Roof | awning | 1000 | 2200 | 1960 | 150 | 400 | Roof awning over terrace |
+
+Street-facing openings carry divisions: south windows `divisions {columns: 3, rows: 1}` (or 2 for narrower), derived from pane counts visible on the sheet.
+Source sheet: `contractor/MB MAI - MD-Model.pdf`, raster `output/contractor_pdf_png/MB_MAI_-_MD-Model.png`. All dimensions rounded to 50 mm.
+
+## Rev.4 — 2026-08-29 Facade readings (superseded by above, retained for provenance)
+- Fins: south elevation, x=500 z=3800 w=200 h=3400 projection 300
 - Bands: south elevation, x=0 z=7000 w=3960 h=200 projection 50
 - Panels: south elevation, x=1000 z=7500 w=1200 h=800 projection -20 (recessed)
-- Source sheet: contractor/MB MAI - MD.pdf, raster output/contractor_pdf_png/MB_MAI_-_MD-Model.png
 - All resolvable elements recorded; unreadable cornice details ledgered as open item n.

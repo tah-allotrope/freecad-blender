@@ -307,7 +307,13 @@
             "exterior"
           ],
           "side": "west",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 2,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         },
         {
           "type": "window",
@@ -316,7 +322,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "annotations": [
@@ -363,13 +375,32 @@
       ],
       "facade_elements": [
         {
+          "kind": "column",
+          "side": "south",
+          "x_mm": 300,
+          "z_mm": 0,
+          "w_mm": 300,
+          "h_mm": 3800,
+          "projection_mm": 250,
+          "id": "col_gf"
+        },
+        {
           "kind": "fin",
           "side": "south",
-          "x_mm": 500,
-          "z_mm": 3800,
-          "w_mm": 200,
+          "x_mm": 1200,
+          "z_mm": 200,
+          "w_mm": 150,
           "h_mm": 3400,
-          "projection_mm": 300
+          "projection_mm": 120
+        },
+        {
+          "kind": "panel",
+          "side": "south",
+          "x_mm": 800,
+          "z_mm": 500,
+          "w_mm": 800,
+          "h_mm": 600,
+          "projection_mm": -60
         }
       ]
     },
@@ -504,7 +535,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "voids": [
@@ -546,6 +583,26 @@
           "d": 600,
           "text": "Lô gia",
           "boxed": false
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 300,
+          "z_mm": 100,
+          "w_mm": 150,
+          "h_mm": 3000,
+          "projection_mm": 120
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 3500,
+          "z_mm": 100,
+          "w_mm": 150,
+          "h_mm": 3000,
+          "projection_mm": 120
         }
       ]
     },
@@ -831,7 +888,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "annotations": [
@@ -850,6 +913,45 @@
           "d": 1900,
           "text": "Ô lấy sáng 2200",
           "boxed": true
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 600,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 2000,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 3200,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "column",
+          "side": "south",
+          "x_mm": 300,
+          "z_mm": 0,
+          "w_mm": 250,
+          "h_mm": 3300,
+          "projection_mm": 200,
+          "id": "col_f2"
         }
       ]
     },
@@ -1135,7 +1237,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "annotations": [
@@ -1154,6 +1262,45 @@
           "d": 1900,
           "text": "Ô lấy sáng 2200",
           "boxed": true
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 600,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 2000,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 3200,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "column",
+          "side": "south",
+          "x_mm": 300,
+          "z_mm": 0,
+          "w_mm": 250,
+          "h_mm": 3300,
+          "projection_mm": 200,
+          "id": "col_f3"
         }
       ]
     },
@@ -1439,7 +1586,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "annotations": [
@@ -1458,6 +1611,45 @@
           "d": 1900,
           "text": "Ô lấy sáng 2200",
           "boxed": true
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 600,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 2000,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 3200,
+          "z_mm": 100,
+          "w_mm": 120,
+          "h_mm": 3200,
+          "projection_mm": 100
+        },
+        {
+          "kind": "column",
+          "side": "south",
+          "x_mm": 300,
+          "z_mm": 0,
+          "w_mm": 250,
+          "h_mm": 3300,
+          "projection_mm": 200,
+          "id": "col_f4"
         }
       ]
     },
@@ -1699,7 +1891,13 @@
             "exterior"
           ],
           "side": "south",
-          "width_mm": 1500
+          "width_mm": 1500,
+          "divisions": {
+            "columns": 3,
+            "rows": 1,
+            "mullion_mm": 50,
+            "transom_mm": 50
+          }
         }
       ],
       "voids": [
@@ -1719,6 +1917,26 @@
           "d": 600,
           "text": "Lô gia",
           "boxed": false
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 800,
+          "z_mm": 100,
+          "w_mm": 150,
+          "h_mm": 3100,
+          "projection_mm": 120
+        },
+        {
+          "kind": "fin",
+          "side": "south",
+          "x_mm": 3000,
+          "z_mm": 100,
+          "w_mm": 150,
+          "h_mm": 3100,
+          "projection_mm": 120
         }
       ]
     },
@@ -1911,6 +2129,26 @@
           "d": 4000,
           "text": "Ô lấy sáng",
           "boxed": true
+        }
+      ],
+      "facade_elements": [
+        {
+          "kind": "band",
+          "side": "south",
+          "x_mm": 0,
+          "z_mm": 2800,
+          "w_mm": 3960,
+          "h_mm": 200,
+          "projection_mm": 150
+        },
+        {
+          "kind": "awning",
+          "side": "south",
+          "x_mm": 1000,
+          "z_mm": 2200,
+          "w_mm": 1960,
+          "h_mm": 150,
+          "projection_mm": 400
         }
       ]
     }

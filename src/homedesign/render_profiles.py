@@ -10,5 +10,5 @@ from __future__ import annotations
 RENDER_PROFILES = {
     "preview": {"engine": "EEVEE", "samples": 32, "res": (960, 540), "raytracing": False},
     "final": {"engine": "EEVEE", "samples": 256, "res": (1920, 1080), "raytracing": True},
-    "cycles": {"engine": "CYCLES", "samples": 512, "res": (1920, 1080), "raytracing": False},
+    "cycles": {"engine": "CYCLES", "samples": 512, "res": (1920, 1080), "raytracing": False, "device": "CPU", "denoise": True, "adaptive_threshold": 0.01},
 }

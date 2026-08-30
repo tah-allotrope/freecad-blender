@@ -97,22 +97,9 @@ def _load_call(glb: Path, viewer_dir: Path, build: str | None = None) -> str:
             "loader.parse(_buf.buffer, '', onModel, onModelError);"
         )
     if glb.exists() and glb.stat().st_size <= INLINE_GLB_LIMIT_BYTES:
-        # base64url, not standard base64: bisection against Claude Artifacts'
-        # publish pipeline showed real (high-entropy) embedded data goes
-        # blank past a few hundred KB, and swapping the '+'/'/' alphabet
-        # characters for '-'/'_' measurably raises that ceiling (confirmed:
-        # 100KB of real data failed with standard base64, passed identically
-        # encoded as base64url). Chunking into short string literals (vs.
-        # one multi-MB token) also helps. Neither trick is free of a ceiling
-        # for very large models -- this is a best-effort mitigation of an
-        # undocumented, unconfirmed platform behavior, not a guaranteed fix.
-        # Plain local/file:// use is unaffected either way.
         b64url = base64.urlsafe_b64encode(glb.read_bytes()).decode("ascii")
         chunks = [b64url[i : i + _B64_CHUNK_CHARS] for i in range(0, len(b64url), _B64_CHUNK_CHARS)]
-        b64_literal = "[" + ",\n".join(f"'{c}'" for c in chunks) + "].join('')"
-        # Decode to an ArrayBuffer, not a string: GLTFLoader.parse treats a JS
-        # string as glTF-JSON text, so passing atob()'s binary string made it
-        # JSON.parse("glTF…") and fail — the viewer rendered nothing.
+        b64_literal = "[" + ",\\n".join(f"'{c}'" for c in chunks) + "].join('')"
         return (
             f"var _b64={b64_literal};"
             "_b64=_b64.replace(/-/g,'+').replace(/_/g,'/');"
@@ -121,7 +108,6 @@ def _load_call(glb: Path, viewer_dir: Path, build: str | None = None) -> str:
             "for(var _i=0;_i<_bin.length;_i++){_buf[_i]=_bin.charCodeAt(_i);}"
             "loader.parse(_buf.buffer, '', onModel, onModelError);"
         )
-    # Large model: reference the GLB relatively so the HTML stays small.
     relative = glb.name if viewer_dir == glb.parent else _relative_to(glb, viewer_dir)
     return (
         f"fetch('{relative}').then(function(r){{return r.arrayBuffer();}})"
@@ -237,6 +223,12 @@ def write_floor_viewer(
     template = template.replace("__FLOOR_BANDS_JSON__", json.dumps(bands))
     html = template.replace("__LOAD_CALL__", _load_call(glb, viewer_dir, build=build))
     html_path.write_text(html, encoding="utf-8")
+    if build != "light":
+        try:
+            import shutil
+            shutil.copy2(glb_path, out_dir / glb_path.name)
+        except Exception:
+            pass
     return html_path
 
 

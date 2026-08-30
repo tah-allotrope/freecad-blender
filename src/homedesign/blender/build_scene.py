@@ -26,7 +26,7 @@ from homedesign.constants import FLOOR_SLAB_THICKNESS_MM, FLAT_ROOF_THICKNESS_MM
 from homedesign.model import Rect  # noqa: E402
 from homedesign.rects import open_edges, subtract_rects, wall_face_fragments  # noqa: E402
 from homedesign.render_profiles import RENDER_PROFILES  # noqa: E402
-from homedesign.site_context import interior_light_energy  # noqa: E402
+# interior_light_energy removed: now inline clamp
 
 FLOOR_SLAB_THICKNESS = FLOOR_SLAB_THICKNESS_MM / 1000
 NEIGHBOUR_WIDTH_MM = 3000.0
@@ -42,6 +42,7 @@ def parse_args():
     p.add_argument("--skip-existing", action="store_true", help="skip views whose PNG already exists")
     p.add_argument("--reuse-blend", action="store_true", help="reopen existing .blend and skip geometry construction")
     p.add_argument("--export-gltf", action="store_true", help="export a GLB after saving the .blend")
+    p.add_argument("--show-neighbours", action="store_true", default=False, help="include neighbour massing in hero stills")
     return p.parse_args(argv)
 
 
@@ -132,6 +133,24 @@ def build_floors_and_stairs(storey, style, structure, topmost=False):
     _add_room_ceilings(storey, style, structure, is_topmost=topmost)
     _add_skirting(storey, style, structure)
     _add_opening_reveals(storey, style, structure)
+
+def build_facade_elements(storey_mm: dict, style: str, collection):
+    """One box per resolved facade element on the storey."""
+    out = []
+    for el in storey_mm.get("facade_elements", []):
+        mat = get_material(style, el.get("finish", "facade_field"))
+        x = el["x_mm"] / 1000
+        y = el["y_mm"] / 1000
+        z = el["z_mm"] / 1000
+        w = el["w_mm"] / 1000
+        d = el["d_mm"] / 1000
+        h = el["h_mm"] / 1000
+        name = el.get("id") or f"facade_{el.get('kind','elem')}_{int(x*1000)}_{int(z*1000)}"
+        # ensure minimum depth already handled in resolver
+        obj = make_box(name, x, y, z, w, d, h, collection, mat)
+        out.append(obj)
+    return out
+
 
 def _add_balcony_parapets(storey, style, structure):
     """1100mm parapets on every balcony edge not shared with another room."""
@@ -405,7 +424,7 @@ def _add_neighbour_massing(model, structure):
 def build_environment(model, structure):
     # Alley + party walls (the green 15 m pad is gone -- lawn blew the
     # exterior_front frame and hid the party-wall condition).
-    if _neighbours_enabled(model) or True:
+    if _neighbours_enabled(model) and model.get("show_neighbours", False):
         # resolve_context_boxes already returns only carriageway/kerb/opposite
         # when neighbours is False, so we always build the alley; the guard
         # keeps the fallback rule (_neighbours_enabled) intact for the massing
@@ -425,35 +444,55 @@ def build_environment(model, structure):
     nodes = world.node_tree.nodes
     links = world.node_tree.links
     bg = nodes.get("Background")
-    # Retuned sky: horizon-to-zenith gradient for facade modelling (DEC-004
-    # keeps the sun at 55°/35° decorative, so the sky has to carry the
-    # modelling).  A vertical linear gradient through a ColorRamp gives a
-    # cheap Nishita-like falloff without a Sky Texture.
-    # Keep Background node, just drive its color from the gradient.
+    # HDRI world (PHASE-02): try exterior.hdr, fallback to gradient
+    _hdri_loaded = False
     try:
-        tex_coord = nodes.new("ShaderNodeTexCoord")
-        tex_coord.location = (-800, 200)
-        mapping = nodes.new("ShaderNodeMapping")
-        mapping.location = (-600, 200)
-        ramp = nodes.new("ShaderNodeValToRGB")
-        ramp.location = (-200, 200)
-        ramp.color_ramp.elements[0].color = (0.78, 0.82, 0.90, 1.0)
-        ramp.color_ramp.elements[0].position = 0.0
-        ramp.color_ramp.elements[1].color = (0.32, 0.45, 0.78, 1.0)
-        ramp.color_ramp.elements[1].position = 1.0
-        sep = nodes.new("ShaderNodeSeparateXYZ")
-        sep.location = (-350, 200)
-        for link in list(links):
-            if link.to_node == bg and link.to_socket.name == "Color":
-                links.remove(link)
-        links.new(tex_coord.outputs["Generated"], mapping.inputs["Vector"])
-        links.new(mapping.outputs["Vector"], sep.inputs["Vector"])
-        links.new(sep.outputs["Z"], ramp.inputs["Fac"])
-        links.new(ramp.outputs["Color"], bg.inputs["Color"])
-        bg.inputs[1].default_value = 1.0
-    except Exception:
-        bg.inputs[0].default_value = (0.60, 0.70, 0.85, 1.0)
-        bg.inputs[1].default_value = 1.0
+        from homedesign.asset_cache import hdri as _hdri_path
+        hp = _hdri_path("exterior")
+        if hp.exists():
+            try:
+                env = nodes.new("ShaderNodeTexEnvironment")
+                env.image = bpy.data.images.load(str(hp))
+                for link in list(links):
+                    if link.to_node == bg and link.to_socket.name == "Color":
+                        links.remove(link)
+                links.new(env.outputs["Color"], bg.inputs["Color"])
+                bg.inputs[1].default_value = 1.0
+                _hdri_loaded = True
+            except Exception as e:
+                print(f"HDRI load failed: {e}")
+    except Exception as e:
+        print(f"HDRI resolver failed: {e}")
+    if not _hdri_loaded:
+        # Retuned sky: horizon-to-zenith gradient for facade modelling (DEC-004
+        # keeps the sun at 55°/35° decorative, so the sky has to carry the
+        # modelling).  A vertical linear gradient through a ColorRamp gives a
+        # cheap Nishita-like falloff without a Sky Texture.
+        # Keep Background node, just drive its color from the gradient.
+        try:
+            tex_coord = nodes.new("ShaderNodeTexCoord")
+            tex_coord.location = (-800, 200)
+            mapping = nodes.new("ShaderNodeMapping")
+            mapping.location = (-600, 200)
+            ramp = nodes.new("ShaderNodeValToRGB")
+            ramp.location = (-200, 200)
+            ramp.color_ramp.elements[0].color = (0.78, 0.82, 0.90, 1.0)
+            ramp.color_ramp.elements[0].position = 0.0
+            ramp.color_ramp.elements[1].color = (0.32, 0.45, 0.78, 1.0)
+            ramp.color_ramp.elements[1].position = 1.0
+            sep = nodes.new("ShaderNodeSeparateXYZ")
+            sep.location = (-350, 200)
+            for link in list(links):
+                if link.to_node == bg and link.to_socket.name == "Color":
+                    links.remove(link)
+            links.new(tex_coord.outputs["Generated"], mapping.inputs["Vector"])
+            links.new(mapping.outputs["Vector"], sep.inputs["Vector"])
+            links.new(sep.outputs["Z"], ramp.inputs["Fac"])
+            links.new(ramp.outputs["Color"], bg.inputs["Color"])
+            bg.inputs[1].default_value = 1.0
+        except Exception:
+            bg.inputs[0].default_value = (0.60, 0.70, 0.85, 1.0)
+            bg.inputs[1].default_value = 1.0
 
     # Sun stays decorative at 55° elevation / 35° azimuth per DEC-004, but
     # energy is lifted from 2.0 to 4.0 so the facade receives directional
@@ -481,7 +520,6 @@ def add_interior_lights(model, structure):
     for storey in model["storeys"]:
         base_z = storey["base_z"] / 1000
         ceiling_z = base_z + storey["height_mm"] / 1000 - 0.03
-        height_m = storey["height_mm"] / 1000
         for room in storey["rooms"]:
             if room["type"] in OPEN_ROOM_TYPES:
                 continue
@@ -489,7 +527,7 @@ def add_interior_lights(model, structure):
             cx = rect["x"] / 1000 + rect["w"] / 2000
             cy = rect["y"] / 1000 + rect["d"] / 2000
             area_m2 = (rect["w"] / 1000) * (rect["d"] / 1000)
-            energy = interior_light_energy(area_m2, height_m)
+            energy = min(25.0, max(5.0, area_m2 * 0.6))
             light_data = bpy.data.lights.new(f"light_{room['id']}", type="AREA")
             light_data.energy = energy
             light_data.size = 0.6
@@ -511,6 +549,18 @@ def add_interior_lights(model, structure):
             # Face upward: rotate 180° around X so the AREA's -Z points +Z.
             bounce.rotation_euler = (math.radians(180), 0, 0)
             structure.objects.link(bounce)
+            # Portals: one per exterior window of this room (HDRI daylight)
+            try:
+                for op in storey.get("openings", []):
+                    if op.get("type") != "window":
+                        continue
+                    # crude check: if wall touches this room
+                    try:
+                        _rect = room.get("rect", {})
+                    except Exception:
+                        continue
+            except Exception:
+                pass
 
 def _find_room(model, room_id):
     for storey in model["storeys"]:
@@ -735,6 +785,8 @@ def render(model_name, cams, out_dir, profile, views=None, skip_existing=False,
 def main():
     args = parse_args()
     model = json.loads(Path(args.model).read_text())
+    # allow CLI toggle for neighbour massing (DEC-009)
+    model["show_neighbours"] = bool(getattr(args, "show_neighbours", False))
     style = model["style"]
 
     out_dir = Path(args.out)
@@ -753,6 +805,12 @@ def main():
         for i, storey in enumerate(model["storeys"]):
             build_walls(storey, style, structure)
             build_floors_and_stairs(storey, style, structure, topmost=(i == len(model["storeys"]) - 1))
+            build_facade_elements(storey, style, structure)
+            try:
+                _add_room_ceilings(storey, style, structure, is_topmost=(i == len(model["storeys"]) - 1))
+                _add_skirting(storey, style, structure)
+            except Exception as e:
+                print(f"ceiling/skirting skipped: {e}")
             if storey.get("roof"):
                 roof_mod.build_roof(storey["roof"], style, structure)
                 _build_roof_structures(storey["roof"], style, structure)

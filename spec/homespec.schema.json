@@ -649,6 +649,32 @@
                   "type": "number",
                   "minimum": 0,
                   "description": "Explicit distance from the wall segment start; overrides align entirely."
+                },
+                "divisions": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "columns": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "default": 1
+                    },
+                    "rows": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "default": 1
+                    },
+                    "mullion_mm": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "default": 50
+                    },
+                    "transom_mm": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "default": 50
+                    }
+                  }
                 }
               }
             }
@@ -665,7 +691,8 @@
                     "fin",
                     "band",
                     "panel",
-                    "awning"
+                    "awning",
+                    "column"
                   ]
                 },
                 "side": {
@@ -696,6 +723,9 @@
                   "type": "integer"
                 },
                 "finish": {
+                  "type": "string"
+                },
+                "id": {
                   "type": "string"
                 }
               },
