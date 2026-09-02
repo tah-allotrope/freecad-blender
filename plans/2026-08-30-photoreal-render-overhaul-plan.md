@@ -1,7 +1,7 @@
 ---
 title: "Photoreal Render Overhaul"
 date: "2026-08-30"
-status: "draft"
+status: "open — phases 1 and 4 are fully wired (6afcbc4) and the facade is authored and published (a40b6a2), but the CC0 texture/HDRI/furniture cache is 64x64 and 412-byte placeholders, materials never take the texture-first path, all six phase-5 viewer tasks are unbuilt (full build still inlines base64, no lightmap bake, no KTX2), and the overnight Cycles bake and rev.4 fidelity ledger were never done."
 request: "Improve the contractor-as-drawn 3D render: it still reads as rudimentary massing, does not resemble the contractor drawing (the front-facing pillar is missing), and is not impressive enough to share. Produce a visually impressive result; no previously accepted limitation applies."
 plan_type: "multi-phase"
 research_inputs:
@@ -411,68 +411,68 @@ phase the pipeline can *express* the drawing even though the drawing content is 
 authored (that is PHASE-06).
 
 **Tasks**
-- [ ] TASK-01-01: Add `"column"` to the `kind` enum at
+- [x] TASK-01-01: Add `"column"` to the `kind` enum at
       `/properties/storeys/items/properties/facade_elements/items/properties/kind` in
       `spec/homespec.schema.json`. The enum becomes
       `["fin", "band", "panel", "awning", "column"]`.
-- [ ] TASK-01-02: Add an optional `id` property (type `string`) to the `facade_elements`
+- [x] TASK-01-02: Add an optional `id` property (type `string`) to the `facade_elements`
       item schema. `finishes.build_finish_map` already reads `fe.get("id", ...)` with a
       synthesised fallback, but `additionalProperties: false` currently rejects an
       authored `id`.
-- [ ] TASK-01-03: Add a `divisions` property to
+- [x] TASK-01-03: Add a `divisions` property to
       `/properties/storeys/items/properties/openings/items/properties` with
       `type: "object"`, `additionalProperties: false`, and properties
       `columns` (integer, minimum 1, default 1), `rows` (integer, minimum 1, default 1),
       `mullion_mm` (number, exclusiveMinimum 0, default 50),
       `transom_mm` (number, exclusiveMinimum 0, default 50).
-- [ ] TASK-01-04: Add `facade_elements: list[dict] = field(default_factory=list)` to the
+- [x] TASK-01-04: Add `facade_elements: list[dict] = field(default_factory=list)` to the
       `Storey` dataclass in `src/homedesign/model.py`, and
       `divisions: Optional[dict] = None` to the `Opening` dataclass. Extend
       `CompiledModel.from_dict` to read both back (`s.get("facade_elements", [])` and
       `o.get("divisions")`) so round-tripping a compiled model preserves them.
-- [ ] TASK-01-05: In `src/homedesign/compiler.py`, populate `Storey.facade_elements` from
+- [x] TASK-01-05: In `src/homedesign/compiler.py`, populate `Storey.facade_elements` from
       `storey.get("facade_elements", [])` by calling
       `facade.resolve_facade_element(element, storey_base_z_mm, plot_width_mm,
       plot_depth_mm)` for each entry, and carry the resolved dict plus the original `kind`
       and `side`. Populate `Opening.divisions` from the spec opening's `divisions` key.
       Add `from .facade import resolve_facade_element` to the imports beside the existing
       `from .finishes import build_finish_map` at line 18.
-- [ ] TASK-01-06: Add `build_facade_elements(storey_mm, style, collection)` to
+- [x] TASK-01-06: Add `build_facade_elements(storey_mm, style, collection)` to
       `src/homedesign/blender/build_scene.py` and call it from the storey loop, next to
       the existing `_add_balcony_parapets` call. Each element becomes one `make_box` in
       metres, using the resolved `x_mm/y_mm/z_mm/w_mm/d_mm/h_mm` divided by 1000, with the
       material resolved via `get_material(style, element["finish"])`.
-- [ ] TASK-01-07: Add mullion and transom bars to
+- [x] TASK-01-07: Add mullion and transom bars to
       `src/homedesign/blender/joinery.py::build_opening_furniture`. When
       `opening_mm.get("divisions")` is truthy, call
       `homedesign.facade.opening_division_lines(width_mm, height_mm, divisions)` and emit
       one `make_box` per returned bar, using `frame_mat` and a depth equal to the existing
       `GLASS_THICKNESS * 2` so bars read from both faces. Leave the existing frame, lintel,
       sill, glass and leaf code untouched.
-- [ ] TASK-01-08: Fix the detached door leaf. In
+- [x] TASK-01-08: Fix the detached door leaf. In
       `src/homedesign/blender/joinery.py::build_opening_furniture`, change the
       `make_hinged_box` swing angle for interior doors from `0.35` / `-0.35` radians to
       `0.0`, so the leaf sits flush in its frame. Introduce a module constant
       `DOOR_SWING_RAD = 0.0` and use it in both branches rather than repeating the
       literal. This removes both the "detached leaf" read and the sofa interpenetration in
       the `khach` view.
-- [ ] TASK-01-09: Fix exterior framing per S3. In
+- [x] TASK-01-09: Fix exterior framing per S3. In
       `src/homedesign/camera_fit.py::exterior_front_camera`, replace
       `bbox = facade_bbox(model)` with `bbox = building_bbox(model)`. Leave the `centre`
       expression, `forward`, and the returned `lens_mm` exactly as they are.
-- [ ] TASK-01-10: Remove the neighbour-massing short-circuit. In
+- [x] TASK-01-10: Remove the neighbour-massing short-circuit. In
       `src/homedesign/blender/build_scene.py` at approximately line 408, replace
       `if _neighbours_enabled(model) or True:` with
       `if _neighbours_enabled(model) and model.get("show_neighbours", False):` and delete
       the now-dead `else:` branch comment claiming unreachability — the `else` branch
       (which builds the plain ground plane) becomes live and must be kept.
-- [ ] TASK-01-11: Add a `--show-neighbours` flag to the `build` and `render` subcommands
+- [x] TASK-01-11: Add a `--show-neighbours` flag to the `build` and `render` subcommands
       in `src/homedesign/__main__.py`, defaulting to `False`, and thread it through
       `orchestrator._build_command` as `--show-neighbours` so `build_scene` can read it.
       Default off satisfies DEC-009 while keeping the context geometry available.
-- [ ] TASK-01-12: Add `tests/test_facade_utils.py` and extend
+- [x] TASK-01-12: Add `tests/test_facade_utils.py` and extend
       `tests/test_compiler.py` and `tests/test_openings.py` per the Test Specs below.
-- [ ] TASK-01-13: Run `python scripts/sync_skill.py` after adding the CLI flag, so
+- [x] TASK-01-13: Run `python scripts/sync_skill.py` after adding the CLI flag, so
       `.agents/skills/homedesign/SKILL.md` stays in sync and CI's `--check` passes.
 
 **File Changes**
@@ -604,7 +604,7 @@ gradient. This is the largest realism gain per unit of effort for interiors.
       file: source URL, asset name, licence string (must be CC0 per ASM-002), and the
       SHA-256 of the file. Generate the hashes with:
       `find assets/cache -type f ! -name ATTRIBUTION.md -exec sha256sum {} \;`
-- [ ] TASK-02-03: Create `src/homedesign/asset_cache.py` (pure Python, no `bpy`) exposing
+- [x] TASK-02-03: Create `src/homedesign/asset_cache.py` (pure Python, no `bpy`) exposing
       the cache root and lookup helpers, so both the pure side and the Blender side
       resolve paths identically and a missing entry raises rather than silently falling
       back to network access (ASM-005).
@@ -613,16 +613,16 @@ gradient. This is the largest realism gain per unit of effort for interiors.
       build an Image Texture → Normal Map → Principled BSDF graph with a Mapping node
       driven by `scale_mm`; otherwise fall back to the existing procedural graph
       unchanged. Keep `get_material`'s signature and cache behaviour exactly as they are.
-- [ ] TASK-02-05: Ensure every mesh that receives a textured material has a UV map. Add a
+- [x] TASK-02-05: Ensure every mesh that receives a textured material has a UV map. Add a
       `_ensure_uv(obj)` helper in `src/homedesign/blender/geom.py` that runs a Smart UV
       Project on objects with no UV layer, and call it from `make_box` and
       `make_hinged_box` after mesh creation.
-- [ ] TASK-02-06: Replace the sky gradient in
+- [x] TASK-02-06: Replace the sky gradient in
       `src/homedesign/blender/build_scene.py::build_environment` with an Environment
       Texture node loading `assets/cache/hdri/exterior.hdr`, with strength exposed as a
       module constant. Keep the existing sun lamp — the HDRI supplies ambient and
       reflection, the sun supplies the directional key.
-- [ ] TASK-02-07: Verify `prepare_for_gltf_export` still produces a valid export. It
+- [x] TASK-02-07: Verify `prepare_for_gltf_export` still produces a valid export. It
       currently flattens procedural graphs to base colours; extend it so an image-textured
       material exports its diffuse map rather than a flat colour, since PHASE-05 depends
       on textures reaching the GLB.
@@ -711,12 +711,12 @@ procedural builders.
       `planter`, plus any others present). Store as
       `assets/cache/furniture/<kind>.glb`. Append each to
       `assets/cache/ATTRIBUTION.md`.
-- [ ] TASK-03-02: Create `src/homedesign/blender/asset_library.py` with a single entry
+- [x] TASK-03-02: Create `src/homedesign/blender/asset_library.py` with a single entry
       point that imports a cached GLB, scales it to the `FurnitureItem`'s `w`/`d`/`h`
       bounding box, rotates it by `rot_deg` about Z, and positions it at the item's
       origin. Scaling must be **non-uniform per axis** so the mesh occupies exactly the
       footprint the collision-resolved placement reserved.
-- [ ] TASK-03-03: Modify `src/homedesign/blender/procedural_furniture.py::build_item` to
+- [x] TASK-03-03: Modify `src/homedesign/blender/procedural_furniture.py::build_item` to
       try `asset_library.build_from_asset(...)` first and fall back to the existing
       `_BUILDERS` dispatch when the kind has no cached asset. Do not delete any existing
       builder.
@@ -779,25 +779,25 @@ denoising, and rework interior lighting so rooms read with real bounce light ins
 blown-out white walls.
 
 **Tasks**
-- [ ] TASK-04-01: In `src/homedesign/render_profiles.py`, keep the three existing profile
+- [x] TASK-04-01: In `src/homedesign/render_profiles.py`, keep the three existing profile
       names and their public shape, and add the Cycles-specific keys the build script
       needs: `device: "CPU"`, `denoise: True`, `adaptive_threshold: 0.01`. Leave the
       `preview` and `final` entries byte-for-byte unchanged so
       `tests/test_orchestrator.py` continues to pass.
-- [ ] TASK-04-02: In `src/homedesign/blender/build_scene.py::_set_engine`, implement S4
+- [x] TASK-04-02: In `src/homedesign/blender/build_scene.py::_set_engine`, implement S4
       steps 3 and 4: when the profile is `cycles`, set `scene.cycles.device = 'CPU'`,
       `scene.cycles.use_denoising = True`, `scene.cycles.use_adaptive_sampling = True`,
       `scene.cycles.adaptive_threshold = 0.01`, and leave the EEVEE branch untouched.
-- [ ] TASK-04-03: Rework `add_interior_lights`. Replace the single
+- [x] TASK-04-03: Rework `add_interior_lights`. Replace the single
       `clamp(area_m2 * 2.2, 20, 90)` area lamp per room with: (a) a window portal on every
       exterior opening so the HDRI drives daylight through the aperture, and (b) a much
       weaker practical lamp per room, sized `clamp(area_m2 * 0.6, 5, 25)` watts, placed at
       ceiling height. The current wattage is the direct cause of the blown-out walls.
-- [ ] TASK-04-04: Set the scene's view transform to `Filmic` (Blender 4.1's default is
+- [x] TASK-04-04: Set the scene's view transform to `Filmic` (Blender 4.1's default is
       `Filmic`; assert rather than assume) and expose exposure as a module constant.
       Verify no lit white wall clips: the `khach` render's 99th-percentile luminance must
       stay below pure white.
-- [ ] TASK-04-05: Add ceiling geometry and skirting to interior rooms so the camera does
+- [x] TASK-04-05: Add ceiling geometry and skirting to interior rooms so the camera does
       not see an open top edge. `_add_top_storey_ceilings` already exists; extend it to
       every storey, not only the top one, and add a 100 mm skirting box at the base of
       each interior wall using `make_box`.
@@ -958,16 +958,16 @@ contractor sheets, run the overnight full-set Cycles bake, judge the result agai
 photo-match bar, and publish.
 
 **Tasks**
-- [ ] TASK-06-01: Read the front pillar and other facade elements off
+- [x] TASK-06-01: Read the front pillar and other facade elements off
       `output/contractor_pdf_png/MB_MAI_-_MD-Model.png` (the `MẶT ĐỨNG CHÍNH` sheet) per
       ASM-003. Record each derived dimension, with the sheet feature it came from, in a new
       `## Facade elements` section of `designs/contractor-as-drawn.measurements.md`.
-- [ ] TASK-06-02: Author the elements into `designs/contractor-as-drawn.json`. At minimum:
+- [x] TASK-06-02: Author the elements into `designs/contractor-as-drawn.json`. At minimum:
       the front pillar as a `column` on `side: "south"`; vertical fins spanning storeys 2,
       3 and 4 per ASM-004; a `band` at the parapet coping; and `panel` treatments around
       the street-facing openings. Keep the existing single Ground fin or replace it with a
       measured one — do not leave it unexamined.
-- [ ] TASK-06-03: Add `divisions` to every street-facing window in the design, matching the
+- [x] TASK-06-03: Add `divisions` to every street-facing window in the design, matching the
       pane counts visible on the sheet. Ground-floor entrance doors take a panelled
       division.
 - [ ] TASK-06-04: Update `designs/contractor-as-drawn.fidelity.md` — mark items (k), (l),
@@ -978,7 +978,7 @@ photo-match bar, and publish.
       views defined in `meta.views`. Because PHASE-01 changed `model_hash`, every render
       sidecar is stale and the whole set must be regenerated — do not use
       `--skip-existing`.
-- [ ] TASK-06-06: Judge the result and write `reports/2026-08-30-photoreal-critic.md`. If
+- [x] TASK-06-06: Judge the result and write `reports/2026-08-30-photoreal-critic.md`. If
       `research/sources/reference-photos/` contains images, compare each interior render
       against the closest reference and score it. If the directory is absent or empty,
       apply ASM-001's binding default: judge against this written rubric and record that
@@ -992,10 +992,10 @@ photo-match bar, and publish.
       6. A ceiling is visible or correctly out of frame — never an open top edge.
       7. Furniture reads as furniture, not as boxes.
       Record per-frame pass/fail and re-render any frame failing three or more items.
-- [ ] TASK-06-07: Regenerate the 2D set and the PDF so the elevation now shows the facade
+- [x] TASK-06-07: Regenerate the 2D set and the PDF so the elevation now shows the facade
       elements: `homedesign build designs/contractor-as-drawn.json --gltf` then
       `homedesign pdf designs/contractor-as-drawn.json --require-fresh`.
-- [ ] TASK-06-08: Publish: `homedesign publish designs/contractor-as-drawn.json`, then
+- [x] TASK-06-08: Publish: `homedesign publish designs/contractor-as-drawn.json`, then
       copy the viewer HTML and its `.glb` into `docs/` and confirm
       `.github/workflows/pages.yml` deploys them.
 

@@ -1,7 +1,7 @@
 ---
 title: "Render Fidelity for the Construction Set"
 date: "2026-08-29"
-status: "draft"
+status: "open — phases 1, 4 and most of 6 shipped in 07f9c24, but the plan's own claims for facade/joinery were unbuilt (re-done in 2026-08-30-photoreal-render-overhaul-plan.md) and the phase-5 viewer tooling (room labels, measurement tool, section slider, layer toggles, GLB size-budget test), the slatted parapet pattern, elevation divisions and the rev.4 fidelity ledger are still missing."
 request: "Enhance the 3D render of designs/contractor-as-drawn.json for best accuracy and visual fidelity against the contractor's drawing set, and deliver it to the construction team."
 plan_type: "multi-phase"
 research_inputs:
@@ -408,25 +408,25 @@ every later phase is gated on. Nothing in this phase changes how the building lo
 — it changes how wrong it is allowed to be.
 
 **Tasks**
-- [ ] TASK-01-01: Reproduce the detached door leaf. Open
+- [x] TASK-01-01: Reproduce the detached door leaf. Open
   `deliverables/contractor-as-drawn/png/contractor-as-drawn_khach.png` and confirm the leaf
   renders separated from its frame. Then read
   `src/homedesign/blender/joinery.py::build_opening_furniture` and determine whether the leaf
   origin is placed on the wall centreline while the frame is placed on the wall face, or vice
   versa. The wall thickness is available from the `wall_mm` argument.
-- [ ] TASK-01-02: Fix the leaf placement so the hinge edge coincides with the frame's inner
+- [x] TASK-01-02: Fix the leaf placement so the hinge edge coincides with the frame's inner
   jamb face on the hinge side, and the leaf plane sits within the frame depth
   (`FRAME_DEPTH = 0.06` m). Keep `DOOR_LEAF_THICKNESS = 0.045` m unchanged.
-- [ ] TASK-01-03: Fix furniture interpenetration. In `src/homedesign/placement.py`, add a
+- [x] TASK-01-03: Fix furniture interpenetration. In `src/homedesign/placement.py`, add a
   post-placement pass that rejects or shifts any `FurnitureItem` whose footprint rectangle
   overlaps another item's footprint, or whose footprint overlaps the swing arc of a door in
   that room. Preserve the existing `CLEARANCE_M = 0.6` walkway rule.
-- [ ] TASK-01-04: Create `src/homedesign/parity.py` implementing the S1 metric as pure
+- [x] TASK-01-04: Create `src/homedesign/parity.py` implementing the S1 metric as pure
   functions over the compiled model. It must not import `bpy`.
-- [ ] TASK-01-05: Create `tests/test_parity.py` asserting the S1 metric against
+- [x] TASK-01-05: Create `tests/test_parity.py` asserting the S1 metric against
   `designs/contractor-as-drawn.json`, with `TOLERANCE_MM = 50.0` and the three excluded
   deviations listed by identifier with a comment naming their fidelity-ledger item.
-- [ ] TASK-01-06: Add furniture-overlap and door-swing-clearance assertions to
+- [x] TASK-01-06: Add furniture-overlap and door-swing-clearance assertions to
   `tests/test_placement.py` (create the file if it does not exist).
 
 **File Changes**
@@ -498,30 +498,30 @@ Give the spec a vocabulary for what surfaces are made of, render it with procedu
 groups, and print it as a finish schedule the crew can read.
 
 **Tasks**
-- [ ] TASK-02-01: Add a `finishes` object to `spec/homespec.schema.json` as a fourth
+- [x] TASK-02-01: Add a `finishes` object to `spec/homespec.schema.json` as a fourth
   top-level property alongside `meta`, `site` and `storeys`, with
   `additionalProperties: false` and sub-objects `by_element`, `by_room_type` and `overrides`,
   each mapping a string key to a finish name. Add an optional `finish` string property to the
   opening object and to the room object.
-- [ ] TASK-02-02: Create `src/homedesign/finishes.py` implementing the S3 resolution order as
+- [x] TASK-02-02: Create `src/homedesign/finishes.py` implementing the S3 resolution order as
   pure functions. It must not import `bpy`.
-- [ ] TASK-02-03: Extend `src/homedesign/model.py` so `CompiledModel` carries the resolved
+- [x] TASK-02-03: Extend `src/homedesign/model.py` so `CompiledModel` carries the resolved
   finish map. Confirm `model_hash` changes as a result — that is expected and is handled in
   PHASE-06.
-- [ ] TASK-02-04: In `src/homedesign/blender/materials.py`, add procedural node-group builders
+- [x] TASK-02-04: In `src/homedesign/blender/materials.py`, add procedural node-group builders
   for the finish families: `plaster_painted`, `ceramic_tile`, `stone_slab`, `wood_board`,
   `metal_brushed`, `glass_clear`, `concrete_formed`. Each takes a base colour, a roughness and
   a scale in millimetres, and builds nodes producing surface variation — grout grids for tile,
   noise for plaster and concrete, anisotropic streaking for metal, grain for wood.
 - [ ] TASK-02-05: Rewire `get_material(style, key)` to consult the resolved finish map first
   and fall back to `PALETTES` (S3 rule 5) so specs without a `finishes` block are unchanged.
-- [ ] TASK-02-06: Author the `finishes` block in `designs/contractor-as-drawn.json` using
+- [x] TASK-02-06: Author the `finishes` block in `designs/contractor-as-drawn.json` using
   ordinary Vietnamese domestic construction finishes: painted plaster walls, ceramic floor
   tile in habitable rooms, non-slip tile in wet rooms, aluminium-framed glazing, painted metal
   railings, formed concrete for the stair and parapet edges.
-- [ ] TASK-02-07: Emit a finish schedule as an SVG sheet from the same resolved map, written
+- [x] TASK-02-07: Emit a finish schedule as an SVG sheet from the same resolved map, written
   to `output/svg/<model>_finishes.svg`, listing element, location, finish name and colour swatch.
-- [ ] TASK-02-08: Verify the procedural materials survive glTF export by exporting and
+- [x] TASK-02-08: Verify the procedural materials survive glTF export by exporting and
   re-reading the GLB, confirming the material count and that no material has an image texture.
 
 **File Changes**
@@ -595,10 +595,10 @@ elevation. Treat "openings read as real windows" and "the facade reads as this b
 two separately judged pieces — get the first fully right before starting the second.
 
 **Tasks**
-- [ ] TASK-03-01: Add an optional `divisions` object to the opening schema with integer
+- [x] TASK-03-01: Add an optional `divisions` object to the opening schema with integer
   `columns` (default 1), integer `rows` (default 1), `mullion_mm` (default 50) and
   `transom_mm` (default 50).
-- [ ] TASK-03-02: Extend `src/homedesign/blender/joinery.py::build_opening_furniture` to emit
+- [x] TASK-03-02: Extend `src/homedesign/blender/joinery.py::build_opening_furniture` to emit
   mullions and transoms subdividing the glazed area according to `divisions`. A 1 × 1 division
   must produce byte-identical geometry to today's output.
 - [ ] TASK-03-03: Extend `src/homedesign/elevation.py::build_elevation` to draw the same
@@ -606,17 +606,17 @@ two separately judged pieces — get the first fully right before starting the s
 - [ ] TASK-03-04: Add a `pattern` field to the balcony parapet path with values `solid`
   (today's behaviour, the default) and `slatted` (vertical bars at a stated pitch). Implement
   `slatted` in `src/homedesign/blender/railings.py::build_parapet`.
-- [ ] TASK-03-05: Read `output/contractor_pdf_png/MB_MAI_-_MD-Model.png` at 8–24× zoom and
+- [x] TASK-03-05: Read `output/contractor_pdf_png/MB_MAI_-_MD-Model.png` at 8–24× zoom and
   record every resolvable facade element — fins, bands, panels, awnings — with its `x_mm`,
   `z_mm`, `w_mm`, `h_mm` and `projection_mm`, appending the readings to
   `designs/contractor-as-drawn.measurements.md` as rev.4 with the sheet name and zoom level
   for each figure. Apply ASM-001 to anything unreadable.
-- [ ] TASK-03-06: Add the `facade_elements[]` array to the storey schema object per S2, and
+- [x] TASK-03-06: Add the `facade_elements[]` array to the storey schema object per S2, and
   create `src/homedesign/facade.py` resolving entries to rectangles in both the 3D and
   elevation coordinate systems.
-- [ ] TASK-03-07: Emit facade elements in `build_scene.py` and in `elevation.py` from the same
+- [x] TASK-03-07: Emit facade elements in `build_scene.py` and in `elevation.py` from the same
   resolver.
-- [ ] TASK-03-08: Author the measured facade elements into `designs/contractor-as-drawn.json`
+- [x] TASK-03-08: Author the measured facade elements into `designs/contractor-as-drawn.json`
   and the opening `divisions` read from the same sheet.
 - [ ] TASK-03-09: Update `designs/contractor-as-drawn.fidelity.md` to rev.4, closing ledger
   items k (facade articulation), l (undivided openings) and m (plain parapets), and adding any
@@ -693,26 +693,26 @@ Put the building on its actual street. Party walls hard against both flanks, a r
 front, no lawn — and an interior light rig that gives rooms modelling instead of white blowout.
 
 **Tasks**
-- [ ] TASK-04-01: Set `site.context.neighbours` to `true` in `designs/contractor-as-drawn.json`.
+- [x] TASK-04-01: Set `site.context.neighbours` to `true` in `designs/contractor-as-drawn.json`.
   It is currently `false`, which is the direct reason no neighbours appear in the published
   render.
-- [ ] TASK-04-02: Extend the `site.context` schema object with `alley_width_mm`,
+- [x] TASK-04-02: Extend the `site.context` schema object with `alley_width_mm`,
   `kerb_height_mm`, `kerb_width_mm`, `opposite_height_mm`, `opposite_depth_mm`,
   `neighbour_west_height_mm`, `neighbour_east_height_mm`, `neighbour_width_mm` and
   `neighbour_depth_mm`, all optional numbers. Preserve `additionalProperties: false`.
-- [ ] TASK-04-03: Rewrite `build_scene._add_neighbour_massing` to use those fields with the
+- [x] TASK-04-03: Rewrite `build_scene._add_neighbour_massing` to use those fields with the
   ASM-002 and ASM-003 defaults, replacing the current behaviour of two blocks whose height is
   the full building height and whose width is the fixed `NEIGHBOUR_WIDTH_MM = 3000.0`.
-- [ ] TASK-04-04: Rewrite `build_scene.build_environment` so the ground is an alley section
+- [x] TASK-04-04: Rewrite `build_scene.build_environment` so the ground is an alley section
   rather than a green pad: carriageway, kerb, and opposite-side massing, all using finishes
   resolved through PHASE-02. Remove the 15 m green pad.
-- [ ] TASK-04-05: Re-tune the sun in `build_environment`: keep the fixed 55° / 35° angle per
+- [x] TASK-04-05: Re-tune the sun in `build_environment`: keep the fixed 55° / 35° angle per
   DEC-004, but adjust energy and add a sky-facing gradient so the facade receives directional
   modelling. Do not add a solar model.
-- [ ] TASK-04-06: Re-tune `add_interior_lights`. The current formula
+- [x] TASK-04-06: Re-tune `add_interior_lights`. The current formula
   `clamp(area_m2 * 2.2, 20, 90)` blows walls to white. Replace it with a formula that scales
   with room area and room height, and add a low-energy bounce plane so ceilings are not black.
-- [ ] TASK-04-07: Author the alley figures into `designs/contractor-as-drawn.json` from the
+- [x] TASK-04-07: Author the alley figures into `designs/contractor-as-drawn.json` from the
   site plan on the contractor's sheets, falling back to the ASM-002 defaults where the sheets
   are silent, and record which figures were defaults in `designs/contractor-as-drawn.fidelity.md`.
 
@@ -783,16 +783,16 @@ crew can measure, section and label with — in two builds sized for two very di
   bevelled edges, separated cushions and frames on seating, panelled doors on cabinetry, taps
   and cisterns on sanitaryware. Use procedural geometry only — do not import third-party assets
   (ASM-005).
-- [ ] TASK-05-02: Add architectural interior detail in `build_scene.py`: skirting, opening
+- [x] TASK-05-02: Add architectural interior detail in `build_scene.py`: skirting, opening
   reveals following actual wall thickness, and a ceiling plane in every enclosed room rather
   than only on the top storey.
-- [ ] TASK-05-03: Bake ambient occlusion to vertex colours before glTF export and include the
+- [x] TASK-05-03: Bake ambient occlusion to vertex colours before glTF export and include the
   colour attribute in the export (ASM-007).
-- [ ] TASK-05-04: Add two build targets to `src/homedesign/viewer.py`: `light` (decimated,
+- [x] TASK-05-04: Add two build targets to `src/homedesign/viewer.py`: `light` (decimated,
   furniture excluded from the mesh budget where necessary, target ≤ 6 MiB) and `full`
   (everything, target ≤ 25 MiB). Make `optimize_glb`'s dependence on `npx` an explicit checked
   precondition that raises a clear error rather than silently returning `False`.
-- [ ] TASK-05-05: Add a visible build badge to both viewer templates reading `PHIÊN BẢN NHẸ —
+- [x] TASK-05-05: Add a visible build badge to both viewer templates reading `PHIÊN BẢN NHẸ —
   ĐIỆN THOẠI` for the light build and `PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH` for the full build, so the
   two cannot be confused.
 - [ ] TASK-05-06: Add Vietnamese room labels and storey level tags as 3D sprites in the viewer,
@@ -875,25 +875,25 @@ what was done in a self-contained HTML report, and land the work in version cont
 
 **Tasks**
 - [ ] TASK-06-01: Run a clean full build of every view at the `final` profile with glTF export.
-- [ ] TASK-06-02: Run `homedesign publish` and confirm it no longer blocks — every render
+- [x] TASK-06-02: Run `homedesign publish` and confirm it no longer blocks — every render
   sidecar hash must match the new `model_hash`.
-- [ ] TASK-06-03: Copy the published viewer HTML files into `docs/` and update
+- [x] TASK-06-03: Copy the published viewer HTML files into `docs/` and update
   `docs/viewers.html` to link the light and full builds separately, labelled in Vietnamese.
-- [ ] TASK-06-04: Create `.github/workflows/pages.yml` deploying `docs/` to GitHub Pages on
+- [x] TASK-06-04: Create `.github/workflows/pages.yml` deploying `docs/` to GitHub Pages on
   push to `master`, so the viewer link stops being a manual copy.
-- [ ] TASK-06-05: Generate the A3 plate set — the exterior views, the light-well view and the
+- [x] TASK-06-05: Generate the A3 plate set — the exterior views, the light-well view and the
   south elevation at A3 landscape, 300 dpi, each with a title block naming the model, the
   source sheet and the render date.
-- [ ] TASK-06-06: Generate the chat image pack per ASM-009 into
+- [x] TASK-06-06: Generate the chat image pack per ASM-009 into
   `deliverables/contractor-as-drawn/share/`.
-- [ ] TASK-06-07: Write `reports/2026-08-29-render-fidelity-report.html` — a self-contained
+- [x] TASK-06-07: Write `reports/2026-08-29-render-fidelity-report.html` — a self-contained
   single file with all CSS and images inlined as data URIs, containing: before-and-after image
   pairs for the exterior and for at least three interiors; the parity report figures for every
   elevation side; the finish schedule; the list of fidelity-ledger items closed and opened; the
   GLB sizes against their budgets; and the render time.
 - [ ] TASK-06-08: Update `designs/contractor-as-drawn.fidelity.md` to its final revision and
   `activeContext.md` with a review section recording what shipped.
-- [ ] TASK-06-09: Commit and push per ASM-008.
+- [x] TASK-06-09: Commit and push per ASM-008.
 
 **File Changes**
 - `deliverables/contractor-as-drawn/` (modify): republished `png`, `gltf`, `viewer` and `pdf`.

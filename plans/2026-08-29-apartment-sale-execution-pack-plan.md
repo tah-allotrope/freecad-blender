@@ -1,7 +1,7 @@
 ---
 title: "Apartment Sale Execution Pack — Fund the Tubehouse Build"
 date: "2026-08-29"
-status: "draft"
+status: "complete — all six phases shipped in 2feedf7 and pushed: 10 documents in deliverables/apartment-sale/, scripts/sale_waterfall.py with 9 passing tests, and the Chart.js+mermaid report at reports/2026-08-29-apartment-sale-execution-pack.html."
 request: "Turn the SSR apartment-sale brainstorm into an executable plan, with the unit confirmed as river-view and the tubehouse finish confirmed as medium; produce an HTML report and commit/push at the end."
 plan_type: "multi-phase"
 research_inputs:
@@ -314,8 +314,8 @@ Establish one dated, sourced, defensible pricing document that every later phase
 verify whether the August 2026 comparables still hold.
 
 **Tasks**
-- [ ] TASK-01-01: Create the directory `deliverables/apartment-sale/`.
-- [ ] TASK-01-02: Re-pull current asking prices for 70–76 m2 two-bedroom units at Saigon South
+- [x] TASK-01-01: Create the directory `deliverables/apartment-sale/`.
+- [x] TASK-01-02: Re-pull current asking prices for 70–76 m2 two-bedroom units at Saigon South
       Residences from at least three of these sources: `https://www.housenow.com.vn/can-ho-chung-cu/saigon-south-residences`,
       `https://angialand.com.vn/saigon-south-residence.html`,
       `https://nasaland.vn/saigon-south-residence.html`,
@@ -323,22 +323,22 @@ verify whether the August 2026 comparables still hold.
       `https://www.nhatot.com/mua-ban-can-ho-chung-cu--saigon-south-residences-huyen-nha-be-pj2033453473`.
       Note that `https://batdongsan.com.vn/ban-can-ho-chung-cu-saigon-south-residences` returns
       HTTP 403 to automated fetching; if it cannot be read, record that fact rather than omitting it.
-- [ ] TASK-01-03: For every listing captured, record: area in m2, bedroom count, asking price in
+- [x] TASK-01-03: For every listing captured, record: area in m2, bedroom count, asking price in
       ty, computed price per m2 in tr/m2 (asking price in VND divided by area, divided by 10^6,
       rounded to one decimal), the posting date, the source URL, and whether the listing states a
       river view or full furniture.
-- [ ] TASK-01-04: Compute the median asking price per m2 across all captured 70–76 m2 listings.
+- [x] TASK-01-04: Compute the median asking price per m2 across all captured 70–76 m2 listings.
       Compare it to the 80.0 tr/m2 baseline recorded in ASM-003. If the deviation exceeds 5%,
       add a clearly headed subsection `## Price Movement Alert` stating the new median, the
       percentage change, and a recommended revised list price computed as
       `median_tr_per_m2 * 72.0` rounded to the nearest 0.05 ty. Do **not** change DEC-003.
-- [ ] TASK-01-05: Add an explicit `## Excluded Listings` subsection recording every listing below
+- [x] TASK-01-05: Add an explicit `## Excluded Listings` subsection recording every listing below
       4.0 ty for a 70–76 m2 unit, with the reason for exclusion (bait listing, or a quote of the
       remaining balance on an unfinished purchase contract rather than a freehold transfer price).
-- [ ] TASK-01-06: Add a `## River View Premium` subsection documenting that the highest live
+- [x] TASK-01-06: Add a `## River View Premium` subsection documenting that the highest live
       comparable, 71 m2 at 5.95 ty (83.8 tr/m2), is a river-view unit, and that the subject unit
       prices against it under DEC-001.
-- [ ] TASK-01-07: Stamp the document with `As of: <YYYY-MM-DD> (Asia/Ho_Chi_Minh)` using the
+- [x] TASK-01-07: Stamp the document with `As of: <YYYY-MM-DD> (Asia/Ho_Chi_Minh)` using the
       actual execution date.
 
 **File Changes**
@@ -387,33 +387,33 @@ Give the owner everything needed to call 6–8 brokers, score them objectively, 
 on identical written terms.
 
 **Tasks**
-- [ ] TASK-02-01: Write the weighted scorecard with these exact criteria and weights, totalling
+- [x] TASK-02-01: Write the weighted scorecard with these exact criteria and weights, totalling
       100: Verified project closings in the last 12 months (30); Written comparative market
       analysis quality (25); Response latency (15); Marketing commitment (15); Live buyer queue
       (10); Terms acceptance (5).
-- [ ] TASK-02-02: For each criterion, write a concrete 0/partial/full scoring rubric. The CMA
+- [x] TASK-02-02: For each criterion, write a concrete 0/partial/full scoring rubric. The CMA
       criterion must state that an agent who submits portal **asking** prices instead of
       **signed transaction** prices scores 0 on that criterion regardless of presentation quality
       — this is the primary filter given the current wide bid-ask spread.
-- [ ] TASK-02-03: Render the candidate pool as a table with columns: candidate, contact if known,
+- [x] TASK-02-03: Render the candidate pool as a table with columns: candidate, contact if known,
       channel type (on-site broker / project-specialist agency / national platform /
       English-language platform / individual portal broker), why they are on the list, and a
       blank `Score` column. Reproduce the CON-003 caveat verbatim immediately above the table:
       "This pool is derived from public search visibility, which measures marketing spend rather
       than closing ability. No claim is made about any firm's transaction history. Score them
       yourself using the rubric below."
-- [ ] TASK-02-04: Write the call script as a numbered sequence of questions mapping one-to-one
+- [x] TASK-02-04: Write the call script as a numbered sequence of questions mapping one-to-one
       onto the scorecard criteria, with a note after each on what a strong versus weak answer
       sounds like. Include an explicit instruction to ask for two unit numbers and closing months
       that can be cross-checked with the building management board.
-- [ ] TASK-02-05: Write the mandate terms sheet as a document the owner can send to all three
+- [x] TASK-02-05: Write the mandate terms sheet as a document the owner can send to all three
       appointed agents unchanged. It must state: the fixed listing price of 5.95 ty; commission
       of 1.5% winner-takes-all plus a 0.3% bonus for a notarised agreement within 45 calendar
       days; the three panel discipline rules from DEC-006 as non-negotiable conditions; the
       published floor of 5.35 ty as the lowest price the agent may present; the requirement that
       all offers be submitted in writing; and the 30-day first-registration buyer attribution
       rule with a worked example of how a disputed buyer is resolved.
-- [ ] TASK-02-06: Add the CON-004 verification line to the mandate terms sheet.
+- [x] TASK-02-06: Add the CON-004 verification line to the mandate terms sheet.
 
 **File Changes**
 - `deliverables/apartment-sale/02-agent-scorecard.md` (create): scoring rubric, weights, candidate
@@ -449,29 +449,29 @@ Produce the marketing material the owner hands identically to all three panel ag
 the seller-owned-assets discipline rule.
 
 **Tasks**
-- [ ] TASK-03-01: Write Vietnamese listing copy with full diacritics, structured as: a headline
+- [x] TASK-03-01: Write Vietnamese listing copy with full diacritics, structured as: a headline
       under 70 characters; a 3-sentence lead; a bulleted specification block (area 72 m2, 2
       bedrooms, 2 bathrooms, block `[[BLOCK]]`, floor `[[FLOOR]]`, river view, fully furnished,
       So hong issued, no mortgage); an amenities paragraph; a location paragraph naming Nguyen
       Huu Tho, Phu My Hung adjacency, and RMIT University; and a price and contact block quoting
       5.95 ty.
-- [ ] TASK-03-02: Lead the Vietnamese copy on the two strongest differentiators in the current
+- [x] TASK-03-02: Lead the Vietnamese copy on the two strongest differentiators in the current
       market: **So hong issued with no mortgage** (fastest legal transfer, a genuine scarcity
       signal while liquidity is tight) and **river view**.
-- [ ] TASK-03-03: Write the English listing copy as an equivalent, not a literal translation,
+- [x] TASK-03-03: Write the English listing copy as an equivalent, not a literal translation,
       pitched at expatriate and foreign buyers, and include the rental yield cross-check using
       the 12–22 tr/month project band.
-- [ ] TASK-03-04: Place a banner as the very first line of the English file, in bold:
+- [x] TASK-03-04: Place a banner as the very first line of the English file, in bold:
       `HOLD — DO NOT PUBLISH UNTIL FOREIGN-OWNERSHIP QUOTA ELIGIBILITY IS CONFIRMED WITH THE SSR MANAGEMENT BOARD.`
-- [ ] TASK-03-05: Write the photography shot list as a numbered sequence of at least 18 specific
+- [x] TASK-03-05: Write the photography shot list as a numbered sequence of at least 18 specific
       shots, each with room, angle, time of day, and purpose. Include at least three shots that
       specifically establish the river view, and a note that the pack must include a floorplan
       graphic and a short vertical video walkthrough for portal and social distribution.
-- [ ] TASK-03-06: Add a `## Portal Placement` section to the shot list file naming
+- [x] TASK-03-06: Add a `## Portal Placement` section to the shot list file naming
       batdongsan.com.vn and nhatot.com as the primary Vietnamese portals, with a note that
       boosted placement on batdongsan.com.vn is the marketing-commitment item agents are scored
       on in PHASE-02.
-- [ ] TASK-03-07: Add a `## Pre-Listing Presentation` section budgeting the 20 tr from ASM-008
+- [x] TASK-03-07: Add a `## Pre-Listing Presentation` section budgeting the 20 tr from ASM-008
       across paint touch-up, deep clean, and professional photography.
 
 **File Changes**
@@ -508,32 +508,32 @@ Convert the pricing decision into a scripted response for every offer the owner 
 receive, and enumerate the legal and tax steps from accepted offer to registered transfer.
 
 **Tasks**
-- [ ] TASK-04-01: Write the negotiation ladder as a table with columns: offer band, what it means,
+- [x] TASK-04-01: Write the negotiation ladder as a table with columns: offer band, what it means,
       scripted response, and concession available. Cover these bands: at or above 5.75 ty;
       5.60–5.74 ty; 5.45–5.59 ty (the target band); 5.35–5.44 ty; 5.15–5.34 ty; below 5.15 ty.
-- [ ] TASK-04-02: Encode the gate logic from `## Specification` S3 into the ladder, so that the
+- [x] TASK-04-02: Encode the gate logic from `## Specification` S3 into the ladder, so that the
       band below 5.35 ty reads ESCALATE and the band below 5.15 ty reads REJECT.
-- [ ] TASK-04-03: Document the non-price concessions available in preference order, cheapest
+- [x] TASK-04-03: Document the non-price concessions available in preference order, cheapest
       first: leaving the existing furniture in place; flexible handover date; the seller paying
       the notary fee; a longer deposit-to-close window. State explicitly that price is the last
       concession, not the first.
-- [ ] TASK-04-04: Add a `## Expected Discount` section stating that the market currently clears
+- [x] TASK-04-04: Add a `## Expected Discount` section stating that the market currently clears
       7–12% below asking price, so an offer at 5.35 ty against a 5.95 ty list is a 10.1%
       discount and therefore **a normal market outcome, not a lowball**. Include the arithmetic.
-- [ ] TASK-04-05: Write the closing checklist as an ordered sequence covering: accepted offer in
+- [x] TASK-04-05: Write the closing checklist as an ordered sequence covering: accepted offer in
       writing; deposit contract (hop dong dat coc) with the 5% deposit and forfeiture clause;
       document assembly (So hong original, identity documents, marriage or single-status
       certificate, household registration); notarisation of the sale-purchase agreement at a
       licensed notary office; 2% transfer tax payment; registration fee; and transfer of the So
       hong to the buyer's name.
-- [ ] TASK-04-06: Add a worked tax calculation to the closing checklist for three prices —
+- [x] TASK-04-06: Add a worked tax calculation to the closing checklist for three prices —
       5.95 ty, 5.50 ty and 5.35 ty — showing the 2% tax in tr for each (119 tr, 110 tr, 107 tr).
       State plainly that the tax is charged on gross contract value and is unaffected by what
       the apartment originally cost.
-- [ ] TASK-04-07: Add a `## Mortgage-Financed Buyers` section stating the DEC-008 conditions and
+- [x] TASK-04-07: Add a `## Mortgage-Financed Buyers` section stating the DEC-008 conditions and
       warning that a bank valuation coming in below the contract price can reopen the
       negotiation around week 4, which is the specific reason cash buyers are preferred.
-- [ ] TASK-04-08: Add the CON-004 verification line to the closing checklist.
+- [x] TASK-04-08: Add the CON-004 verification line to the closing checklist.
 
 **File Changes**
 - `deliverables/apartment-sale/08-negotiation-ladder.md` (create): the offer-band ladder,
@@ -570,34 +570,34 @@ Implement the reconciliation arithmetic as tested code so the release decision o
 computed, not estimated, and write the narrative reconciliation document.
 
 **Tasks**
-- [ ] TASK-05-01: Create `scripts/sale_waterfall.py` implementing the formulas in
+- [x] TASK-05-01: Create `scripts/sale_waterfall.py` implementing the formulas in
       `## Specification` S1, S2 and S3 exactly. All monetary values are Python `int` in plain VND.
       Module-level constants must carry the identifiers used in the specification.
-- [ ] TASK-05-02: Give the module a command-line interface using `argparse` accepting
+- [x] TASK-05-02: Give the module a command-line interface using `argparse` accepting
       `--price` (integer VND, required), `--speed-bonus` (a flag, default off), and
       `--format` (`text` or `json`, default `text`). Text output prints one labelled line per
       waterfall step with amounts formatted in `ty` to three decimal places; JSON output emits a
       single object with the keys `price_vnd`, `tax_vnd`, `commission_vnd`, `presentation_vnd`,
       `net_vnd`, `build_total_vnd`, `contingency_vnd`, `reserve_vnd`, `surplus_vnd`, `gate`.
-- [ ] TASK-05-03: Create `tests/test_sale_waterfall.py` with one test per row of the S4 worked
+- [x] TASK-05-03: Create `tests/test_sale_waterfall.py` with one test per row of the S4 worked
       examples table, asserting the exact `tax`, `commission`, `net`, `surplus` and `gate` values.
       Name them `test_net_proceeds_at_list_price`, `test_net_proceeds_at_target_with_bonus`,
       `test_net_proceeds_at_floor_price`, `test_gate_escalates_below_published_floor`,
       `test_gate_escalates_at_hard_floor`, `test_gate_rejects_below_hard_floor`.
-- [ ] TASK-05-04: Add three further tests: `test_build_total_is_medium_finish` asserting
+- [x] TASK-05-04: Add three further tests: `test_build_total_is_medium_finish` asserting
       `construction == 3_250_000_000` and `build_with_contingency == 4_075_000_000`;
       `test_all_amounts_are_integers` asserting every returned monetary value is `int` and never
       `float`; and `test_json_output_keys` asserting the JSON object carries exactly the ten keys
       listed in TASK-05-02.
-- [ ] TASK-05-05: Write the narrative reconciliation document presenting the S4 table in `ty`
+- [x] TASK-05-05: Write the narrative reconciliation document presenting the S4 table in `ty`
       units for a human reader, the four release gates in plain language, and the 15-month rent
       line of 180 tr clearly labelled `NON-INCREMENTAL — paid whether or not the apartment sells`
       per ASM-007.
-- [ ] TASK-05-06: In the reconciliation document, state the headline conclusion explicitly: at
+- [x] TASK-05-06: In the reconciliation document, state the headline conclusion explicitly: at
       the published floor of 5.35 ty the sale nets 5.143 ty against a build-plus-contingency cost
       of 4.075 ty, leaving 1.068 ty, of which 750 tr is held as hard reserve and 318 tr is free
       surplus. The build is funded with margin at every price down to the hard floor.
-- [ ] TASK-05-07: Run `python -m ruff check .` and `python -m ruff format .` and fix all findings.
+- [x] TASK-05-07: Run `python -m ruff check .` and `python -m ruff format .` and fix all findings.
 
 **File Changes**
 - `scripts/sale_waterfall.py` (create): the waterfall implementation and CLI. Keep it dependency-
@@ -683,7 +683,7 @@ Summarise the whole pack in one styled, self-contained HTML report matching the 
 existing report house style, then commit and push everything.
 
 **Tasks**
-- [ ] TASK-06-01: Read `reports/2026-08-15-final-drawing-truth-and-construction-set.html` and
+- [x] TASK-06-01: Read `reports/2026-08-15-final-drawing-truth-and-construction-set.html` and
       reuse its CSS custom-property palette and typography verbatim: `--paper: #fbf7f1`,
       `--paper-strong: #fffdf9`, `--ink: #1f1912`, `--ink-soft: #5f564c`, `--line: #dccdb6`,
       `--line-strong: #bfa37d`, `--accent: #9d6b37`, `--accent-soft: #efe4d0`,
@@ -692,7 +692,7 @@ existing report house style, then commit and push everything.
       `"Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif`, mono font
       `"Cascadia Code", Consolas, monospace`. Include the same
       `<meta name="color-scheme" content="dark light">` tag.
-- [ ] TASK-06-02: Build the report with these sections in order: title and as-of date; an
+- [x] TASK-06-02: Build the report with these sections in order: title and as-of date; an
       executive summary stating the 5.95 ty list, 5.35 ty floor and the funded conclusion; a
       pricing section rendering the comparables table from PHASE-01; a Chart.js horizontal bar
       chart comparing asking price per m2 across the captured comparables with the subject
@@ -701,26 +701,26 @@ existing report house style, then commit and push everything.
       floor price; the agent panel method; the sale timeline; the negotiation ladder; the closing
       sequence; and a deliverables index linking every file in `deliverables/apartment-sale/`
       with a relative href.
-- [ ] TASK-06-03: Load Chart.js from `https://cdn.jsdelivr.net/npm/chart.js` exactly as the
+- [x] TASK-06-03: Load Chart.js from `https://cdn.jsdelivr.net/npm/chart.js` exactly as the
       existing reports do. Do not vendor it locally and do not add a build step.
-- [ ] TASK-06-04: Include a mermaid flowchart of the release-gate decision logic from
+- [x] TASK-06-04: Include a mermaid flowchart of the release-gate decision logic from
       `## Specification` S3, using the same mermaid ESM import and `themeVariables` block as the
       existing report so the diagram matches the palette.
-- [ ] TASK-06-05: Ensure the report renders correctly with no network access to anything other
+- [x] TASK-06-05: Ensure the report renders correctly with no network access to anything other
       than the two jsDelivr CDN URLs, and that all content is legible if both scripts fail to
       load — every chart must be preceded by the same data in an HTML `<table>`.
-- [ ] TASK-06-06: Verify the working tree contains only intended changes by reviewing
+- [x] TASK-06-06: Verify the working tree contains only intended changes by reviewing
       `git status --porcelain`. The expected additions are exactly: ten files under
       `deliverables/apartment-sale/`, `scripts/sale_waterfall.py`, `tests/test_sale_waterfall.py`,
       `reports/2026-08-29-apartment-sale-execution-pack.html`, and this plan file. Do not commit
       anything under `output/` or any `__pycache__/` directory.
-- [ ] TASK-06-07: Re-run the full verification suite one final time before committing:
+- [x] TASK-06-07: Re-run the full verification suite one final time before committing:
       `python -m pytest` and `python -m ruff check .`, both must pass.
-- [ ] TASK-06-08: Stage and commit with this exact message subject:
+- [x] TASK-06-08: Stage and commit with this exact message subject:
       `feat(sale): apartment sale execution pack — pricing, agent panel, closing, build reconciliation`
       and a body summarising the six phases, the 5.95 ty list price, the 5.35 ty floor, and the
       1.068 ty funded margin at the floor.
-- [ ] TASK-06-09: Push to `origin master` and confirm the push succeeded by checking that
+- [x] TASK-06-09: Push to `origin master` and confirm the push succeeded by checking that
       `git status -sb` reports the local branch is not ahead of its remote tracking branch.
 
 **File Changes**
