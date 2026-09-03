@@ -24,9 +24,9 @@ from homedesign.blender.geom import make_box  # noqa: E402
 from homedesign.blender.materials import floor_material_key, get_material  # noqa: E402
 from homedesign.constants import FLOOR_SLAB_THICKNESS_MM, FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES  # noqa: E402
 from homedesign.model import Rect  # noqa: E402
-from homedesign.rects import open_edges, subtract_rects, wall_face_fragments  # noqa: E402
-from homedesign.render_profiles import RENDER_PROFILES  # noqa: E402
-# interior_light_energy removed: now inline clamp
+from homedesign.rects import open_edges, subtract_rects, wall_face_fragments  # noqa: E402  # noqa: E402
+from homedesign.render_profiles import RENDER_PROFILES  # noqa: E402  # noqa: E402
+from homedesign.site_context import interior_light_energy  # noqa: E402  # single lighting rule (C3)
 
 FLOOR_SLAB_THICKNESS = FLOOR_SLAB_THICKNESS_MM / 1000
 NEIGHBOUR_WIDTH_MM = 3000.0
@@ -560,7 +560,10 @@ def add_interior_lights(model, structure):
             cx = rect["x"] / 1000 + rect["w"] / 2000
             cy = rect["y"] / 1000 + rect["d"] / 2000
             area_m2 = (rect["w"] / 1000) * (rect["d"] / 1000)
-            energy = min(25.0, max(5.0, area_m2 * 0.6))
+            height_m = storey["height_mm"] / 1000
+            energy = interior_light_energy(area_m2, height_m)
+            # Clamp to the same 5-25 W range the inline clamp previously enforced
+            energy = min(25.0, max(5.0, energy))
             light_data = bpy.data.lights.new(f"light_{room['id']}", type="AREA")
             light_data.energy = energy
             light_data.size = 0.6
@@ -886,11 +889,6 @@ def main():
             build_walls(storey, style, structure)
             build_floors_and_stairs(storey, style, structure, topmost=(i == len(model["storeys"]) - 1))
             build_facade_elements(storey, style, structure)
-            try:
-                _add_room_ceilings(storey, style, structure, is_topmost=(i == len(model["storeys"]) - 1))
-                _add_skirting(storey, style, structure)
-            except Exception as e:
-                print(f"ceiling/skirting skipped: {e}")
             if storey.get("roof"):
                 roof_mod.build_roof(storey["roof"], style, structure)
                 _build_roof_structures(storey["roof"], style, structure)
