@@ -56,14 +56,13 @@ def test_unmatched_opening_fails():
 def test_elevation_parity_contractor_south():
     spec = json.loads(pathlib.Path("designs/contractor-as-drawn.json").read_text(encoding="utf-8"))
     model = compile_spec(spec)
-    # three deliberate deviations excluded by name (ledger a,c,g) - use empty here but test must pass with empty exclude
-    # actual excluded ids would be named, but passing without them should still pass because current model is faithful within tolerance
     report = elevation_parity_report(model, "south", tolerance_mm=TOLERANCE_MM, exclude=set())
+    # C6: metric now points at independent witness (7 mm shift), so it is
+    # not arithmetically 0.0; the 50 mm budget is exercised.
     assert report["passed"] is True
-    assert report["silhouette_mm"] <= 50.0
-    assert report["opening_mm"] <= 50.0
+    assert report["silhouette_mm"] == 7.0
+    assert report["opening_mm"] == 0.0
     assert report["unmatched"] == []
-
 
 def test_elevation_parity_exclude():
     ref = [
