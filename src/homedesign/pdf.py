@@ -355,16 +355,16 @@ def render_brief_html(model: CompiledModel, brief: dict, out_dir: Path, spec_pat
     # briefed; `require_fresh` promotes a stale image to a hard error.
     current_hash = model_hash(model)
     if require_fresh:
-        stale = []
-        for p in image_paths:
-            if not p.exists():
-                continue
-            sidecar = read_render_sidecar(p)
-            if sidecar is None or sidecar.get("model_hash") != current_hash:
-                stale.append(p.name)
-        if stale:
+        from .freshness import check_freshness
+        report = check_freshness(model, out_dir, kind="refuse")
+        # Only PNG staleness is authoritative for the brief's gallery badge;
+        # missing GLB is also reported but not as stale render
+        stale_pngs = [n for n in report["stale"] if n.endswith(".png")]
+        missing_pngs = [n for n in report["missing"] if n.endswith(".png")]
+        problematic = stale_pngs + missing_pngs
+        if problematic:
             raise RuntimeError(
-                f"stale render(s) for model {current_hash}: {', '.join(sorted(stale))}; "
+                f"stale render(s) for model {current_hash}: {', '.join(sorted(problematic))}; "
                 "re-render before building the brief"
             )
 

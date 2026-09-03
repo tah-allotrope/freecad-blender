@@ -80,10 +80,13 @@ def test_publish_copies_fresh_gallery(tmp_path):
     model = _mini()
     _write_png(tmp_path / "png", f"{model.name}_a.png", model_hash(model))
     (tmp_path / "gltf").mkdir()
-    (tmp_path / "gltf" / f"{model.name}.glb").write_bytes(b"glb")
+    glb = tmp_path / "gltf" / f"{model.name}.glb"
+    glb.write_bytes(b"glb")
+    import json as _json
+    (glb.with_suffix(glb.suffix + ".json")).write_text(_json.dumps({"model_hash": model_hash(model)}), encoding="utf-8")
     deliverables = tmp_path / "deliverables"
     paths = publish(model, tmp_path, deliverables)
     assert (deliverables / model.name / "png" / f"{model.name}_a.png").exists()
     assert (deliverables / model.name / "gltf" / f"{model.name}.glb").exists()
     # png + its render sidecar + glb
-    assert len(paths) == 3
+    assert len(paths) == 4  # png, png sidecar, glb, glb sidecar

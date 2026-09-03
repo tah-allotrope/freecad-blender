@@ -64,20 +64,25 @@ def test_write_and_read_sidecar_roundtrip(tmp_path):
 
 
 def test_pdf_require_fresh_raises_on_stale_render(tmp_path, monkeypatch):
-    out = REPO_ROOT / "output"
+    # Use tmp_path so we never mutate deliverables
+    out = tmp_path / "out"
+    (out / "png").mkdir(parents=True)
+    (out / "svg").mkdir(parents=True)
     model = _mini()
-    # Give the model one view so a gallery image is expected.
     from homedesign.model import View
     model.views = [View(name="exterior", kind="exterior_front")]
     png = out / "png" / "tubehouse-mini_exterior.png"
-    if not png.exists():
-        pytest.skip("no render present")
-    # Stamp a sidecar with the WRONG hash -> stale.
+    from PIL import Image
+    Image.new("RGB", (10, 10), color="white").save(png)
     write_render_sidecar(png, "stale00000000", "exterior", "final")
+    # Create all required drawings for the model via catalogue
+    from homedesign.artifacts import all_drawing_paths
+    for pth in all_drawing_paths(model, out):
+        pth.parent.mkdir(parents=True, exist_ok=True)
+        pth.write_text("<svg></svg>", encoding="utf-8")
     with pytest.raises(RuntimeError) as exc:
         render_brief_html(model, _brief(), out, EXAMPLES / "tubehouse-mini.json", require_fresh=True)
     assert "stale" in str(exc.value).lower()
-    # Without require_fresh the same setup renders with a STALE stamp instead.
     html = render_brief_html(model, _brief(), out, EXAMPLES / "tubehouse-mini.json")
     assert "STALE" in html
 

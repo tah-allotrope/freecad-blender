@@ -5,22 +5,21 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from .model import CompiledModel, model_hash, read_render_sidecar
+from .model import CompiledModel, read_render_sidecar
 
 
 def verify_fresh(model: CompiledModel, out_dir: Path) -> list[tuple[Path, str | None]]:
-    """One `(png_path, sidecar_hash_or_None)` tuple for every render of this
-    model whose sidecar hash does not equal the current model hash; an empty
-    list means the gallery is fully fresh."""
-    current = model_hash(model)
-    stale: list[tuple[Path, str | None]] = []
-    png_dir = Path(out_dir) / "png"
-    if not png_dir.exists():
-        return stale
-    for p in sorted(png_dir.glob(f"{model.name}_*.png")):
-        sidecar = read_render_sidecar(p)
-        if sidecar is None or sidecar.get("model_hash") != current:
-            stale.append((p, sidecar.get("model_hash") if sidecar else None))
+    """Delegates to freshness (C5): declared views, not every PNG on disk."""
+    from .freshness import check_freshness
+    from pathlib import Path as P
+    report = check_freshness(model, P(out_dir), kind="warn")
+    stale = []
+    for name in report["stale"] + report["missing"]:
+        if not name.endswith(".png"):
+            continue
+        pp = P(out_dir) / "png" / name
+        sc = read_render_sidecar(pp)
+        stale.append((pp, sc.get("model_hash") if sc else None))
     return stale
 
 
@@ -38,10 +37,10 @@ def publish(
     """
     out_dir = Path(out_dir)
     deliverables_dir = Path(deliverables_dir)
-    stale = verify_fresh(model, out_dir)
-    if stale and not force:
-        names = ", ".join(p.name for p, _ in stale)
-        raise RuntimeError(f"stale render(s) for model {model_hash(model)}: {names}")
+    from .freshness import check_freshness
+    report = check_freshness(model, Path(out_dir), kind="refuse")
+    if not report["is_fresh"] and not force:
+        raise RuntimeError(report["message"])
 
     dest = deliverables_dir / model.name
     written: list[Path] = []
