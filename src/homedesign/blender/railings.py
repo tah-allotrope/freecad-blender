@@ -3,6 +3,10 @@
 All geometry is a `make_box` composition (CON-004): parapets are 1100mm high
 panels inside the balcony rect (their outer face on the rect edge), and stair
 balustrades are per-tread rail panels that follow the flight slope.
+
+The parapet band list comes from `homedesign.parapet`, the same pure module the
+elevation writer draws from, so a `slatted` parapet cannot appear in one output
+and not the other.
 """
 from homedesign.constants import (
     BALUSTRADE_HEIGHT_MM,
@@ -10,6 +14,7 @@ from homedesign.constants import (
     PARAPET_THICKNESS_MM,
     RAIL_THICKNESS_MM,
 )
+from homedesign.parapet import parapet_bands
 
 from .geom import make_box
 
@@ -19,23 +24,29 @@ BALUSTRADE_HEIGHT_M = BALUSTRADE_HEIGHT_MM / 1000
 RAIL_THICKNESS_M = RAIL_THICKNESS_MM / 1000
 
 
-def build_parapet(rect_mm, top_z_m, sides, height_m, thickness_m, collection, material):
+def build_parapet(rect_mm, top_z_m, sides, height_m, thickness_m, collection, material,
+                  pattern: str = "solid"):
     """Parapet panels along the requested `sides` of a balcony rect (mm).
 
     Panels sit inside the room rect, their outer face on the rect edge, so they
-    never project past the plot regardless of the wall-alignment setting.
+    never project past the plot regardless of the wall-alignment setting. With
+    `pattern="slatted"` each side becomes a stack of horizontal slats separated
+    by open gaps, matching the pattern drawn on the front elevation.
     """
     x, y, w, d = rect_mm
-    xm, ym, wm, dm = x / 1000, y / 1000, w / 1000, d / 1000
+    bands = parapet_bands(
+        x, y, w, d, sides, pattern,
+        height_mm=height_m * 1000, thickness_mm=thickness_m * 1000,
+    )
     objs = []
-    if "north" in sides:
-        objs.append(make_box("parapet_n", xm, ym, top_z_m, wm, thickness_m, height_m, collection, material))
-    if "south" in sides:
-        objs.append(make_box("parapet_s", xm, ym + dm - thickness_m, top_z_m, wm, thickness_m, height_m, collection, material))
-    if "west" in sides:
-        objs.append(make_box("parapet_w", xm, ym, top_z_m, thickness_m, dm, height_m, collection, material))
-    if "east" in sides:
-        objs.append(make_box("parapet_e", xm + wm - thickness_m, ym, top_z_m, thickness_m, dm, height_m, collection, material))
+    for band in bands:
+        name = f"parapet_{band['side']}" if pattern == "solid" else f"parapet_{band['side']}_{band['index']}"
+        objs.append(make_box(
+            name,
+            band["x_mm"] / 1000, band["y_mm"] / 1000, top_z_m + band["z_off_mm"] / 1000,
+            band["w_mm"] / 1000, band["d_mm"] / 1000, band["h_mm"] / 1000,
+            collection, material,
+        ))
     return objs
 
 

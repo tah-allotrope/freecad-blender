@@ -445,3 +445,127 @@ All six phases implemented; pipeline severance fixed.
 
 **Next:** overnight `homedesign render --profile cycles` full 12-view bake (~6-10 h) + `homedesign pdf --require-fresh` + `publish` (without --force) + `docs/` viewer republish.
 
+
+---
+
+## Plan — 2026-09-03 Close out the two open render plans
+
+Completing the 25 outstanding tasks across
+`plans/2026-08-29-render-fidelity-construction-set-plan.md` (12) and
+`plans/2026-08-30-photoreal-render-overhaul-plan.md` (13). Triage commit `c5f04e1`
+established which tasks were genuinely done; these are the rest.
+
+### Group A — pure Python / schema (TDD: test first)
+- [x] RF-02-05 `get_material` resolves family through the compiled finish map
+- [x] RF-03-03 elevation draws opening divisions (mullions/transoms)
+- [x] RF-03-04 balcony parapet `pattern` (solid | slatted) in schema + railings
+- [x] RF-05-10 GLB size-budget test enforcing ASM-006
+- [x] PR-05-01/02/03 viewer: full/floors fetch external GLB, inline gate light-only, copy GLB
+- [x] PR-05-06 KTX2/Basis in `optimize_glb`, pass through when absent
+
+### Group B — real CC0 asset cache (network, once)
+- [x] PR-02-01 2K PBR sets for 7 families + interior/exterior HDRI from Poly Haven
+- [x] PR-02-02 ATTRIBUTION.md with real source URLs, licence and SHA-256
+- [x] PR-03-01 CC0 furniture GLBs per `_BUILDERS` kind
+
+### Group C — Blender-side geometry and shading
+- [x] PR-02-04 texture-first path in `make_procedural_material`
+- [x] PR-03-04 instance imported furniture via linked object data
+- [x] RF-05-01 upgrade the procedural furniture builders off box primitives
+- [x] PR-05-04 `bake_lightmap(resolution)` + GLB inclusion
+
+### Group D — viewer front-end (three.js)
+- [x] RF-05-06 Vietnamese room labels + level tags as sprites
+- [x] RF-05-07 two-point measurement tool (mm)
+- [x] RF-05-08 section sliders on Y and Z via clipping planes
+- [x] RF-05-09 layer toggles driven by object-name prefixes
+- [x] PR-05-05 HDRI environment in the viewer templates
+
+### Group E — build, publish, ledger
+- [ ] RF-06-01 clean full build, `final` profile, with glTF
+- [ ] PR-06-05 Cycles hero bake (CPU-only per hardware note; scope stated honestly)
+- [x] RF-03-09 / RF-06-08 / PR-06-04 fidelity ledger to rev.4 + review section
+- [ ] Republish `docs/`, commit, push
+
+**Constraint on record:** this machine has no GPU render path (UHD 620, 2018 driver) —
+Cycles is CPU-only, so a 12-view 512-sample bake is not a one-session operation. The
+Cycles scope actually run will be reported rather than claimed.
+
+## Review — 2026-09-03 Render plans closeout
+
+Both open render plans taken from 22 outstanding tasks to 1. What follows
+separates what was built from what was found to be *already* broken, because
+most of this session's value was in the second category.
+
+### Defects found in work previously recorded as complete
+
+1. **The elevation dropped every facade element and window division.**
+   `elevation.py` emitted `facade` and division primitives that no SVG or DXF
+   writer had a branch for. Both were silently discarded, so the generated
+   south elevation showed a blank wall while the ledger recorded (k) and (l) as
+   resolved. Both writers now paint them; the south elevation carries 21 facade
+   rects, 12 mullion bars and 98 parapet bands.
+2. **The asset cache was entirely placeholder.** 64x64 textures, a 2x2-pixel
+   HDRI, 412-byte empty GLBs, and an `ATTRIBUTION.md` whose every row read
+   `source: placeholder`. Replaced with real Poly Haven CC0 assets (2048x2048
+   PBR sets for six families, two HDRIs, ten furniture meshes) with source
+   URLs, licence and SHA-256 recorded. `scripts/fetch_assets.py` reproduces it.
+3. **`build_scene` never forwarded `show_neighbours`.** The keyword was
+   accepted and dropped before `_build_command`, so `--show-neighbours` did
+   nothing on any `build`. Fixed and covered by two tests.
+4. **The textured material path sampled a single texel.** It was wired to
+   `ShaderNodeTexCoord.UV`, and every mesh is a bmesh cube whose only UV layer
+   is empty. Renders looked exactly like the untextured ones. Now driven from
+   **Object** coordinates with `projection='BOX'`.
+5. **`set_finish_map` was never called.** The S3 finish resolver ran and
+   nothing consumed its result. Now installed per build, with `room_id`
+   threaded to the floor and wall call sites, so the authored `finishes` block
+   actually reaches the render: circulation and service floors become ceramic
+   tile, WC and kitchen walls become tiled.
+6. **Quantized GLB positions broke picking.** `gltf-transform quantize` stores
+   POSITION as normalized Int16; the viewer's three.js (r128) raycasts those
+   without applying the normalization, so a 20 m pick reported 902 m — the
+   measurement tool and tap-to-focus were both silently wrong. Quantization
+   dropped (costs ~2.4 MiB, well inside the 25 MiB budget) and a test asserts
+   POSITION stays float.
+7. **The pick ray itself was wrong.** `raycaster.setFromCamera` unprojects
+   NDC z=0.5, and `animate()` drives `camera.near` to millimetres against a
+   500 m far plane; at that ratio the direction collapsed to (0,0,-1)
+   regardless of where you tapped. Replaced with a projection-matrix-free ray
+   built from the camera's frustum angles.
+
+### Built this session
+
+- **Viewer tools** (RF-05-06..09): Vietnamese room labels and storey level tags
+  as sprites, a two-point ruler reading millimetres, Y and Z section sliders on
+  three.js clipping planes, and layer toggles by object-name prefix. Verified
+  in Chrome against a served build: the ruler reported 4323 mm against 4322 mm
+  computed from the hit points.
+- **Viewer delivery** (PR-05-01..03, 05-05, 05-06): `full`/`floors` fetch an
+  external GLB and `write_viewer` copies it beside the page; the 8 MiB inline
+  ceiling now gates only the `light` build; an equirectangular environment map
+  (a tone-mapped 512px JPEG of the cached HDRI, auto-exposed by metering the
+  sky) drives reflections; KTX2 compression runs when a compressor is present
+  and passes through when it is not.
+- **Geometry and drawings**: slatted parapet pattern shared by the 3D scene and
+  the elevation through one pure module (`parapet.py`); opening divisions drawn
+  on the elevation; twelve procedural furniture builders rebuilt off box
+  primitives with bevels, separated cushions, panelled doors, taps and cisterns;
+  furniture instanced through linked mesh data.
+- **`bake_lightmap(resolution)`** with a `--bake-lightmap` CLI flag.
+- **`homedesign/hdri.py`**: a Radiance RGBE decoder with tone mapping and sky
+  auto-exposure, so the HDRI can be previewed without Blender.
+
+### Not done, and why
+
+- **PR TASK-06-05, the full Cycles bake.** This machine has no GPU render path
+  (UHD 620, 2018 driver — see `lessons.md`), so Cycles is CPU-only. The
+  published stills are the `final` EEVEE profile at 1920x1080/256 samples,
+  which took ~65 minutes for twelve views; a 512-sample Cycles pass over the
+  same set is a multi-hour job that is not a single-session operation.
+- **A question for the owner:** the design's `finishes.by_room_type` lists
+  floor materials (`living: wood_board`, `bedroom: wood_board`), and S3 rule 3
+  applies `by_room_type` to floors *and wall faces*. Living and bedroom walls
+  therefore now render as wood boarding. That is faithful to the spec as
+  written; if the intent was floors only, the fix is in the design's
+  `finishes` block, not in the resolver.

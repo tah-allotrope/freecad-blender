@@ -43,11 +43,25 @@ def parse_args():
     p.add_argument("--reuse-blend", action="store_true", help="reopen existing .blend and skip geometry construction")
     p.add_argument("--export-gltf", action="store_true", help="export a GLB after saving the .blend")
     p.add_argument("--show-neighbours", action="store_true", default=False, help="include neighbour massing in hero stills")
+    p.add_argument("--bake-lightmap", type=int, default=0, metavar="PX",
+                   help="bake Cycles GI to a PXxPX lightmap per object before glTF export "
+                        "(CPU-bound: expect minutes per hundred objects)")
     return p.parse_args(argv)
 
 
 def clear_scene():
+    """Empty the file, and drop every cache that points into the old `bpy.data`.
+
+    `read_factory_settings` frees the previous file's datablocks, so any module
+    still holding a material or mesh reference from it is holding a dangling
+    pointer — reusing one yields geometry from a scene that no longer exists.
+    """
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    from homedesign.blender import asset_library, materials
+
+    materials._cache.clear()
+    materials._image_cache.clear()
+    asset_library.clear_cache()
 
 
 def new_collection(name):
@@ -72,7 +86,7 @@ def build_walls(storey, style, structure):
             continue
 
         mat_key = "wall_exterior" if wall["kind"] == "exterior" else "wall_partition"
-        mat = get_material(style, mat_key)
+        mat = get_material(style, mat_key, room_id=wall.get("room_id"))
 
         # Build the wall face by pure rectangle subtraction (S4): openings are
         # holes in (span, height) space, each fragment becomes one solid box.
@@ -107,7 +121,7 @@ def build_floors_and_stairs(storey, style, structure, topmost=False):
     for room in storey["rooms"]:
         rx, ry = room["rect"]["x"], room["rect"]["y"]
         rw, rd = room["rect"]["w"], room["rect"]["d"]
-        mat = get_material(style, floor_material_key(room["type"]))
+        mat = get_material(style, floor_material_key(room["type"]), room_id=room["id"])
         fragments = subtract_rects(rx, ry, rw, rd, voids_mm) if voids_mm else [(rx, ry, rw, rd)]
         for i, (fx, fy, fw, fd) in enumerate(fragments):
             x, y, w, d = fx / 1000, fy / 1000, fw / 1000, fd / 1000
@@ -167,6 +181,7 @@ def _add_balcony_parapets(storey, style, structure):
             railings.build_parapet(
                 (rect.x, rect.y, rect.w, rect.d), base_z, sides,
                 railings.PARAPET_HEIGHT_M, railings.PARAPET_THICKNESS_M, structure, mat,
+                pattern=room.get("parapet_pattern", "solid"),
             )
 
 
@@ -381,12 +396,23 @@ def _neighbours_enabled(model) -> bool:
         return bool(context["neighbours"])
     return model["plot_width_mm"] <= 6000
 
-def _add_neighbour_massing(model, structure):
-    """Party-wall massing for the sandwiched-urban-lot case: two blocks flanking
-    the plot (west/east only -- never south, the side the front camera shoots
-    from) plus alley carriageway/kerb/opposite. Dimensions from
-    ``site_context.resolve_context_boxes`` so the pure helper and the Blender
-    scene stay in sync (ASM-002/003)."""
+# The boxes that stand *up* out of the site rather than paving it. The block
+# opposite is 12 m tall across a 4 m alley, so from the front camera it hides
+# the lower five storeys outright — which is why it is opt-in (DEC-009).
+_MASSING_BOXES = ("opposite", "neighbour_west", "neighbour_east")
+
+
+def _add_neighbour_massing(model, structure, massing: bool = True):
+    """The alley section, and optionally the buildings around it.
+
+    The paving — carriageway and kerb — is always built: it is what makes the
+    ground read as a 4 m Saigon alley instead of the 15 m lawn pad that used to
+    blow out the `exterior_front` frame. The surrounding *massing* (the block
+    opposite and the two party walls) is gated on `massing`, because from the
+    front camera the opposite block stands between the viewer and the facade.
+
+    Dimensions come from ``site_context.resolve_context_boxes`` so the pure
+    helper and the Blender scene stay in sync (ASM-002/003)."""
     from homedesign.site_context import resolve_context_boxes
 
     style = model["style"]
@@ -401,6 +427,8 @@ def _add_neighbour_massing(model, structure):
         "ground": "ground",
     }
     for box in resolve_context_boxes(model, total_h_mm):
+        if not massing and box["name"] in _MASSING_BOXES:
+            continue
         palette_key = _FINISH_TO_PALETTE.get(box["finish"], "neighbour")
         mat = get_material(style, palette_key)
         # Names must start with ground/neighbour/street to be excluded by
@@ -424,19 +452,24 @@ def _add_neighbour_massing(model, structure):
 def build_environment(model, structure):
     # Alley + party walls (the green 15 m pad is gone -- lawn blew the
     # exterior_front frame and hid the party-wall condition).
-    if _neighbours_enabled(model) and model.get("show_neighbours", False):
-        # resolve_context_boxes already returns only carriageway/kerb/opposite
-        # when neighbours is False, so we always build the alley; the guard
-        # keeps the fallback rule (_neighbours_enabled) intact for the massing
-        # part while guaranteeing the alley is present.
-        _add_neighbour_massing(model, structure)
-    else:
-        # Unreachable but keeps the original branch visible.
-        style = model["style"]
-        ground_mat = get_material(style, "ground")
-        plot_w, plot_d = model["plot_width_mm"] / 1000, model["plot_depth_mm"] / 1000
-        pad = 15.0
-        make_box("ground", -pad, -pad, -0.3, plot_w + 2 * pad, plot_d + 2 * pad, 0.3, structure, ground_mat)
+    massing = _neighbours_enabled(model) and model.get("show_neighbours", False)
+    _add_neighbour_massing(model, structure, massing=massing)
+
+    # A ground plane for the shadows to land on, sized to the alley rather than
+    # to a 15 m lawn: wide enough to catch the building's shadow, tight enough
+    # that it never becomes the subject of the frame.
+    style = model["style"]
+    ground_mat = get_material(style, "ground")
+    plot_w, plot_d = model["plot_width_mm"] / 1000, model["plot_depth_mm"] / 1000
+    context = model.get("context") or {}
+    alley = context.get("alley_width_mm", 4000) / 1000
+    margin = 6.0
+    make_box(
+        "ground",
+        -margin, -(alley + margin), -0.31,
+        plot_w + 2 * margin, plot_d + alley + 2 * margin, 0.3,
+        structure, ground_mat,
+    )
 
     world = bpy.data.worlds.new("World")
     bpy.context.scene.world = world
@@ -782,11 +815,58 @@ def render(model_name, cams, out_dir, profile, views=None, skip_existing=False,
     return rendered
 
 
+def _viewer_room_labels(model: dict) -> list[dict]:
+    """Room name sprites for the viewer, in metres, at head height.
+
+    Vietnamese names come straight off the compiled model, so the viewer and
+    the plan sheets always call a room the same thing (RF TASK-05-06).
+    """
+    labels = []
+    for storey in model["storeys"]:
+        base_z = storey["base_z"] / 1000
+        head = min(1.6, storey["height_mm"] / 1000 * 0.5)
+        for room in storey["rooms"]:
+            name = room.get("name") or room.get("id")
+            if not name:
+                continue
+            r = room["rect"]
+            labels.append({
+                "text": str(name),
+                "x": (r["x"] + r["w"] / 2) / 1000,
+                "y": (r["y"] + r["d"] / 2) / 1000,
+                "z": base_z + head,
+                "storey": storey["name"],
+            })
+    return labels
+
+
+def _viewer_level_tags(model: dict) -> list[dict]:
+    """Storey level tags (`+3.400`) at the plot's front-west corner."""
+    tags = []
+    for storey in model["storeys"]:
+        z = storey["base_z"] / 1000
+        tags.append({
+            "text": f"{storey['name']} {z:+.3f}",
+            "x": 0.0,
+            "y": 0.0,
+            "z": z,
+            "storey": storey["name"],
+        })
+    return tags
+
+
 def main():
     args = parse_args()
     model = json.loads(Path(args.model).read_text())
     # allow CLI toggle for neighbour massing (DEC-009)
     model["show_neighbours"] = bool(getattr(args, "show_neighbours", False))
+    # Install the compiled finish map so `get_material` resolves families
+    # through the design's authored `finishes` block (S3) rather than the
+    # static palette table. Without this call the whole finishes pipeline is
+    # dead code — the resolver runs, and nothing consumes its answer.
+    from homedesign.blender.materials import set_finish_map
+
+    set_finish_map(model.get("finish_map"))
     style = model["style"]
 
     out_dir = Path(args.out)
@@ -844,6 +924,14 @@ def main():
         # Flatten procedural graphs back to flat base colours so the GLB
         # never carries image textures and stays under 6/25 MiB. The render
         # already consumed the procedural shading, so this is safe post-render.
+        if getattr(args, "bake_lightmap", 0):
+            try:
+                from homedesign.blender.materials import bake_lightmap
+
+                bake_lightmap(resolution=int(args.bake_lightmap))
+            except Exception as e:
+                print(f"bake_lightmap: skipped ({e})")
+            sys.stdout.flush()
         try:
             from homedesign.blender.materials import prepare_for_gltf_export
 
@@ -865,14 +953,36 @@ def main():
         )
         print(f"gltf: {glb_path}")
         sys.stdout.flush()
-        from homedesign.viewer import optimize_glb, write_floor_viewer, write_viewer
+        from homedesign.viewer import (
+            derive_light_glb,
+            optimize_glb,
+            write_floor_viewer,
+            write_viewer,
+        )
         before = glb_path.stat().st_size
         if optimize_glb(glb_path):
             print(f"glb optimize: {before} -> {glb_path.stat().st_size} bytes")
         else:
             print("glb optimize: skipped (npx not available or gltf-transform failed)")
         sys.stdout.flush()
-        write_viewer(model["name"], glb_path, out_dir)
+
+        rooms = _viewer_room_labels(model)
+        levels = _viewer_level_tags(model)
+        written = write_viewer(model["name"], glb_path, out_dir, rooms=rooms, levels=levels)
+        print(f"viewer: {written.html} (glb {written.glb})")
+
+        # The phone build is derived from the desktop build rather than
+        # re-exported, so the two can never disagree about geometry.
+        light_glb = glb_path.with_name(f"{model['name']}-light.glb")
+        try:
+            derive_light_glb(glb_path, light_glb)
+            light = write_viewer(model["name"], light_glb, out_dir, build="light",
+                                 rooms=rooms, levels=levels)
+            print(f"viewer light: {light.html} ({light_glb.stat().st_size} bytes)")
+        except Exception as e:
+            print(f"viewer light: skipped ({e})")
+        sys.stdout.flush()
+
         floors_path = write_floor_viewer(model["name"], glb_path, model["storeys"], out_dir / "svg", out_dir)
         if floors_path is None:
             print("floor viewer: skipped (plan SVGs not found -- run `plan` before `render --export-gltf`)")

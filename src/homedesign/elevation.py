@@ -14,11 +14,12 @@ from pathlib import Path
 
 import ezdxf
 
-from .constants import FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES, PARAPET_HEIGHT_MM, PARAPET_THICKNESS_MM, SLAB_BAND_MM
+from .constants import FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES, PARAPET_THICKNESS_MM, SLAB_BAND_MM
 from .model import CompiledModel
 from .plan2d import MARGIN_MM, MM_PER_PX, _scale_bar, _title_block
 from .rects import open_edges, subtract_rects
 from . import facade
+from . import parapet as parapet_mod
 from .xmltext import escape_text
 
 
@@ -128,12 +129,33 @@ def build_elevation(model: CompiledModel, side: str) -> list[dict]:
                 for opening in storey.openings:
                     if opening.wall_id != wall.id:
                         continue
+                    o_h = _opening_h(wall, opening, side, h0)
+                    o_z = storey.base_z + opening.sill_mm
+                    o_w = opening.width_mm
+                    o_height = opening.head_mm - opening.sill_mm
                     group.append({
-                        "kind": "opening", "x": _opening_h(wall, opening, side, h0),
-                        "z": storey.base_z + opening.sill_mm, "w": opening.width_mm,
-                        "h": opening.head_mm - opening.sill_mm,
+                        "kind": "opening", "x": o_h,
+                        "z": o_z, "w": o_w,
+                        "h": o_height,
                         "label": None, "type": opening.type, "depth": depth,
                     })
+                    # Mullions and transoms ride in the same group as their
+                    # host opening so they always overpaint the glass (S1.2).
+                    for bar in facade.opening_division_lines(
+                        o_w, o_height, getattr(opening, "divisions", None) or {}
+                    ):
+                        # north/west read left-to-right; south/east are mirrored
+                        # by _opening_h, so the bar offsets mirror with them.
+                        if side in ("north", "west"):
+                            bar_h = o_h + bar["x_mm"]
+                        else:
+                            bar_h = o_h + (o_w - bar["x_mm"] - bar["w_mm"])
+                        group.append({
+                            "kind": "mullion", "x": bar_h,
+                            "z": o_z + bar["y_mm"], "w": bar["w_mm"],
+                            "h": bar["h_mm"],
+                            "label": None, "type": opening.type, "depth": depth,
+                        })
             groups.append((depth, 0, h0, group))
 
         for room in storey.rooms:
@@ -154,12 +176,16 @@ def build_elevation(model: CompiledModel, side: str) -> list[dict]:
                 bands.append((rect.x, rect.y, t, rect.d))
             if "east" in sides:
                 bands.append((rect.x + rect.w - t, rect.y, t, rect.d))
+            pattern = getattr(room, "parapet_pattern", "solid") or "solid"
             for bx, by, bw, bd in bands:
                 h0, w_h, depth = _project_box(side, model, bx, by, bw, bd)
+                # One primitive for a solid parapet; one per slat for a slatted
+                # one, from the same band list the 3D scene builds from.
                 groups.append((depth, 1, h0, [{
-                    "kind": "parapet", "x": h0, "z": storey.base_z, "w": w_h,
-                    "h": PARAPET_HEIGHT_MM, "label": None, "type": None, "depth": depth,
-                }]))
+                    "kind": "parapet", "x": h0, "z": storey.base_z + slat["z_off_mm"],
+                    "w": w_h, "h": slat["h_mm"],
+                    "label": None, "type": pattern, "depth": depth,
+                } for slat in parapet_mod.elevation_bands(w_h, pattern)]))
 
         if storey.stairs:
             for t in storey.stairs.treads:
@@ -198,7 +224,7 @@ def build_elevation(model: CompiledModel, side: str) -> list[dict]:
     items: list[dict] = [
         {"kind": "ground", "x": 0.0, "z": 0.0, "w": canvas_width_mm, "h": 0.0, "label": None, "type": None},
     ]
-    solid = [p for p in projected if p["kind"] in ("wall", "roof", "parapet", "structure")]
+    solid = [p for p in projected if p["kind"] in ("wall", "roof", "parapet", "structure", "facade")]
     if solid:
         min_h = max(0.0, min(p["x"] for p in solid))
         max_h = min(canvas_width_mm, max(p["x"] + p["w"] for p in solid))
@@ -326,7 +352,19 @@ def _svg(items: list[dict], title: str, width_mm: float, total_h_mm: float) -> s
             parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
                          f'fill="none" stroke="#222" stroke-width="2"/>')
         elif kind == "parapet":
-            parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" fill="#666"/>')
+            # Outlined so a slatted parapet reads as separate bars rather than
+            # dissolving into one grey block against the wall behind it.
+            parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
+                         f'fill="#8a8a8a" stroke="#1a1a1a" stroke-width="0.8"/>')
+        elif kind == "facade":
+            # Projecting elements (pillars, fins, bands) sit proud of the wall,
+            # so they read lighter, with a crisp outline. The wall field is
+            # #555; anything within a few percent of that is invisible.
+            parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
+                         f'fill="#9a9a9a" stroke="#111" stroke-width="1.2"/>')
+        elif kind == "mullion":
+            parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" '
+                         f'fill="#bbb" stroke="#333" stroke-width="0.5"/>')
         elif kind == "structure":
             parts.append(f'<rect x="{sx:.1f}" y="{sy:.1f}" width="{sw:.1f}" height="{sh:.1f}" fill="#333"/>')
         elif kind == "roof":
@@ -351,7 +389,7 @@ def _svg(items: list[dict], title: str, width_mm: float, total_h_mm: float) -> s
             parts.append(f'<text x="{sx + 2:.1f}" y="{sy:.1f}" font-size="9" fill="#555">{escape_text(item["label"])}</text>')
 
     # Overall height dimension on the right, labelled in metres.
-    solid = [i for i in items if i["kind"] in ("wall", "roof", "parapet", "structure")]
+    solid = [i for i in items if i["kind"] in ("wall", "roof", "parapet", "structure", "facade")]
     max_z = max((i["z"] + i["h"] for i in solid), default=total_h_mm)
     right_x = px_x(width_mm) + 40.0
     y_top, y_bot = px_y_top(max_z, 0.0), px_y_top(0.0, 0.0)
@@ -392,8 +430,10 @@ def _dxf(items: list[dict], out_path: Path) -> None:
         x, z, w = item["x"], item["z"], item["w"]
         if kind in ("wall", "cut_wall", "cut_slab"):
             poly(item, "ELEV" if kind == "wall" else "SECTION")
-        elif kind in ("parapet", "structure"):
+        elif kind in ("parapet", "structure", "facade"):
             poly(item, "ELEV")
+        elif kind == "mullion":
+            poly(item, "WINDOWS")
         elif kind == "roof":
             msp.add_lwpolyline(
                 [(h, z) for h, z in item["points"]], close=True, dxfattribs={"layer": "ELEV"}

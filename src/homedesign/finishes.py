@@ -72,3 +72,81 @@ def finish_schedule_rows(model) -> list[dict]:
             rows.append({"finish": v, "element_kind": kind, "location": k})
     rows.sort(key=lambda r: (r["element_kind"], r["location"]))
     return rows
+
+# --- Palette key -> procedural family (RF TASK-02-05) ----------------------
+#
+# `materials.get_material` is handed a palette key ("floor_bathroom"); the
+# compiled model carries a resolved finish map keyed by element kind
+# ("element:floor") and by room ("room:khach:floor"). This table is the join
+# between the two, and it lives here rather than in `materials` so it can be
+# tested without Blender.
+
+PROCEDURAL_FAMILIES = (
+    "plaster_painted", "ceramic_tile", "stone_slab", "wood_board",
+    "metal_brushed", "glass_clear", "concrete_formed",
+)
+
+FAMILY_FOR_PALETTE_KEY = {
+    "wall_exterior": "plaster_painted",
+    "wall_partition": "plaster_painted",
+    "floor_default": "wood_board",
+    "floor_bathroom": "ceramic_tile",
+    "floor_kitchen": "ceramic_tile",
+    "floor_garage": "stone_slab",
+    "roof": "concrete_formed",
+    "frame": "metal_brushed",
+    "glass": "glass_clear",
+    "door_leaf": "wood_board",
+    "furniture": "wood_board",
+    "upholstery": "plaster_painted",
+    "cabinetry": "wood_board",
+    "porcelain": "ceramic_tile",
+    "vehicle": "metal_brushed",
+    "ground": "concrete_formed",
+    "neighbour": "plaster_painted",
+    "street": "concrete_formed",
+}
+FAMILY_FOR_PALETTE_KEY.update({f: f for f in PROCEDURAL_FAMILIES})
+
+# Which finish-map element kind a palette key is governed by.
+ELEMENT_FOR_PALETTE_KEY = {
+    "wall_exterior": "wall",
+    "wall_partition": "wall",
+    "floor_default": "floor",
+    "floor_bathroom": "floor",
+    "floor_kitchen": "floor",
+    "floor_garage": "floor",
+    "roof": "ceiling",
+    "frame": "frame",
+    "glass": "glass",
+    "door_leaf": "leaf",
+    "ground": "ground",
+    "neighbour": "neighbour",
+    "street": "street",
+}
+
+
+def family_for_palette_key(key: str, finish_map: dict | None,
+                           room_id: str | None = None) -> str:
+    """The procedural family a palette key should render as.
+
+    Resolution order (S3): the room-scoped entry in the compiled finish map,
+    then the element-kind entry, then the static table. A finish-map value that
+    is not a known procedural family is ignored rather than raising, so an
+    authored finish name the renderer has no graph for degrades to the static
+    family instead of failing the build.
+    """
+    default = FAMILY_FOR_PALETTE_KEY.get(key, "plaster_painted")
+    if not finish_map:
+        return default
+    element = ELEMENT_FOR_PALETTE_KEY.get(key)
+    candidates = []
+    if room_id and element:
+        candidates.append(f"room:{room_id}:{element}")
+    if element:
+        candidates.append(f"element:{element}")
+    for candidate in candidates:
+        value = finish_map.get(candidate)
+        if value in PROCEDURAL_FAMILIES:
+            return value
+    return default

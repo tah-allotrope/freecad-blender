@@ -625,7 +625,8 @@
             "y": 3500,
             "w": 3960,
             "d": 1400
-          }
+          },
+          "parapet_pattern": "slatted"
         },
         {
           "id": "ngu_truoc_f2",
@@ -974,7 +975,8 @@
             "y": 3500,
             "w": 3960,
             "d": 1400
-          }
+          },
+          "parapet_pattern": "slatted"
         },
         {
           "id": "ngu_truoc_f3",
@@ -1323,7 +1325,8 @@
             "y": 3500,
             "w": 3960,
             "d": 1400
-          }
+          },
+          "parapet_pattern": "slatted"
         },
         {
           "id": "ngu_truoc_f4",
@@ -1672,7 +1675,8 @@
             "y": 3500,
             "w": 3960,
             "d": 1400
-          }
+          },
+          "parapet_pattern": "slatted"
         },
         {
           "id": "tho_f5",

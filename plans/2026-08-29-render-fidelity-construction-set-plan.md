@@ -1,7 +1,7 @@
 ---
 title: "Render Fidelity for the Construction Set"
 date: "2026-08-29"
-status: "open — phases 1, 4 and most of 6 shipped in 07f9c24, but the plan's own claims for facade/joinery were unbuilt (re-done in 2026-08-30-photoreal-render-overhaul-plan.md) and the phase-5 viewer tooling (room labels, measurement tool, section slider, layer toggles, GLB size-budget test), the slatted parapet pattern, elevation divisions and the rev.4 fidelity ledger are still missing."
+status: "complete — all 49 tasks done. Phase 5 viewer tooling (labels, ruler, section sliders, layer toggles), the slatted parapet, elevation divisions and the rev.4 ledger landed 2026-09-03; final-profile build of all 12 views published with an 18.1 MB full GLB and a 5.8 MiB light build."
 request: "Enhance the 3D render of designs/contractor-as-drawn.json for best accuracy and visual fidelity against the contractor's drawing set, and deliver it to the construction team."
 plan_type: "multi-phase"
 research_inputs:
@@ -513,7 +513,7 @@ groups, and print it as a finish schedule the crew can read.
   `metal_brushed`, `glass_clear`, `concrete_formed`. Each takes a base colour, a roughness and
   a scale in millimetres, and builds nodes producing surface variation — grout grids for tile,
   noise for plaster and concrete, anisotropic streaking for metal, grain for wood.
-- [ ] TASK-02-05: Rewire `get_material(style, key)` to consult the resolved finish map first
+- [x] TASK-02-05: Rewire `get_material(style, key)` to consult the resolved finish map first
   and fall back to `PALETTES` (S3 rule 5) so specs without a `finishes` block are unchanged.
 - [x] TASK-02-06: Author the `finishes` block in `designs/contractor-as-drawn.json` using
   ordinary Vietnamese domestic construction finishes: painted plaster walls, ceramic floor
@@ -601,9 +601,9 @@ two separately judged pieces — get the first fully right before starting the s
 - [x] TASK-03-02: Extend `src/homedesign/blender/joinery.py::build_opening_furniture` to emit
   mullions and transoms subdividing the glazed area according to `divisions`. A 1 × 1 division
   must produce byte-identical geometry to today's output.
-- [ ] TASK-03-03: Extend `src/homedesign/elevation.py::build_elevation` to draw the same
+- [x] TASK-03-03: Extend `src/homedesign/elevation.py::build_elevation` to draw the same
   subdivision lines, driven by the same pure resolver as the 3D path.
-- [ ] TASK-03-04: Add a `pattern` field to the balcony parapet path with values `solid`
+- [x] TASK-03-04: Add a `pattern` field to the balcony parapet path with values `solid`
   (today's behaviour, the default) and `slatted` (vertical bars at a stated pitch). Implement
   `slatted` in `src/homedesign/blender/railings.py::build_parapet`.
 - [x] TASK-03-05: Read `output/contractor_pdf_png/MB_MAI_-_MD-Model.png` at 8–24× zoom and
@@ -618,7 +618,7 @@ two separately judged pieces — get the first fully right before starting the s
   resolver.
 - [x] TASK-03-08: Author the measured facade elements into `designs/contractor-as-drawn.json`
   and the opening `divisions` read from the same sheet.
-- [ ] TASK-03-09: Update `designs/contractor-as-drawn.fidelity.md` to rev.4, closing ledger
+- [x] TASK-03-09: Update `designs/contractor-as-drawn.fidelity.md` to rev.4, closing ledger
   items k (facade articulation), l (undivided openings) and m (plain parapets), and adding any
   new open item created by ASM-001.
 
@@ -778,7 +778,7 @@ Make the interiors credible, and turn the viewer from a navigation toy into an i
 crew can measure, section and label with — in two builds sized for two very different devices.
 
 **Tasks**
-- [ ] TASK-05-01: Upgrade the twelve builders in
+- [x] TASK-05-01: Upgrade the twelve builders in
   `src/homedesign/blender/procedural_furniture.py` from box primitives to credible geometry:
   bevelled edges, separated cushions and frames on seating, panelled doors on cabinetry, taps
   and cisterns on sanitaryware. Use procedural geometry only — do not import third-party assets
@@ -795,15 +795,15 @@ crew can measure, section and label with — in two builds sized for two very di
 - [x] TASK-05-05: Add a visible build badge to both viewer templates reading `PHIÊN BẢN NHẸ —
   ĐIỆN THOẠI` for the light build and `PHIÊN BẢN ĐẦY ĐỦ — MÁY TÍNH` for the full build, so the
   two cannot be confused.
-- [ ] TASK-05-06: Add Vietnamese room labels and storey level tags as 3D sprites in the viewer,
+- [x] TASK-05-06: Add Vietnamese room labels and storey level tags as 3D sprites in the viewer,
   reading the room name and `+X.XXX` level string straight from the compiled model.
-- [ ] TASK-05-07: Add a two-point measurement tool: tap two surfaces, draw a line, display the
+- [x] TASK-05-07: Add a two-point measurement tool: tap two surfaces, draw a line, display the
   distance in millimetres to the nearest 1 mm.
-- [ ] TASK-05-08: Add a section slider cutting the model on the Y axis (along the 25 m depth)
+- [x] TASK-05-08: Add a section slider cutting the model on the Y axis (along the 25 m depth)
   and a second cutting on Z (height), implemented with three.js clipping planes.
-- [ ] TASK-05-09: Add layer toggles for structure, walls, openings and furniture, driven by
+- [x] TASK-05-09: Add layer toggles for structure, walls, openings and furniture, driven by
   object-name prefixes already emitted by `build_scene.py`.
-- [ ] TASK-05-10: Add a GLB size-budget test enforcing ASM-006.
+- [x] TASK-05-10: Add a GLB size-budget test enforcing ASM-006.
 
 **File Changes**
 - `src/homedesign/blender/procedural_furniture.py` (modify): upgrade all twelve `_build_*`
@@ -874,7 +874,7 @@ Produce the final artifacts in one run, get them to the crew through all three c
 what was done in a self-contained HTML report, and land the work in version control.
 
 **Tasks**
-- [ ] TASK-06-01: Run a clean full build of every view at the `final` profile with glTF export.
+- [x] TASK-06-01: Run a clean full build of every view at the `final` profile with glTF export.
 - [x] TASK-06-02: Run `homedesign publish` and confirm it no longer blocks — every render
   sidecar hash must match the new `model_hash`.
 - [x] TASK-06-03: Copy the published viewer HTML files into `docs/` and update
@@ -891,7 +891,7 @@ what was done in a self-contained HTML report, and land the work in version cont
   pairs for the exterior and for at least three interiors; the parity report figures for every
   elevation side; the finish schedule; the list of fidelity-ledger items closed and opened; the
   GLB sizes against their budgets; and the render time.
-- [ ] TASK-06-08: Update `designs/contractor-as-drawn.fidelity.md` to its final revision and
+- [x] TASK-06-08: Update `designs/contractor-as-drawn.fidelity.md` to its final revision and
   `activeContext.md` with a review section recording what shipped.
 - [x] TASK-06-09: Commit and push per ASM-008.
 

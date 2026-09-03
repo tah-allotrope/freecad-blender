@@ -83,9 +83,14 @@ def test_pdf_require_fresh_raises_on_stale_render(tmp_path, monkeypatch):
 
 
 def test_write_viewer_inlines_glb(tmp_path):
+    """The light phone build stays a single offline file (DEC-006).
+
+    The full build now serves an external GLB instead; that contract is
+    covered in tests/test_render_fidelity.py.
+    """
     glb = tmp_path / "mini.glb"
     glb.write_bytes(b"\x00\x01GLB")
-    html_path = write_viewer("mini", glb, tmp_path)
+    html_path = write_viewer("mini", glb, tmp_path, build="light").html
     html = html_path.read_text(encoding="utf-8")
     assert "mini" in html
     assert "atob(" in html  # GLB embedded inline (under the 8MB limit)

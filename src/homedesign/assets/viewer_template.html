@@ -41,7 +41,23 @@
   </div>
   <div id="hud">drag/tap-drag to orbit · pinch/scroll to zoom · two-finger or right-drag to pan · tap a spot to step closer — <a href="#" id="hud-dismiss" style="color:#8ab4ff">Ẩn</a></div>
 </div>
-<div id="bottom-bar" style="position:absolute;left:0;right:0;bottom:0;height:44px;min-height:44px;background:rgba(10,12,16,0.96);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 10px;z-index:998;box-sizing:border-box;gap:8px"><button id="reset-btn" type="button" style="padding:8px 14px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#d8dbe0;font:inherit;font-size:12px;cursor:pointer">Reset view</button><span id="bottom-floor" style="font-size:12px;color:#9aa0a6">Tầng 1/7 • +0.00m</span><button id="help-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Trợ giúp điều hướng">?</button></div>
+<div id="tools" style="position:absolute;right:12px;top:56px;width:214px;max-width:calc(100vw - 24px);background:rgba(10,12,16,0.92);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;z-index:999;color:#d8dbe0;font-size:12px;box-sizing:border-box;display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong style="font-size:12px;letter-spacing:0.04em">CÔNG CỤ</strong><button id="tools-close" type="button" style="background:none;border:none;color:#9aa0a6;font-size:16px;cursor:pointer;line-height:1">&times;</button></div>
+  <label style="display:flex;align-items:center;gap:8px;margin:7px 0"><input type="checkbox" id="tg-labels"> Nhãn phòng &amp; cao độ</label>
+  <label style="display:flex;align-items:center;gap:8px;margin:7px 0"><input type="checkbox" id="tg-measure"> Đo khoảng cách</label>
+  <div id="measure-readout" style="display:none;margin:4px 0 8px;padding:6px 8px;background:rgba(138,180,255,0.12);border-radius:6px;color:#cfe0ff">Chạm hai điểm</div>
+  <div style="border-top:1px solid rgba(255,255,255,0.1);margin:9px 0 7px"></div>
+  <div style="margin-bottom:4px;color:#9aa0a6">MẶT CẮT</div>
+  <label style="display:block;margin:5px 0">Theo chiều sâu (Y) <span id="cut-y-val" style="color:#9aa0a6"></span><input type="range" id="cut-y" min="0" max="100" value="100" style="width:100%"></label>
+  <label style="display:block;margin:5px 0">Theo chiều cao (Z) <span id="cut-z-val" style="color:#9aa0a6"></span><input type="range" id="cut-z" min="0" max="100" value="100" style="width:100%"></label>
+  <div style="border-top:1px solid rgba(255,255,255,0.1);margin:9px 0 7px"></div>
+  <div style="margin-bottom:4px;color:#9aa0a6">LỚP</div>
+  <label style="display:flex;align-items:center;gap:8px;margin:5px 0"><input type="checkbox" class="tg-layer" data-layer="structure" checked> Kết cấu</label>
+  <label style="display:flex;align-items:center;gap:8px;margin:5px 0"><input type="checkbox" class="tg-layer" data-layer="walls" checked> Tường</label>
+  <label style="display:flex;align-items:center;gap:8px;margin:5px 0"><input type="checkbox" class="tg-layer" data-layer="openings" checked> Cửa &amp; cửa sổ</label>
+  <label style="display:flex;align-items:center;gap:8px;margin:5px 0"><input type="checkbox" class="tg-layer" data-layer="furniture" checked> Nội thất</label>
+</div>
+<div id="bottom-bar" style="position:absolute;left:0;right:0;bottom:0;height:44px;min-height:44px;background:rgba(10,12,16,0.96);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 10px;z-index:998;box-sizing:border-box;gap:8px"><button id="reset-btn" type="button" style="padding:8px 14px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#d8dbe0;font:inherit;font-size:12px;cursor:pointer">Reset view</button><span id="bottom-floor" style="font-size:12px;color:#9aa0a6">Tầng 1/7 • +0.00m</span><button id="tools-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Công cụ: nhãn, đo, mặt cắt, lớp">&#9881;</button><button id="help-btn" type="button" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:#d8dbe0;font-size:14px;cursor:pointer" title="Trợ giúp điều hướng">?</button></div>
 <script>__THREE_JS__</script>
 <script>__GLTF_LOADER__</script>
 <script>__ORBIT_CONTROLS__</script>
@@ -102,6 +118,24 @@
   }
   scene.background = makeSkyTexture();
 
+  // Equirectangular environment (PR TASK-05-05). A small tone-mapped JPEG of
+  // the same cached HDRI the offline render uses, inlined as a data URI, so
+  // glass and metal reflect a real sky instead of flat grey. Absent on builds
+  // where the HDRI could not be decoded — the gradient above stands in.
+  var ENV_MAP_URI = '__ENV_MAP__';
+  if (ENV_MAP_URI) {
+    try {
+      new THREE.TextureLoader().load(ENV_MAP_URI, function (tex) {
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+        // Environment only. The map is 512px so it can inline, which is ample
+        // for reflections but visibly soft as a backdrop — the procedural sky
+        // gradient stays the background.
+        scene.environment = tex;
+      });
+    } catch (e) { /* keep the gradient */ }
+  }
+
   var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 500);
   // The GLB is exported Blender-native (export_yup=False): Z is vertical,
   // not three.js's default Y. Without this, OrbitControls orbits around the
@@ -146,6 +180,8 @@
 
   var loader = new THREE.GLTFLoader();
   var modelRoot = null;
+  var modelBox = null;
+  var measureActive = false;
   var sceneRadius = 10;
   var homeState = null;
 
@@ -185,6 +221,7 @@
     modelRoot = root;
 
     var box = fitBox(root);
+    modelBox = box;
     var size = new THREE.Vector3();
     box.getSize(size);
     var centre = new THREE.Vector3();
@@ -267,6 +304,24 @@
   // stays pinned to the building's centre. A drag (or a second finger, for
   // pinch/pan) is never mistaken for a tap. --
   var raycaster = new THREE.Raycaster();
+
+  // Build the pick ray from the camera's own frustum angles rather than
+  // `setFromCamera`. That helper unprojects NDC z=0.5 through
+  // `projectionMatrixInverse`, and `animate()` drives `camera.near` down to
+  // millimetres against a 500 m far plane — at a 1:100000 ratio the
+  // unprojected point lands within float noise of the camera and the
+  // direction collapses to garbage (measured: (0,0,-1) regardless of where
+  // you tap). This form is exact for any near/far.
+  function setRayFromNdc(ndc) {
+    var tanHalf = Math.tan((camera.fov * 0.5) * Math.PI / 180);
+    var dir = new THREE.Vector3(
+      ndc.x * tanHalf * camera.aspect,
+      ndc.y * tanHalf,
+      -1
+    ).applyQuaternion(camera.quaternion).normalize();
+    raycaster.set(camera.position.clone(), dir);
+    return raycaster;
+  }
   var pointer = new THREE.Vector2();
   var downPos = null;
   var downTime = 0;
@@ -302,8 +357,14 @@
     if (!wasTap) return;
 
     var ndc = pointerNdc(ev);
-    pointer.set(ndc.x, ndc.y);
-    raycaster.setFromCamera(pointer, camera);
+    // While the measure tool is armed a tap sets a measurement point instead
+    // of flying the camera — otherwise picking the second point moves the
+    // view out from under the first.
+    if (measureActive) {
+      if (window.__handleMeasureTap) window.__handleMeasureTap(ndc);
+      return;
+    }
+    setRayFromNdc(ndc);
     var hits = raycaster.intersectObject(modelRoot, true);
     if (!hits.length) return;
 
@@ -374,16 +435,249 @@
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
 
+  // ---------------------------------------------------------------------
+  // Construction tools: room labels, a two-point measure, section planes and
+  // layer toggles (RF TASK-05-06 .. 05-09). Everything below is inert until
+  // the model has loaded; every handler no-ops when modelRoot is null.
+  // ---------------------------------------------------------------------
+  var ROOM_LABELS = __ROOM_LABELS__;
+  var LEVEL_TAGS = __LEVEL_TAGS__;
+
+  var toolsPanel = document.getElementById('tools');
+  var toolsBtn = document.getElementById('tools-btn');
+  var toolsClose = document.getElementById('tools-close');
+  if (toolsBtn) toolsBtn.addEventListener('click', function () {
+    toolsPanel.style.display = toolsPanel.style.display === 'none' ? 'block' : 'none';
+  });
+  if (toolsClose) toolsClose.addEventListener('click', function () {
+    toolsPanel.style.display = 'none';
+  });
+
+  // --- label sprites ----------------------------------------------------
+  function makeLabelSprite(text, accent) {
+    var pad = 12, font = 34;
+    var measureCanvas = document.createElement('canvas');
+    var mctx = measureCanvas.getContext('2d');
+    mctx.font = font + 'px "Segoe UI", sans-serif';
+    var w = Math.ceil(mctx.measureText(text).width) + pad * 2;
+    var h = font + pad * 2;
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var g = c.getContext('2d');
+    g.fillStyle = accent ? 'rgba(18,32,58,0.88)' : 'rgba(12,14,18,0.82)';
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = accent ? 'rgba(138,180,255,0.9)' : 'rgba(255,255,255,0.28)';
+    g.lineWidth = 2;
+    g.strokeRect(1, 1, w - 2, h - 2);
+    g.fillStyle = accent ? '#cfe0ff' : '#e6e8ec';
+    g.font = font + 'px "Segoe UI", sans-serif';
+    g.textBaseline = 'middle';
+    g.fillText(text, pad, h / 2);
+    var tex = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+    var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthTest: false, depthWrite: false
+    }));
+    sprite.renderOrder = 999;
+    sprite.userData.aspect = w / h;
+    return sprite;
+  }
+
+  var labelGroup = new THREE.Group();
+  labelGroup.visible = false;
+  scene.add(labelGroup);
+
+  function buildLabels() {
+    var height = Math.max(0.35, sceneRadius * 0.018);
+    function add(entry, accent) {
+      if (!entry || !entry.text) return;
+      var sprite = makeLabelSprite(String(entry.text), accent);
+      sprite.position.set(entry.x || 0, entry.y || 0, entry.z || 0);
+      sprite.scale.set(height * sprite.userData.aspect, height, 1);
+      labelGroup.add(sprite);
+    }
+    ROOM_LABELS.forEach(function (r) { add(r, false); });
+    LEVEL_TAGS.forEach(function (l) { add(l, true); });
+  }
+
+  var labelToggle = document.getElementById('tg-labels');
+  if (labelToggle) labelToggle.addEventListener('change', function () {
+    if (labelToggle.checked && labelGroup.children.length === 0) buildLabels();
+    labelGroup.visible = labelToggle.checked;
+  });
+
+  // --- two-point measurement -------------------------------------------
+  var measureToggle = document.getElementById('tg-measure');
+  var measureReadout = document.getElementById('measure-readout');
+  var measureGroup = new THREE.Group();
+  scene.add(measureGroup);
+  var measurePoints = [];
+
+  function clearMeasure() {
+    while (measureGroup.children.length) {
+      var child = measureGroup.children.pop();
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+      measureGroup.remove(child);
+    }
+    measurePoints = [];
+  }
+
+  function addMeasureDot(point) {
+    var r = Math.max(sceneRadius * 0.004, 0.02);
+    var dot = new THREE.Mesh(
+      new THREE.SphereGeometry(r, 12, 8),
+      new THREE.MeshBasicMaterial({ color: 0x8ab4ff, depthTest: false })
+    );
+    dot.renderOrder = 998;
+    dot.position.copy(point);
+    measureGroup.add(dot);
+  }
+
+  function drawMeasure(a, b) {
+    var geom = new THREE.BufferGeometry().setFromPoints([a, b]);
+    var line = new THREE.Line(geom, new THREE.LineBasicMaterial({
+      color: 0x8ab4ff, depthTest: false
+    }));
+    line.renderOrder = 998;
+    measureGroup.add(line);
+
+    var mm = Math.round(a.distanceTo(b) * 1000);
+    var label = makeLabelSprite(mm + ' mm', true);
+    var height = Math.max(0.3, sceneRadius * 0.016);
+    label.position.copy(a).add(b).multiplyScalar(0.5);
+    label.scale.set(height * label.userData.aspect, height, 1);
+    measureGroup.add(label);
+    if (measureReadout) measureReadout.textContent = mm + ' mm';
+  }
+
+  function handleMeasureTap(ndc) {
+    if (!modelRoot) return;
+    setRayFromNdc(ndc);
+    var hits = raycaster.intersectObject(modelRoot, true);
+    if (!hits.length) {
+      if (measureReadout) measureReadout.textContent = 'Khong trung be mat nao';
+      return;
+    }
+    if (measurePoints.length === 2) clearMeasure();
+    var point = hits[0].point.clone();
+    measurePoints.push(point);
+    addMeasureDot(point);
+    if (measurePoints.length === 2) {
+      drawMeasure(measurePoints[0], measurePoints[1]);
+    } else if (measureReadout) {
+      measureReadout.textContent = 'Cham diem thu hai';
+    }
+  }
+  window.__handleMeasureTap = handleMeasureTap;
+
+  if (measureToggle) measureToggle.addEventListener('change', function () {
+    measureActive = measureToggle.checked;
+    if (measureReadout) {
+      measureReadout.style.display = measureActive ? 'block' : 'none';
+      measureReadout.textContent = 'Cham hai diem';
+    }
+    if (!measureActive) clearMeasure();
+  });
+
+  // --- section planes ---------------------------------------------------
+  // Y cuts along the 25 m depth, Z cuts through the height; both are
+  // three.js clipping planes applied to every material in the model.
+  renderer.localClippingEnabled = true;
+  var clipY = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+  var clipZ = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+  var clipEnabled = { y: false, z: false };
+
+  function applyClipping() {
+    if (!modelRoot) return;
+    var planes = [];
+    if (clipEnabled.y) planes.push(clipY);
+    if (clipEnabled.z) planes.push(clipZ);
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (m) {
+        if (!m) return;
+        m.clippingPlanes = planes.length ? planes : null;
+        m.clipShadows = true;
+        m.needsUpdate = true;
+      });
+    });
+  }
+
+  function wireCutSlider(id, valueId, plane, axis) {
+    var slider = document.getElementById(id);
+    var readout = document.getElementById(valueId);
+    if (!slider) return;
+    slider.addEventListener('input', function () {
+      if (!modelBox) return;
+      var frac = Number(slider.value) / 100;
+      var lo = modelBox.min[axis], hi = modelBox.max[axis];
+      var at = lo + (hi - lo) * frac;
+      // The normal points down-axis, so the constant is the cut coordinate:
+      // everything with axis > at is removed.
+      plane.constant = at;
+      clipEnabled[axis] = frac < 0.999;
+      if (readout) readout.textContent = clipEnabled[axis] ? at.toFixed(2) + ' m' : '';
+      applyClipping();
+    });
+  }
+  wireCutSlider('cut-y', 'cut-y-val', clipY, 'y');
+  wireCutSlider('cut-z', 'cut-z-val', clipZ, 'z');
+
+  // --- layer toggles ----------------------------------------------------
+  // Driven by the object-name prefixes build_scene.py already emits, so no
+  // extra metadata has to travel in the GLB.
+  var LAYER_PREFIXES = {
+    structure: ['slab', 'structure', 'stair', 'tread', 'beam', 'roof', 'facade'],
+    walls: ['wall', 'parapet', 'skirting', 'ceiling', 'floor', 'reveal', 'rail'],
+    openings: ['frame', 'glass', 'leaf', 'door', 'window', 'sill', 'lintel', 'bar'],
+    furniture: ['furn', 'bed', 'sofa', 'table', 'chair', 'kitchen', 'wc', 'shelving',
+                'console', 'car', 'planter', 'desk', 'wardrobe']
+  };
+
+  function layerOf(name) {
+    var lower = String(name || '').toLowerCase();
+    var keys = Object.keys(LAYER_PREFIXES);
+    for (var i = 0; i < keys.length; i++) {
+      var prefixes = LAYER_PREFIXES[keys[i]];
+      for (var j = 0; j < prefixes.length; j++) {
+        var pfx = prefixes[j];
+        if (lower.indexOf(pfx) === 0 || lower.indexOf('_' + pfx) > -1) return keys[i];
+      }
+    }
+    return null;
+  }
+
+  function applyLayers() {
+    if (!modelRoot) return;
+    var state = {};
+    Array.prototype.forEach.call(document.querySelectorAll('.tg-layer'), function (box) {
+      state[box.getAttribute('data-layer')] = box.checked;
+    });
+    modelRoot.traverse(function (obj) {
+      if (!obj.isMesh) return;
+      var layer = layerOf(obj.name);
+      if (layer) obj.visible = state[layer] !== false;
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tg-layer'), function (box) {
+    box.addEventListener('change', applyLayers);
+  });
+
   function animate() {
     requestAnimationFrame(animate);
     // Keep the near/far planes tight around the current dolly distance so
     // walking up close to a wall doesn't clip it, while still covering the
     // whole building when zoomed out.
     var dist = camera.position.distanceTo(controls.target);
-    var nearWanted = Math.max(sceneRadius / 2000, dist / 200);
+    var farWanted = Math.max(sceneRadius * 50, dist * 10);
+    // Cap the ratio at 1:20000; past that the depth buffer z-fights on
+    // coplanar slabs even though picking no longer depends on it.
+    var nearWanted = Math.max(sceneRadius / 2000, dist / 200, farWanted / 20000);
     if (Math.abs(camera.near - nearWanted) > camera.near * 0.2) {
       camera.near = nearWanted;
-      camera.far = Math.max(sceneRadius * 50, dist * 10);
+      camera.far = farWanted;
       camera.updateProjectionMatrix();
     }
     controls.update();

@@ -1,74 +1,155 @@
-"""GLB import, fit, place (PHASE-03)."""
+"""Place cached CC0 furniture meshes (PR TASK-03-02 / 03-04). Runs in Blender.
+
+A kind's GLB is imported **once** per session into a template list of mesh
+datablocks. Every placement then creates new objects that *link* those same
+datablocks, so a dining room with twelve chairs holds one chair mesh in memory
+and one in the exported GLB, not twelve.
+
+Each placement is fitted non-uniformly to the `FurnitureItem`'s w/d/h box —
+the footprint the collision-resolved placement already reserved — rotated
+about the footprint centre by `rot_deg`, and named `furn_<kind>_*` so the
+viewer's layer toggles can find it.
+"""
 from __future__ import annotations
+
+import math
 from pathlib import Path
+
 try:
     from homedesign import asset_cache
-    _HAS = True
-except Exception:
-    _HAS = False
+    _HAS_CACHE = True
+except Exception:  # pragma: no cover
+    asset_cache = None
+    _HAS_CACHE = False
 
-_cache = {}
+# kind -> (list of mesh datablocks, local bbox min, local bbox max) or None
+_templates: dict[str, tuple | None] = {}
+
+
+def _import_template(kind: str, path: Path):
+    """Import a kind's GLB once and keep its mesh datablocks.
+
+    The imported objects are removed from the scene afterwards; only their mesh
+    data survives, which is what later placements link to.
+    """
+    import bpy
+
+    before = set(bpy.data.objects.keys())
+    bpy.ops.import_scene.gltf(filepath=str(path))
+    new_names = [n for n in bpy.data.objects.keys() if n not in before]
+    if not new_names:
+        return None
+
+    meshes: list[tuple] = []
+    lo = [float("inf")] * 3
+    hi = [float("-inf")] * 3
+    for name in new_names:
+        obj = bpy.data.objects[name]
+        if obj.type != "MESH" or obj.data is None:
+            continue
+        matrix = obj.matrix_world.copy()
+        meshes.append((obj.data, matrix))
+        for corner in obj.bound_box:
+            world = matrix @ __import__("mathutils").Vector(corner)
+            for axis in range(3):
+                lo[axis] = min(lo[axis], world[axis])
+                hi[axis] = max(hi[axis], world[axis])
+
+    # Drop the imported objects; the mesh datablocks stay alive because the
+    # template holds references to them.
+    for name in new_names:
+        obj = bpy.data.objects.get(name)
+        if obj is not None:
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+    if not meshes or lo[0] == float("inf"):
+        return None
+    return (meshes, tuple(lo), tuple(hi))
+
+
+def _template(kind: str):
+    if kind in _templates:
+        return _templates[kind]
+    result = None
+    if _HAS_CACHE and asset_cache is not None:
+        try:
+            path = asset_cache.furniture(kind)
+        except Exception:
+            path = None
+        if path and Path(path).exists():
+            try:
+                result = _import_template(kind, Path(path))
+            except Exception as exc:
+                print(f"asset import failed for {kind}: {exc}")
+                result = None
+    _templates[kind] = result
+    return result
+
+
+def clear_cache() -> None:
+    """Forget every imported template (used between builds in one process)."""
+    _templates.clear()
+
 
 def build_from_asset(item, room_x: float, room_y: float, base_z: float, collection):
-    """Try to import a cached GLB for item.kind, fitted to its bounding box. Returns obj or None."""
+    """Instance the cached mesh for `item.kind`, or return None to fall back.
+
+    Returns the first instanced object so the caller can treat it like any
+    other built object; every part is linked into `collection`.
+    """
     import bpy
-    kind = getattr(item, "kind", None) or getattr(item, "type", None) or getattr(item, "kind", "")
-    if not _HAS:
+    import mathutils
+
+    kind = getattr(item, "kind", "")
+    template = _template(kind)
+    if template is None:
         return None
-    # resolve path
-    try:
-        p = asset_cache.furniture(kind)
-    except Exception:
-        p = None
-    if not p or not Path(p).exists():
+    meshes, lo, hi = template
+
+    src = [hi[axis] - lo[axis] for axis in range(3)]
+    if min(src) <= 1e-9:
         return None
-    # cache per kind: we just import each time; instancing via linked data would be extra
-    try:
-        # Import GLB
-        before = set(bpy.data.objects.keys())
-        bpy.ops.import_scene.gltf(filepath=str(p))
-        after = set(bpy.data.objects.keys())
-        new_names = after - before
-        if not new_names:
-            return None
-        # Take first new object as representative
-        name = list(new_names)[0]
-        obj = bpy.data.objects[name]
-        # Non-uniform scale to fit bounding box: compute current bounds
-        # Simple: scale by w/d/h ratios; assume native unit size ~1m
-        w = getattr(item, "w", 1.0)
-        d = getattr(item, "d", 1.0)
-        h = getattr(item, "h", 1.0)
-        # If object has dimensions, scale accordingly
-        try:
-            dim = obj.dimensions
-            if dim.x > 1e-6 and dim.y > 1e-6 and dim.z > 1e-6:
-                obj.scale.x = w / dim.x if dim.x else 1
-                obj.scale.y = d / dim.y if dim.y else 1
-                obj.scale.z = h / dim.z if dim.z else 1
-        except Exception:
-            pass
-        # Position: item origin is room-local; room_x/y are world metres
-        ix = getattr(item, "x", 0)
-        iy = getattr(item, "y", 0)
-        # item x/y are mm in placement? placement uses metres for plan_room? Check: placement returns metres scaled? Actually FurnitureItem w/d in metres? We'll assume metres in item and convert if needed
-        # If values > 10, they're mm -> convert
-        if ix > 100:
-            ix /= 1000
-            iy /= 1000
-        obj.location.x = room_x + ix
-        obj.location.y = room_y + iy
-        obj.location.z = base_z
-        rot = getattr(item, "rot_deg", 0) or 0
-        if rot:
-            import math
-            obj.rotation_euler.z = math.radians(rot)
-        # Move to collection if not already
-        try:
-            collection.objects.link(obj)
-        except Exception:
-            pass
-        return obj
-    except Exception as e:
-        print(f"asset import failed for {kind}: {e}")
-        return None
+
+    # The item's footprint is (x, y) corner + (w, d); rot_deg turns it about
+    # the footprint centre, exactly as the procedural placer does.
+    w, d, h = float(item.w), float(item.d), float(item.h)
+    angle = math.radians(float(getattr(item, "rot_deg", 0.0) or 0.0))
+    cx = room_x + float(item.x) + w / 2
+    cy = room_y + float(item.y) + d / 2
+
+    # A 90-degree rotation swaps which source axis spans the item's width.
+    if abs(math.cos(angle)) < 0.5:
+        scale = (d / src[0], w / src[1], h / src[2])
+    else:
+        scale = (w / src[0], d / src[1], h / src[2])
+
+    # Centre the mesh group on the footprint centre in X/Y and sit it on the
+    # floor in Z, in the template's own units, before scaling.
+    offset = mathutils.Vector((
+        -(lo[0] + hi[0]) / 2,
+        -(lo[1] + hi[1]) / 2,
+        -lo[2],
+    ))
+    # The full transform is baked into each instance's own matrix rather than
+    # applied through a parent empty. Parented transforms are only correct
+    # after a depsgraph update, so anything reading `matrix_world` in the same
+    # pass that built the scene — the geometry tests, the camera fit, the
+    # exporter — would see the mesh sitting at the template's origin.
+    place = (
+        mathutils.Matrix.Translation((cx, cy, base_z))
+        @ mathutils.Matrix.Rotation(angle, 4, "Z")
+        @ mathutils.Matrix.Diagonal((scale[0], scale[1], scale[2], 1.0))
+        @ mathutils.Matrix.Translation(offset)
+    )
+
+    first = None
+    for index, (mesh, matrix) in enumerate(meshes):
+        obj = bpy.data.objects.new(f"furn_{kind}_{cx:.2f}_{cy:.2f}_{index}", mesh)
+        collection.objects.link(obj)
+        # `matrix_world` (not `matrix_basis`) is the write that takes effect
+        # without a depsgraph evaluation: on an unparented object Blender
+        # applies it straight through to the object's local transform.
+        obj.matrix_world = place @ matrix
+        if first is None:
+            first = obj
+    return first

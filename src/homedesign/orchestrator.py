@@ -105,7 +105,8 @@ def build_scene(model_path: Path, out_dir: Path, final: bool = False,
     (out_dir / "blend").mkdir(parents=True, exist_ok=True)
     (out_dir / "png").mkdir(parents=True, exist_ok=True)
 
-    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend, gltf)
+    cmd = _build_command(model_path, out_dir, profile, views, skip_existing, reuse_blend, gltf,
+                         show_neighbours=show_neighbours)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, cwd=REPO_ROOT, encoding="utf-8", errors="replace")
     streamed: list[str] = []

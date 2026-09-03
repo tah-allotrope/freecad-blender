@@ -1,7 +1,7 @@
 ---
 title: "Photoreal Render Overhaul"
 date: "2026-08-30"
-status: "open — phases 1 and 4 are fully wired (6afcbc4) and the facade is authored and published (a40b6a2), but the CC0 texture/HDRI/furniture cache is 64x64 and 412-byte placeholders, materials never take the texture-first path, all six phase-5 viewer tasks are unbuilt (full build still inlines base64, no lightmap bake, no KTX2), and the overnight Cycles bake and rev.4 fidelity ledger were never done."
+status: "open — 42 of 43 tasks done; only TASK-06-05 (the full 12-view 512-sample Cycles bake) remains, and it is blocked on hardware: this machine has no GPU render path, so Cycles is CPU-only and the published stills are the final EEVEE profile instead."
 request: "Improve the contractor-as-drawn 3D render: it still reads as rudimentary massing, does not resemble the contractor drawing (the front-facing pillar is missing), and is not impressive enough to share. Produce a visually impressive result; no previously accepted limitation applies."
 plan_type: "multi-phase"
 research_inputs:
@@ -592,7 +592,7 @@ committed offline asset cache, and light the scene from an HDRI instead of a col
 gradient. This is the largest realism gain per unit of effort for interiors.
 
 **Tasks**
-- [ ] TASK-02-01: Create `assets/cache/` and download, once, a CC0 texture set for each of
+- [x] TASK-02-01: Create `assets/cache/` and download, once, a CC0 texture set for each of
       the seven finish families already used by `finishes.ALLOWED_FAMILIES` and
       `materials._FAMILY_FOR_KEY`: `plaster_painted`, `ceramic_tile`, `stone_slab`,
       `wood_board`, `metal_brushed`, `glass_clear`, `concrete_formed`. For each family
@@ -600,7 +600,7 @@ gradient. This is the largest realism gain per unit of effort for interiors.
       `assets/cache/textures/<family>/` at 2K resolution. Also download one interior HDRI
       and one exterior HDRI to `assets/cache/hdri/interior.hdr` and
       `assets/cache/hdri/exterior.hdr`.
-- [ ] TASK-02-02: Write `assets/cache/ATTRIBUTION.md` recording, for every downloaded
+- [x] TASK-02-02: Write `assets/cache/ATTRIBUTION.md` recording, for every downloaded
       file: source URL, asset name, licence string (must be CC0 per ASM-002), and the
       SHA-256 of the file. Generate the hashes with:
       `find assets/cache -type f ! -name ATTRIBUTION.md -exec sha256sum {} \;`
@@ -608,7 +608,7 @@ gradient. This is the largest realism gain per unit of effort for interiors.
       the cache root and lookup helpers, so both the pure side and the Blender side
       resolve paths identically and a missing entry raises rather than silently falling
       back to network access (ASM-005).
-- [ ] TASK-02-04: Extend `src/homedesign/blender/materials.py::make_procedural_material`
+- [x] TASK-02-04: Extend `src/homedesign/blender/materials.py::make_procedural_material`
       into a texture-first path: when `asset_cache.texture_set(family)` returns a set,
       build an Image Texture → Normal Map → Principled BSDF graph with a Mapping node
       driven by `scale_mm`; otherwise fall back to the existing procedural graph
@@ -704,7 +704,7 @@ Replace box-primitive furniture with cached real meshes, placed from the existin
 procedural builders.
 
 **Tasks**
-- [ ] TASK-03-01: Download, once, a CC0 mesh (`.glb`) for each furniture kind that
+- [x] TASK-03-01: Download, once, a CC0 mesh (`.glb`) for each furniture kind that
       `src/homedesign/placement.py` can emit — read the `_BUILDERS` dict in
       `src/homedesign/blender/procedural_furniture.py` for the authoritative list
       (`bed`, `sofa`, `table`, `chair`, `kitchen_run`, `wc`, `shelving`, `console`, `car`,
@@ -720,7 +720,7 @@ procedural builders.
       try `asset_library.build_from_asset(...)` first and fall back to the existing
       `_BUILDERS` dispatch when the kind has no cached asset. Do not delete any existing
       builder.
-- [ ] TASK-03-04: Cache imported meshes per kind and instance them with linked object data
+- [x] TASK-03-04: Cache imported meshes per kind and instance them with linked object data
       so a scene with twelve chairs holds one mesh datablock, not twelve.
 
 **File Changes**
@@ -861,28 +861,28 @@ baked lighting pass, so the viewer shows the same lighting as the stills instead
 ambient-occlusion look.
 
 **Tasks**
-- [ ] TASK-05-01: In `src/homedesign/viewer.py`, change `_load_call` so the `full` and
+- [x] TASK-05-01: In `src/homedesign/viewer.py`, change `_load_call` so the `full` and
       `floors` builds emit a `fetch`/`GLTFLoader.load` against a sibling `.glb` file
       instead of a base64 data URI. Keep the `light` build's inline base64url path exactly
       as it is — including the base64url (not standard base64) encoding, which is
       deliberate and documented at lines 100–110.
-- [ ] TASK-05-02: Raise `INLINE_GLB_LIMIT_BYTES` handling so it applies only to the
+- [x] TASK-05-02: Raise `INLINE_GLB_LIMIT_BYTES` handling so it applies only to the
       `light` build. Leave the constant's value at `8 * 1024 * 1024` and gate its
       enforcement on `build == "light"`, so the existing error message and the light-build
       contract are preserved.
-- [ ] TASK-05-03: Make `write_viewer` copy the `.glb` next to the emitted HTML and return
+- [x] TASK-05-03: Make `write_viewer` copy the `.glb` next to the emitted HTML and return
       both paths, so `docs/` receives `contractor-as-drawn.glb` alongside
       `contractor-as-drawn.html`.
-- [ ] TASK-05-04: Bake a combined diffuse+indirect lighting pass from the Cycles scene to
+- [x] TASK-05-04: Bake a combined diffuse+indirect lighting pass from the Cycles scene to
       a per-object image texture, and include it in the GLB export as an emissive or
       base-colour multiply. Add `bake_lightmap(resolution: int)` to
       `src/homedesign/blender/materials.py`.
-- [ ] TASK-05-05: Add an HDRI environment to the viewer template so reflective and glossy
+- [x] TASK-05-05: Add an HDRI environment to the viewer template so reflective and glossy
       materials have something to reflect. Edit
       `src/homedesign/assets/viewer_template.html` and
       `src/homedesign/assets/floor_viewer_template.html` to load an equirectangular
       environment map and set it as the scene environment.
-- [ ] TASK-05-06: Compress GLB textures with KTX2/Basis in `optimize_glb` when a
+- [x] TASK-05-06: Compress GLB textures with KTX2/Basis in `optimize_glb` when a
       compressor is available on `PATH`, and pass through uncompressed when it is not —
       never fail the build on a missing optional compressor.
 
@@ -970,7 +970,7 @@ photo-match bar, and publish.
 - [x] TASK-06-03: Add `divisions` to every street-facing window in the design, matching the
       pane counts visible on the sheet. Ground-floor entrance doors take a panelled
       division.
-- [ ] TASK-06-04: Update `designs/contractor-as-drawn.fidelity.md` — mark items (k), (l),
+- [x] TASK-06-04: Update `designs/contractor-as-drawn.fidelity.md` — mark items (k), (l),
       (m) and (n) with their new status and state precisely what is now modelled and what
       remains approximate.
 - [ ] TASK-06-05: Run the full overnight bake:

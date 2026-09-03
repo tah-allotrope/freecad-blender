@@ -40,6 +40,7 @@ class Room:
     name: Optional[str] = None
     interior: Optional[Rect] = None  # net usable rect after wall thickness (S5)
     level_mm: Optional[float] = None  # finished-floor offset from storey base_z
+    parapet_pattern: str = "solid"  # edge-protection pattern for an open room
 
 
 @dataclass
@@ -156,6 +157,7 @@ class CompiledModel:
                     name=r.get("name"),
                     interior=Rect(**r["interior"]) if r.get("interior") else None,
                     level_mm=r.get("level_mm"),
+                    parapet_pattern=r.get("parapet_pattern", "solid"),
                 )
                 for r in s["rooms"]
             ]

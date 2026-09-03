@@ -162,7 +162,8 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
         for r in pending:
             if "rect" in r:
                 resolved[r["id"]] = Room(id=r["id"], type=r["type"], rect=Rect(**r["rect"]),
-                                         name=r.get("name"), level_mm=r.get("level_mm"))
+                                         name=r.get("name"), level_mm=r.get("level_mm"),
+                                         parapet_pattern=r.get("parapet_pattern", "solid"))
                 continue
             rel = r["relative"]
             anchor = resolved.get(rel["adjacent_to"])
@@ -171,7 +172,7 @@ def _resolve_rooms(room_specs, plot_w, plot_d, path, errors) -> list[Room]:
                 continue
             resolved[r["id"]] = Room(
                 id=r["id"], type=r["type"], rect=_place_relative(anchor.rect, rel), name=r.get("name"),
-                level_mm=r.get("level_mm"),
+                level_mm=r.get("level_mm"), parapet_pattern=r.get("parapet_pattern", "solid"),
             )
         pending = still_pending
 

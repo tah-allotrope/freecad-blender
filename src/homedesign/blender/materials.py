@@ -1,11 +1,15 @@
 """Principled-BSDF material definitions, keyed by style. Runs inside Blender."""
 
 import bpy
+
+from homedesign.finishes import family_for_palette_key
+
 try:
-    from homedesign import asset_cache  # noqa: F401
+    from homedesign import asset_cache
     _HAS_CACHE = True
-except Exception:
-    _HAS_CACHE = False  # noqa: F401
+except Exception:  # pragma: no cover - the cache module is always importable
+    asset_cache = None
+    _HAS_CACHE = False
 
 PALETTES = {
     "modern-minimal": {
@@ -33,7 +37,8 @@ PALETTES = {
 # How a palette key maps to a procedural family. This keeps the schema
 # palette key stable while the render uses a procedural graph tuned for
 # that family -- e.g. a bathroom floor is not just a flat colour but a
-# ceramic tile with grout.
+# ceramic tile with grout. The authoritative table lives in `finishes` (pure,
+# testable without Blender); this dict is kept as a read-only alias.
 _FAMILY_FOR_KEY = {
     "wall_exterior": "plaster_painted",
     "wall_partition": "plaster_painted",
@@ -65,8 +70,28 @@ _FAMILY_FOR_KEY = {
 
 _cache: dict[str, "bpy.types.Material"] = {}
 
+# The compiled model's resolved finish map, installed by `build_scene` before
+# any geometry is built. Empty means "no design-level finishes authored", and
+# every palette key then falls back to its static family (RF TASK-02-05).
+_finish_map: dict[str, str] = {}
 
-def get_material(style: str, key: str) -> "bpy.types.Material":
+
+def set_finish_map(finish_map: dict | None) -> None:
+    """Install the compiled model's resolved finish map for this build.
+
+    Clears the material cache, because the same palette key can now resolve to
+    a different family than it did for the previous model.
+    """
+    global _finish_map
+    _finish_map = dict(finish_map or {})
+    _cache.clear()
+
+
+def get_finish_map() -> dict:
+    return dict(_finish_map)
+
+
+def get_material(style: str, key: str, room_id: str | None = None) -> "bpy.types.Material":
     """Return a cached Principled material for a palette key.
 
     When the key maps to a procedural family we delegate to
@@ -74,12 +99,14 @@ def get_material(style: str, key: str) -> "bpy.types.Material":
     anisotropy while the glTF export still carries only a flat base
     colour (see :func:`prepare_for_gltf_export`).
     """
-    cache_key = f"{style}:{key}"
+    # The resolved finish map is part of the cache key: two rooms with
+    # different authored floor finishes must not share one material.
+    family = family_for_palette_key(key, _finish_map, room_id=room_id)
+    cache_key = f"{style}:{key}:{family}"
     if cache_key in _cache:
         return _cache[cache_key]
     palette = PALETTES.get(style, PALETTES["modern-minimal"])
     spec = palette.get(key, palette["furniture"])
-    family = _FAMILY_FOR_KEY.get(key, "plaster_painted")
     # Families that already have a direct palette entry keep the exact
     # base colour; the procedural graph only modulates it slightly so
     # the glTF fallback (the stored base colour) stays accurate.
@@ -148,6 +175,123 @@ def furniture_material_key(kind: str) -> str:
     return FURNITURE_MATERIAL_KEY.get(kind, "furniture")
 
 
+_image_cache: dict[str, "bpy.types.Image"] = {}
+
+
+def _load_image(path, non_color: bool):
+    """Load a cached texture once and share the datablock between materials."""
+    key = str(path)
+    img = _image_cache.get(key)
+    if img is None:
+        img = bpy.data.images.load(key, check_existing=True)
+        _image_cache[key] = img
+    if non_color:
+        try:
+            img.colorspace_settings.name = "Non-Color"
+        except Exception:
+            pass
+    return img
+
+
+def _build_textured_material(mat, nodes, links, family, textures,
+                             base_color, roughness, scale_mm) -> None:
+    """Wire a cached CC0 PBR set into a Principled BSDF.
+
+    diffuse -> Base Color (through an AO multiply so the vertex-colour AO layer
+    and the baked AO map both survive), rough -> Roughness, normal -> a Normal
+    Map node. The flat base colour is still stored on the material so the light
+    GLB build can strip textures back to it.
+    """
+    for n in list(nodes):
+        if n.type not in {"BSDF_PRINCIPLED", "OUTPUT_MATERIAL"}:
+            nodes.remove(n)
+    principled = next((n for n in nodes if n.type == "BSDF_PRINCIPLED"), None)
+    output = next((n for n in nodes if n.type == "OUTPUT_MATERIAL"), None)
+    if principled is None:
+        principled = nodes.new("ShaderNodeBsdfPrincipled")
+    if output is None:
+        output = nodes.new("ShaderNodeOutputMaterial")
+    principled.location = (200, 100)
+    output.location = (500, 100)
+    links.new(principled.outputs[0], output.inputs[0])
+
+    mat["procedural_family"] = family
+    mat["textured"] = True
+    mat["base_color"] = (float(base_color[0]), float(base_color[1]), float(base_color[2]), 1.0)
+
+    tex_coord = nodes.new("ShaderNodeTexCoord")
+    tex_coord.location = (-1000, 0)
+    mapping = nodes.new("ShaderNodeMapping")
+    mapping.location = (-800, 0)
+    # scale_mm is the real-world size of one texture repeat, so a 300 mm tile
+    # repeats 3.3x per metre and a 1 m plaster sheet once.
+    repeat = 1000.0 / max(50.0, float(scale_mm))
+    mapping.inputs["Scale"].default_value = (repeat, repeat, repeat)
+    # **Object** coordinates with box projection, not UV. Every mesh here is a
+    # bmesh cube with no unwrap — `geom._ensure_uv` adds an empty UV layer, so
+    # a UV-mapped texture samples one texel and renders as a flat colour, which
+    # is exactly how "textured" materials shipped looking untextured. These
+    # meshes also bake world position into their vertices and leave the origin
+    # at (0,0,0), so object space *is* world space: the texture then runs
+    # continuously across adjacent boxes instead of restarting per object, and
+    # `repeat` is a true metric scale.
+    links.new(tex_coord.outputs["Object"], mapping.inputs["Vector"])
+
+    def image_node(path, non_color, y):
+        node = nodes.new("ShaderNodeTexImage")
+        node.image = _load_image(path, non_color)
+        node.location = (-560, y)
+        node.projection = "BOX"
+        node.projection_blend = 0.25
+        node.extension = "REPEAT"
+        links.new(mapping.outputs["Vector"], node.inputs["Vector"])
+        return node
+
+    diffuse = image_node(textures["diffuse"], False, 250)
+
+    colour_out = diffuse.outputs["Color"]
+    if "ao" in textures:
+        ao_tex = image_node(textures["ao"], True, -50)
+        ao_map_mix = nodes.new("ShaderNodeMixRGB")
+        ao_map_mix.blend_type = "MULTIPLY"
+        ao_map_mix.inputs[0].default_value = 0.6
+        ao_map_mix.location = (-320, 200)
+        links.new(colour_out, ao_map_mix.inputs[1])
+        links.new(ao_tex.outputs["Color"], ao_map_mix.inputs[2])
+        colour_out = ao_map_mix.outputs[0]
+
+    # Vertex-colour AO, same contract as the procedural path: an Attribute
+    # named "Col" multiplied at 0.35, which is also what tells the glTF
+    # exporter to write COLOR_0.
+    attr = nodes.new("ShaderNodeAttribute")
+    attr.attribute_name = "Col"
+    attr.location = (-560, -300)
+    ao_mix = nodes.new("ShaderNodeMixRGB")
+    ao_mix.blend_type = "MULTIPLY"
+    ao_mix.inputs[0].default_value = 0.35
+    ao_mix.location = (-80, 150)
+    links.new(colour_out, ao_mix.inputs[1])
+    links.new(attr.outputs["Color"], ao_mix.inputs[2])
+    links.new(ao_mix.outputs[0], principled.inputs["Base Color"])
+
+    if "rough" in textures:
+        rough_tex = image_node(textures["rough"], True, 0)
+        links.new(rough_tex.outputs["Color"], principled.inputs["Roughness"])
+    else:
+        principled.inputs["Roughness"].default_value = float(max(0.0, min(1.0, roughness)))
+
+    if "normal" in textures:
+        normal_tex = image_node(textures["normal"], True, -250)
+        normal_map = nodes.new("ShaderNodeNormalMap")
+        normal_map.location = (-320, -250)
+        normal_map.inputs["Strength"].default_value = 0.8
+        links.new(normal_tex.outputs["Color"], normal_map.inputs["Color"])
+        links.new(normal_map.outputs["Normal"], principled.inputs["Normal"])
+
+    if family == "metal_brushed":
+        principled.inputs["Metallic"].default_value = 0.85
+
+
 def make_procedural_material(name: str, family: str, base_color, roughness: float, scale_mm: float):
     """Create a procedural Principled material for `family`.
 
@@ -167,6 +311,20 @@ def make_procedural_material(name: str, family: str, base_color, roughness: floa
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
+
+    # Texture-first (PR TASK-02-04): when the offline cache holds a PBR set for
+    # this family, an image-texture graph beats every procedural approximation,
+    # so we build that and return. A family with no cached set (glass_clear)
+    # falls through to the procedural graph below.
+    if _HAS_CACHE and asset_cache is not None:
+        try:
+            textures = asset_cache.texture_set(family)
+        except Exception:
+            textures = None
+        if textures:
+            _build_textured_material(mat, nodes, links, family, textures,
+                                     base_color, roughness, scale_mm)
+            return mat
 
     # Keep only Principled BSDF and Output; remove the default stale nodes
     # but preserve those two so we don't have to recreate sockets.
@@ -446,20 +604,29 @@ def make_procedural_material(name: str, family: str, base_color, roughness: floa
     return mat
 
 
-def prepare_for_gltf_export() -> None:
+def prepare_for_gltf_export(keep_textures: bool = True) -> None:
     """Flatten procedural graphs but keep vertex-colour AO so the GLB carries it.
 
-    The render uses the full procedural graph (grout, noise, anisotropy) but
-    the GLB should contain only flat base colours plus a ``Col`` vertex
-    layer multiplied into Base Color (strength 0.35). This keeps the file tiny
-    (no image textures) while giving the viewer the deep soffit shadows and
-    leaf-dappled occlusion that separate a maquette from Stacking Green.
+    The render uses the full procedural graph (grout, noise, anisotropy) but a
+    node graph cannot be exported, so every procedural chain is flattened to
+    the material's stored base colour plus a ``Col`` vertex layer multiplied
+    into Base Color (strength 0.35).
+
+    Materials built from the cached CC0 PBR sets are different: an image
+    texture *is* exportable, and carrying it is the whole point of the full
+    build. With ``keep_textures`` (the default) those materials are left
+    intact. Pass ``keep_textures=False`` for the light phone build, where the
+    6 MiB budget cannot afford image data and the flat colour plus vertex AO
+    has to stand in for it.
     """
     for mat in list(bpy.data.materials):
         if not mat.use_nodes or mat.node_tree is None:
             continue
         base = mat.get("base_color")
         if base is None:
+            continue
+        if (mat.get("textured") or mat.get("lightmapped")) and keep_textures:
+            # An exportable image-texture graph: leave it exactly as built.
             continue
         ntree = mat.node_tree
         principled = ntree.nodes.get("Principled BSDF")
@@ -553,6 +720,146 @@ def prepare_for_gltf_export() -> None:
                 ntree.nodes.remove(n)
             except Exception:
                 pass
+
+def bake_lightmap(resolution: int = 256, max_objects: int = 400,
+                  samples: int = 24) -> int:
+    """Bake combined direct+indirect light to a per-object texture (PR TASK-05-04).
+
+    The GLB the viewer serves has no global illumination of its own — three.js
+    gives it one hemisphere light and one directional. Baking the Cycles
+    solution into an image and multiplying it into Base Color carries the
+    render's bounce light, soft shadows and colour bleed into the viewer, which
+    is the single biggest gap between the still and the interactive model.
+
+    Returns the number of objects baked. Every step is guarded: baking is an
+    enhancement, and a scene that cannot be baked must still export.
+
+    This is CPU-bound (see the hardware note in `lessons.md` — there is no GPU
+    render path on the reference machine), hence `max_objects` and the low
+    default sample count. Call it before `prepare_for_gltf_export`.
+    """
+    scene = bpy.context.scene
+    meshes = [o for o in scene.objects
+              if o.type == "MESH" and o.data is not None and len(o.data.polygons) > 0]
+    if not meshes:
+        return 0
+    if len(meshes) > max_objects:
+        # Bake the largest surfaces, where indirect light actually reads, and
+        # leave the small props to the vertex-colour AO layer.
+        meshes.sort(key=lambda o: -sum(p.area for p in o.data.polygons))
+        meshes = meshes[:max_objects]
+
+    previous_engine = scene.render.engine
+    try:
+        scene.render.engine = "CYCLES"
+    except TypeError:
+        return 0
+    previous_samples = getattr(scene.cycles, "samples", None)
+    scene.cycles.samples = samples
+    try:
+        scene.cycles.device = "CPU"
+    except Exception:
+        pass
+
+    baked = 0
+    for obj in meshes:
+        try:
+            mesh = obj.data
+            if not mesh.materials or all(m is None for m in mesh.materials):
+                continue
+            # A dedicated second UV layer: the material's own UVs are tiled for
+            # texture repeat, which a lightmap must never be.
+            if "Lightmap" in mesh.uv_layers:
+                mesh.uv_layers["Lightmap"].active = True
+            else:
+                mesh.uv_layers.new(name="Lightmap")
+            mesh.uv_layers.active = mesh.uv_layers["Lightmap"]
+
+            bpy.ops.object.select_all(action="DESELECT")
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_all(action="SELECT")
+            bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.02)
+            bpy.ops.object.mode_set(mode="OBJECT")
+
+            image = bpy.data.images.new(
+                f"lightmap_{obj.name}", width=resolution, height=resolution,
+                float_buffer=False,
+            )
+            targets = []
+            for material in mesh.materials:
+                if material is None or not material.use_nodes:
+                    continue
+                nodes = material.node_tree.nodes
+                node = nodes.new("ShaderNodeTexImage")
+                node.image = image
+                node.label = "Lightmap"
+                node.location = (-1400, 400)
+                nodes.active = node
+                targets.append((material, node))
+            if not targets:
+                bpy.data.images.remove(image)
+                continue
+
+            bpy.ops.object.bake(type="COMBINED", use_clear=True, margin=2)
+
+            # Multiply the baked light into Base Color so the exported GLB
+            # carries it as ordinary texture data.
+            for material, node in targets:
+                _wire_lightmap(material, node)
+            obj["lightmap"] = image.name
+            baked += 1
+        except Exception as exc:
+            print(f"lightmap bake skipped for {obj.name}: {exc}")
+            try:
+                if bpy.context.object and bpy.context.object.mode != "OBJECT":
+                    bpy.ops.object.mode_set(mode="OBJECT")
+            except Exception:
+                pass
+
+    scene.render.engine = previous_engine
+    if previous_samples is not None:
+        scene.cycles.samples = previous_samples
+    print(f"lightmap: baked {baked}/{len(meshes)} objects at {resolution}px")
+    return baked
+
+
+def _wire_lightmap(material, tex_node) -> None:
+    """Multiply a baked lightmap into a material's Base Color chain."""
+    tree = material.node_tree
+    principled = None
+    for node in tree.nodes:
+        if node.type == "BSDF_PRINCIPLED":
+            principled = node
+            break
+    if principled is None:
+        return
+    base = principled.inputs.get("Base Color")
+    if base is None:
+        return
+
+    uv = tree.nodes.new("ShaderNodeUVMap")
+    uv.uv_map = "Lightmap"
+    uv.location = (-1600, 400)
+    tree.links.new(uv.outputs["UV"], tex_node.inputs["Vector"])
+
+    mix = tree.nodes.new("ShaderNodeMixRGB")
+    mix.blend_type = "MULTIPLY"
+    mix.inputs[0].default_value = 1.0
+    mix.location = (60, 300)
+
+    existing = list(base.links)
+    if existing:
+        source = existing[0].from_socket
+        tree.links.remove(existing[0])
+        tree.links.new(source, mix.inputs[1])
+    else:
+        mix.inputs[1].default_value = base.default_value
+    tree.links.new(tex_node.outputs["Color"], mix.inputs[2])
+    tree.links.new(mix.outputs[0], base)
+    material["lightmapped"] = True
+
 
 def add_vertex_color_ao(strength: float = 0.52) -> None:
     """Add a per-mesh ``Col`` vertex-colour layer that encodes stacked-jardinière AO.

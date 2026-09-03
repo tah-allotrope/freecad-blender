@@ -28,6 +28,17 @@ def hdri(name: str) -> Path:
         raise FileNotFoundError(f"HDRI {name!r} not found at {p}")
     return p
 
+def hdri_preview(name: str) -> Path | None:
+    """The small LDR equirect JPEG beside an HDRI, or None if not generated.
+
+    Written once by `scripts/fetch_assets.py`, because generating it needs
+    numpy and Pillow and the viewer is written from inside Blender, whose
+    bundled Python has neither.
+    """
+    p = CACHE_ROOT / "hdri" / f"{name}_preview.jpg"
+    return p if p.exists() else None
+
+
 def furniture(kind: str) -> Path | None:
     p = CACHE_ROOT / "furniture" / f"{kind}.glb"
     return p if p.exists() else None

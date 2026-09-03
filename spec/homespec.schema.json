@@ -569,6 +569,14 @@
                 },
                 "finish": {
                   "type": "string"
+                },
+                "parapet_pattern": {
+                  "type": "string",
+                  "enum": [
+                    "solid",
+                    "slatted"
+                  ],
+                  "description": "Edge-protection pattern for an open room's parapet: a solid 1100 mm panel, or the horizontal slats drawn on the front elevation."
                 }
               },
               "oneOf": [

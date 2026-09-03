@@ -1,4 +1,4 @@
-# contractor-as-drawn — fidelity ledger (rev. 3)
+# contractor-as-drawn — fidelity ledger (rev. 4)
 
 Every place the compiled model departs from the contractor's issued drawing set.
 Read this alongside the renders: a render is persuasive, and the point of this
@@ -22,6 +22,16 @@ departures on features the model does represent, which made the set look far
 more complete than it is — a reader comparing `MẶT ĐỨNG CHÍNH` against
 `exterior_front.png` sees the difference immediately, and this file did not
 account for it. Nothing in (a)–(j) changed; the omission was one of scope.
+
+**rev.4 (2026-09-03)** closes (k)–(n) and, more importantly, corrects rev.3's
+account of (k) and (l). Rev.3 recorded them as resolved because the facade
+elements and opening divisions reached the *draw model*. They did not reach any
+output: `elevation.py` built `facade` and division primitives that neither the
+SVG nor the DXF writer had a branch for, so both were silently dropped on the
+floor. A reader comparing `MẶT ĐỨNG CHÍNH` with the generated south elevation
+still saw a blank wall. Both writers now paint them, and a test asserts every
+mullion lands inside its host opening. The lesson is recorded in `lessons.md`:
+a primitive in the draw model is not a primitive on the sheet.
 
 Columns: **what the drawing shows → what the model does → why → does it change
 what the render says?**
@@ -196,7 +206,7 @@ The schema's entire geometric vocabulary is: rooms as axis-aligned rectangles
 `stairs`, `roof`, `voids` and `roof.structures`. Consequences:
 
 ### (k) Facade articulation is absent — the front elevation is flat massing
-> **Resolved (2026-08-30, photoreal overhaul PHASE-01/06).** `facade_elements` (column, fin, band, panel, awning) now authored across all 7 storeys (21 elements) and rendered as boxes via `build_facade_elements` plus elevation SVG via `facade_element_elevation_rect`. The front pillar (column) and middle-storey fins are visible in `exterior_front.png` and `south` elevation SVG. Remaining gap: cornice moulding profile is a rectangular band, not a true moulding.
+> **Resolved (rev.4, 2026-09-03).** `facade_elements` (column, fin, band, panel, awning) are authored across all 7 storeys (21 elements), built as boxes by `build_facade_elements`, and — new in rev.4 — actually drawn on the elevation: `elevation.py` emitted a `facade` primitive that no SVG or DXF branch consumed, so rev.3's claim that it reached the south elevation was wrong. Both writers now paint it (`fill=#5f5f5f` in SVG, layer `ELEV` in DXF) and the silhouette bounding box counts facade elements, so a projecting pillar no longer falls outside the outline. Remaining gap: the cornice is a rectangular band, not a moulded profile.
 `MẶT ĐỨNG CHÍNH` carries vertical fins/pilasters running the height of the
 middle storeys, a cornice/coping band at the parapet, and framed panel
 treatments around the openings. **None of it is modelled**, because there is no
@@ -206,7 +216,7 @@ box with rectangular voids. **Yes — this is the single biggest visual departur
 in the set, and the reason the 3D reads as massing rather than as this building.**
 
 ### (l) Openings are undivided rectangles — no mullions, transoms or panelling
-> **Resolved (2026-08-30, PHASE-01/06).** Street-facing windows carry `divisions {columns: 3/2, rows: 1}` and `joinery.py` emits mullion bars via `opening_division_lines`. Visible as vertical bars in south elevation and close-up interior renders.
+> **Resolved (rev.4, 2026-09-03).** Street-facing windows carry `divisions {columns: 3/2, rows: 1}`; `joinery.py` emits mullion bars in 3D via `opening_division_lines`, and the elevation now emits a `mullion` primitive from the same function, mirrored correctly on the south/east sides where `_opening_h` flips the drawing axis. `tests/test_render_fidelity.py` asserts a divided window produces bars and that every bar lies inside its host opening. Rev.3 claimed the bars were visible in the south elevation; they were not — the primitive had no writer branch.
 Every window on the sheets is subdivided (multi-pane, with transoms; the ground
 floor entrance is a panelled door set). An opening in the model is one
 `width_mm` and renders as a single rectangular hole with a lintel and sill.
@@ -214,13 +224,13 @@ floor entrance is a panelled door set). An opening in the model is one
 subdivision, and none of it survives.**
 
 ### (m) Balcony railings are a plain parapet, not the drawn pattern
-> **Partially resolved (2026-08-30).** Parapet remains 1100 mm solid; slatted variant not yet authored (requires patterned railings). Exterior still reads as parapet, but facade articulation now provides scale.
+> **Resolved (rev.4, 2026-09-03).** `parapet_pattern` (`solid` | `slatted`) is a schema property on a room; `homedesign/parapet.py` turns it into a band list — 100 mm slats on a 160 mm pitch, seven within the 1100 mm height — and *both* consumers read that one function: `blender/railings.py` builds the slats and `elevation.py` draws them. All four `BAN CÔNG` (Floors 2–5) are authored `slatted`; the roof terraces keep the solid coping band the sheets draw. Remaining gap: the slat profile is rectangular, and the drawn railing's end posts are not modelled.
 The elevations show a patterned railing/balustrade to each `BAN CÔNG`; the model
 auto-generates an unarticulated 1100mm solid parapet on open edges (see (e)).
 **Yes — visible on every balcony in every exterior view.**
 
 ### (n) No material, finish or colour information
-> **Partially resolved (2026-08-30, PHASE-02).** PBR texture cache (`assets/cache/textures/*`) and HDRI environment now provide image-based materials; `materials.make_procedural_material` uses texture-first path. Furniture still placeholder meshes; finish is no longer flat.
+> **Resolved for render purposes (rev.4, 2026-09-03); still not a finish schedule.** `assets/cache/` now holds real CC0 2048×2048 PBR sets (diffuse/rough/normal/AO) for six finish families and two HDRIs, all from Poly Haven with source URLs, licence and SHA-256 recorded in `assets/cache/ATTRIBUTION.md`; rev.3's cache was 64×64 placeholder JPEGs and a 2×2-pixel HDRI, so its claim of image-based materials was not true in substance. `make_procedural_material` takes a texture-first path when a family resolves, and `get_material` picks the family through the compiled finish map (`finishes.family_for_palette_key`) rather than a static table, so an authored `finishes` block now changes what renders. Ten furniture kinds are real CC0 meshes, instanced by linked mesh data. **Still true: this is not a finish schedule.** `glass_clear`, `kitchen_run` and `wc` have no CC0 source and stay procedural, and nothing here maps to the sheets' `NỀN GẠCH / VÁCH GẠCH` notation.
 The sheets note `KẾT CẤU: MÓNG - CỘT - SÀN BTCT, NỀN GẠCH, VÁCH GẠCH, MÁI BTCT`
 and imply finish zones on the elevation. The model carries a single `style`
 palette applied by element kind. **Partly — the renders are legible as form but
