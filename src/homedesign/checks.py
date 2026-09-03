@@ -250,6 +250,7 @@ def check_walls_within_plot(model: CompiledModel) -> list[SpecError]:
     return errors
 
 
+# Dead code (C4): rule re-implemented inline at compiler.py:42-53, zero callers -- kept for backward compat.
 def check_storey_order(spec_levels: list[int]) -> list[SpecError]:
     """Warning when storeys are not authored in ascending level order."""
     if spec_levels == sorted(spec_levels):

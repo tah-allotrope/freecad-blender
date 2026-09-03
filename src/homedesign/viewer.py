@@ -303,7 +303,7 @@ def write_viewer(model_name: str, glb_path: Path, out_dir: Path, build: str = "f
 def write_floor_viewer(
     model_name: str, glb_path: Path, storeys: list[dict], svg_dir: Path, out_dir: Path,
     build: str = "full",
-) -> Path | None:
+) -> "ViewerFiles | None":
     """Write the per-floor viewer HTML (2D plan + floor-isolated 3D pane).
 
     `storeys` is the compiled model's `storeys` list (each needs `name`,
@@ -352,6 +352,15 @@ def write_floor_viewer(
         bands.append({"name": s["name"], "z0": z0, "z1": z1})
 
     glb = Path(glb_path)
+    # Copy the GLB beside the page *before* the load call is written, so the
+    # page can reference it by bare name and the whole viewer directory stays
+    # relocatable — `docs/` is published without the `gltf/` tree beside it.
+    copied = None
+    if build != "light":
+        copied = viewer_dir / glb.name
+        if glb.resolve() != copied.resolve():
+            shutil.copy2(glb, copied)
+
     template = _read_asset("floor_viewer_template.html")
     template = template.replace("__TITLE__", model_name)
     template = template.replace("__BUILD_BADGE__", _badge_text(build))
@@ -361,15 +370,9 @@ def write_floor_viewer(
     template = template.replace("__FLOOR_TABS__", tabs)
     template = template.replace("__FLOOR_PLANS__", plans)
     template = template.replace("__FLOOR_BANDS_JSON__", json.dumps(bands))
-    html = template.replace("__LOAD_CALL__", _load_call(glb, viewer_dir, build=build))
+    html = template.replace("__LOAD_CALL__", _load_call(copied or glb, viewer_dir, build=build))
     html_path.write_text(html, encoding="utf-8")
-    if build != "light":
-        try:
-            import shutil
-            shutil.copy2(glb_path, out_dir / glb_path.name)
-        except Exception:
-            pass
-    return html_path
+    return ViewerFiles(html_path, copied)
 
 
 def _escape(text: str) -> str:
@@ -377,10 +380,21 @@ def _escape(text: str) -> str:
 
 
 def _relative_to(path: Path, base_dir: Path) -> str:
+    """A URL-usable relative path from `base_dir` to `path`.
+
+    `Path.relative_to` only walks *downward*, and the viewer sits in
+    `<out>/viewer/` while its GLB is written to `<out>/gltf/` — a sibling. The
+    old fallback returned `path.resolve()`, which baked an absolute machine
+    path (`C:/Users/.../output/gltf/x.glb`) into a page published to GitHub
+    Pages, where it fails for every visitor. `os.path.relpath` handles the
+    `../` case; if even that is impossible (a different drive), fall back to
+    the bare filename rather than a local path, so the page at least looks for
+    a sibling instead of naming somebody's home directory.
+    """
     try:
-        return path.resolve().relative_to(base_dir.resolve()).as_posix()
+        return Path(os.path.relpath(path.resolve(), base_dir.resolve())).as_posix()
     except ValueError:
-        return path.resolve().as_posix()
+        return path.name
 
 
 def glb_size_budget(build: str) -> int:
@@ -402,19 +416,3 @@ def assert_within_budget(glb_path, build: str) -> None:
             f"GLB size {size} exceeds budget {budget} for build {build!r} "
             f"({size/1024/1024:.1f} MiB > {budget/1024/1024:.0f} MiB)"
         )
-
-
-def room_label_data(model) -> list[dict]:
-    out = []
-    for storey in model.storeys:
-        for room in storey.rooms:
-            # center of room rect
-            x_m = (room.rect.x + room.rect.w / 2) / 1000
-            y_m = (room.rect.y + room.rect.d / 2) / 1000
-            z_m = (storey.base_z + (room.level_mm or 0)) / 1000
-            level_tag = f"+{storey.base_z/1000:.3f}" if room.level_mm is None else f"+{(storey.base_z + room.level_mm)/1000:.3f}"
-            # if level_mm present, make tag from base_z+level_mm else base_z
-            if room.level_mm is not None:
-                level_tag = f"+{(storey.base_z + room.level_mm)/1000:.3f}"
-            out.append({"text": room.name or room.id, "level_tag": level_tag, "x_m": x_m, "y_m": y_m, "z_m": z_m})
-    return out

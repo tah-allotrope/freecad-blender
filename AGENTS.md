@@ -74,7 +74,9 @@ homedesign publish designs/<slug>.json [--force]        # hash-verified copy int
 - Treat generated files in `output/` as reproducible artifacts; do not
   hand-edit them.
 - Millimetres everywhere on the pure side, metres everywhere on the Blender
-  side; the `/ 1000` conversion happens exactly once at the boundary.
+  side; the `/ 1000` conversion happens once per ledger-owned family at the
+  boundary (`scene_ledger.py`); remaining families still convert inline until
+  the ledger migration completes (see C3).
 
 ## Verification
 - Run `python -m pytest tests -q` and `ruff check src tests` before

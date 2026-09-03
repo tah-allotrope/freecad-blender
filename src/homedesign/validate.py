@@ -30,9 +30,9 @@ def validate_compiled(model: CompiledModel) -> list[SpecError]:
     """Geometric sanity checks beyond what the compiler itself already enforces
     (room overlap / out-of-plot / dangling openings raise during compile).
 
-    Runs the rule registry from `checks`; adding a rule there enforces it
-    everywhere. The two legacy checks (stairwell width, room size) are kept
-    as registry entries so their behaviour is unchanged.
+    Runs the rule registry from `checks` plus two legacy inline checks
+    (stairwell width, room size) that predate the registry; the docstring
+    previously claimed they were registry entries, which was inaccurate.
     """
     from .checks import RULES
 

@@ -798,22 +798,3 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
 
     doc.saveas(out_path)
 
-
-def write_finish_schedule(model, out_dir):
-    from pathlib import Path
-    from .finishes import finish_schedule_rows
-    rows = finish_schedule_rows(model)
-    # simple SVG table
-    svg = ['<svg xmlns="http://www.w3.org/2000/svg" width="800" height="{}">'.format(40 + len(rows)*20)]
-    svg.append('<text x="10" y="20" font-size="14">Finish Schedule - {}</text>'.format(model.name))
-    y=40
-    for r in rows:
-        svg.append(f'<text x="10" y="{y}" font-size="10">{r["element_kind"]} | {r["location"]} | {r["finish"]}</text>')
-        y+=18
-        # swatch rect
-        svg.append(f'<rect x="700" y="{y-12}" width="20" height="12" fill="#cccccc" stroke="#000"/>')
-    svg.append('</svg>')
-    out = Path(out_dir) / f"{model.name}_finishes.svg"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(svg), encoding="utf-8")
-    return out

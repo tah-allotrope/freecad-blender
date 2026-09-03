@@ -39,6 +39,7 @@ PALETTES = {
 # that family -- e.g. a bathroom floor is not just a flat colour but a
 # ceramic tile with grout. The authoritative table lives in `finishes` (pure,
 # testable without Blender); this dict is kept as a read-only alias.
+# Deprecated duplicate of finishes.FAMILY_FOR_PALETTE_KEY (C4) -- zero callers, kept for compat.
 _FAMILY_FOR_KEY = {
     "wall_exterior": "plaster_painted",
     "wall_partition": "plaster_painted",

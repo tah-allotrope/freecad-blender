@@ -96,9 +96,8 @@ def all_section_paths(model, out_dir: Path) -> list[Path]:
         name = sec.get("name", "section")
         paths.append(section_svg_path(out, model.name, name))
         paths.append(section_dxf_path(out, model.name, name))
-    # Fallback for models without declared sections (legacy)
     if not paths:
-        for name in ("long", "cross_bed"):
+        for name in ("x", "y"):
             paths.append(section_svg_path(out, model.name, name))
             paths.append(section_dxf_path(out, model.name, name))
     return paths

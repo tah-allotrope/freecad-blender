@@ -378,3 +378,74 @@ def test_build_command_emits_the_show_neighbours_flag(monkeypatch):
     off = orchestrator._build_command(Path("m.json"), Path("out"), "final", show_neighbours=False)
     assert "--show-neighbours" in on
     assert "--show-neighbours" not in off
+
+
+# --- a published page must never reference a local filesystem path ---------
+
+def test_relative_to_resolves_a_sibling_directory():
+    """`Path.relative_to` only walks downward; a sibling needs `os.path.relpath`.
+
+    The floors viewer sits in `<out>/viewer/` and its GLB in `<out>/gltf/`, so
+    the downward-only form raised and the except branch fell back to
+    `path.resolve()` — baking `C:/Users/.../output/gltf/x.glb` into a page
+    published to GitHub Pages, where it fails for every visitor.
+    """
+    from homedesign.viewer import _relative_to
+
+    out = Path("/tmp/out")
+    assert _relative_to(out / "gltf" / "x.glb", out / "viewer") == "../gltf/x.glb"
+
+
+def test_relative_to_never_returns_an_absolute_path(tmp_path):
+    from homedesign.viewer import _relative_to
+
+    elsewhere = tmp_path / "somewhere" / "deep" / "model.glb"
+    elsewhere.parent.mkdir(parents=True)
+    elsewhere.write_bytes(b"x")
+    rel = _relative_to(elsewhere, tmp_path / "viewer")
+    assert not Path(rel).is_absolute(), rel
+    assert ":" not in rel, f"{rel} looks like a Windows drive path"
+
+
+def _floors_fixture(tmp_path):
+    """A minimal model plus the plan SVGs the floors viewer requires."""
+    glb = _tiny_glb(tmp_path / "gltf" / "mini.glb") if (tmp_path / "gltf").exists() else None
+    (tmp_path / "gltf").mkdir(exist_ok=True)
+    glb = _tiny_glb(tmp_path / "gltf" / "mini.glb")
+    svg_dir = tmp_path / "svg"
+    svg_dir.mkdir(exist_ok=True)
+    storeys = [{"name": "Ground", "base_z": 0.0, "height_mm": 3400.0},
+               {"name": "F1", "base_z": 3400.0, "height_mm": 3400.0}]
+    for level in range(len(storeys)):
+        (svg_dir / f"mini_f{level}.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
+            encoding="utf-8")
+    return glb, storeys, svg_dir
+
+
+def test_floor_viewer_copies_its_glb_and_loads_it_by_name(tmp_path):
+    from homedesign.viewer import write_floor_viewer
+
+    glb, storeys, svg_dir = _floors_fixture(tmp_path)
+    written = write_floor_viewer("mini", glb, storeys, svg_dir, tmp_path)
+    assert written is not None
+    html_path = getattr(written, "html", written)
+    html = html_path.read_text(encoding="utf-8")
+    assert "fetch('mini.glb')" in html, "floors page must load a sibling GLB by bare name"
+    assert (html_path.parent / "mini.glb").exists(), "the GLB was not copied beside the page"
+
+
+def test_no_emitted_viewer_embeds_a_filesystem_path(tmp_path):
+    """Guard for every build: nothing published may name a local directory."""
+    from homedesign.viewer import write_floor_viewer, write_viewer
+
+    glb, storeys, svg_dir = _floors_fixture(tmp_path)
+    pages = [write_viewer("mini", glb, tmp_path, build="full").html,
+             write_viewer("mini", glb, tmp_path, build="light").html]
+    floors = write_floor_viewer("mini", glb, storeys, svg_dir, tmp_path)
+    pages.append(getattr(floors, "html", floors))
+
+    needle = tmp_path.resolve().as_posix()
+    for page in pages:
+        text = page.read_text(encoding="utf-8")
+        assert needle not in text, f"{page.name} embeds the absolute path {needle}"
