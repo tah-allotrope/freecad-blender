@@ -117,7 +117,7 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
         parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" fill="{stroke}"/>')
 
     for opening in storey.openings:
-        wall = next((w for w in storey.walls if w.id == opening.wall_id), None)
+        wall = storey.wall_by_id(opening.wall_id)
         if wall is None:
             continue
         parts.append(_svg_opening(wall, opening, depth))
@@ -670,7 +670,7 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
     _dxf_furniture(msp, storey, plot_depth)
 
     for opening in storey.openings:
-        wall = next((w for w in storey.walls if w.id == opening.wall_id), None)
+        wall = storey.wall_by_id(opening.wall_id)
         if wall is None:
             continue
         layer = "DOORS" if opening.type == "door" else "WINDOWS"

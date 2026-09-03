@@ -433,16 +433,9 @@ def _walls_between(rooms_by_id: dict[str, Room], walls: list[Wall], a_id: str, b
 
 
 def _wall_touches_room(wall: Wall, rect: Rect, eps: float = 1.0) -> bool:
-    tol = wall.thickness / 2 + eps
-    if wall.orientation == "vertical":
-        coord = wall.x + wall.thickness / 2
-        on_edge = abs(coord - rect.x) < tol or abs(coord - rect.x2) < tol
-        overlaps = not (wall.y + wall.h <= rect.y + eps or rect.y2 <= wall.y + eps)
-    else:
-        coord = wall.y + wall.thickness / 2
-        on_edge = abs(coord - rect.y) < tol or abs(coord - rect.y2) < tol
-        overlaps = not (wall.x + wall.w <= rect.x + eps or rect.x2 <= wall.x + eps)
-    return on_edge and overlaps
+    from .model import _wall_touches_room_canonical
+
+    return _wall_touches_room_canonical(wall, rect, eps)
 
 
 def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Opening]:
@@ -508,6 +501,7 @@ def _place_openings(opening_specs, rooms, walls, level, path, errors) -> list[Op
                 sill_mm=0.0 if o["type"] == "door" else o.get("sill_mm", 900.0),
                 head_mm=o.get("head_mm", default_head),
                 divisions=o.get("divisions"),
+                between=(a_id, b_id),
             )
         )
     _check_opening_overlaps(result, path, errors)

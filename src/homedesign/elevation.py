@@ -303,7 +303,7 @@ def build_section(model: CompiledModel, axis: str, position_mm: float) -> list[d
         # Opening head annotations: a small +x.xxx label at the head of every
         # opening whose host wall the section plane cuts through.
         for opening in storey.openings:
-            wall = next((w for w in storey.walls if w.id == opening.wall_id), None)
+            wall = storey.wall_by_id(opening.wall_id)
             if wall is None or not _wall_cut(wall, axis, position_mm):
                 continue
             xpos = (wall.y + wall.h / 2) if axis == "x" else (wall.x + wall.w / 2)

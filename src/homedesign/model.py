@@ -68,7 +68,26 @@ class Opening:
     sill_mm: float
     head_mm: float
     divisions: Optional[dict] = None
+    between: tuple[str, str] = ("", "")  # authored adjacency: (a_id, b_id) as in spec between
 
+
+def _wall_touches_room_canonical(wall: "Wall", rect: "Rect", eps: float = 1.0) -> bool:
+    """Single canonical wall-touch test (C1 deep module).
+
+    Tolerance ``wall.thickness / 2 + eps`` matches the original compiler
+    rule; every reader now asks the model instead of re-measuring with a
+    private copy.  ``eps`` is the same 1 mm used throughout the codebase.
+    """
+    tol = wall.thickness / 2 + eps
+    if wall.orientation == "vertical":
+        coord = wall.x + wall.thickness / 2
+        on_edge = abs(coord - rect.x) < tol or abs(coord - rect.x2) < tol
+        overlaps = not (wall.y + wall.h <= rect.y + eps or rect.y2 <= wall.y + eps)
+    else:
+        coord = wall.y + wall.thickness / 2
+        on_edge = abs(coord - rect.y) < tol or abs(coord - rect.y2) < tol
+        overlaps = not (wall.x + wall.w <= rect.x + eps or rect.x2 <= wall.x + eps)
+    return on_edge and overlaps
 
 @dataclass
 class Tread:
@@ -126,6 +145,65 @@ class Storey:
     annotations: list[dict] = field(default_factory=list)  # text callouts, not rooms
     facade_elements: list[dict] = field(default_factory=list)
 
+    # -- C1 deep interface: the compiled model answers adjacency --
+    def wall_by_id(self, wall_id: str) -> Optional["Wall"]:
+        for w in self.walls:
+            if w.id == wall_id:
+                return w
+        return None
+
+    def opening_rooms(self, opening: "Opening") -> tuple[str, str]:
+        """Authored pair the opening connects, as stored at compile time."""
+        if opening.between and opening.between != ("", ""):
+            return tuple(opening.between)  # type: ignore[return-value]
+        wall = self.wall_by_id(opening.wall_id)
+        if wall is None:
+            return ("exterior", "?")
+        touching = [r.id for r in self.rooms if _wall_touches_room_canonical(wall, r.rect)]
+        if wall.kind == "exterior":
+            touching.append("exterior")
+        if len(touching) >= 2:
+            return (touching[0], touching[1])  # type: ignore[return-value]
+        if touching:
+            return (touching[0], "exterior")  # type: ignore[return-value]
+        return ("exterior", "?")
+
+    def opening_room_names(self, opening: "Opening") -> list[str]:
+        """Display names for the two sides of an opening."""
+        a_id, b_id = self.opening_rooms(opening)
+        names = {r.id: (r.name or r.id) for r in self.rooms}
+        names["exterior"] = "exterior"
+        return [names.get(a_id, a_id), names.get(b_id, b_id)]
+
+    def walls_for_room(self, room_id: str) -> list["Wall"]:
+        """Walls that bound a room (canonical tolerance)."""
+        room = next((r for r in self.rooms if r.id == room_id), None)
+        if room is None:
+            return []
+        return [w for w in self.walls if _wall_touches_room_canonical(w, room.rect)]
+
+    def wall_between(self, a_id: str, b_id: str) -> Optional["Wall"]:
+        """Wall separating a_id and b_id: prefer the opening's wall when present."""
+        for o in self.openings:
+            if set(o.between) == {a_id, b_id}:
+                return self.wall_by_id(o.wall_id)
+        if b_id == "exterior":
+            a = next((r for r in self.rooms if r.id == a_id), None)
+            if a is None:
+                return None
+            for w in self.walls:
+                if w.kind == "exterior" and _wall_touches_room_canonical(w, a.rect):
+                    return w
+            return None
+        a = next((r for r in self.rooms if r.id == a_id), None)
+        b = next((r for r in self.rooms if r.id == b_id), None)
+        if a is None or b is None:
+            return None
+        for w in self.walls:
+            if w.kind == "partition" and _wall_touches_room_canonical(w, a.rect) and _wall_touches_room_canonical(w, b.rect):
+                return w
+        return None
+
 
 @dataclass
 class CompiledModel:
@@ -162,7 +240,15 @@ class CompiledModel:
                 for r in s["rooms"]
             ]
             walls = [Wall(**w) for w in s["walls"]]
-            openings = [Opening(**o) for o in s["openings"]]
+            openings = []
+            for o in s["openings"]:
+                # between is stored as list in JSON (tuple in the model); older
+                # dicts may lack it entirely.
+                bw = o.get("between", ("", ""))
+                # Preserve dict for Opening(**o) but normalise between to tuple
+                od = dict(o)
+                od["between"] = tuple(bw) if isinstance(bw, (list, tuple)) and len(bw) == 2 else ("", "")
+                openings.append(Opening(**od))
             stairs = None
             if s.get("stairs"):
                 st = s["stairs"]

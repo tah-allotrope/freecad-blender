@@ -98,27 +98,12 @@ def build_opening_schedule(model: CompiledModel) -> list[dict]:
     """One row per opening: id, storey, type, width, sill, head, rooms."""
     rows = []
     for storey in model.storeys:
-        rooms_by_id = {r.id: (r.name or r.id) for r in storey.rooms}
         for o in storey.openings:
-            wall = next((w for w in storey.walls if w.id == o.wall_id), None)
-            rooms = []
-            if wall is not None:
-                # The wall's two side room ids are not directly stored on the
-                # opening in the compiled model; recover them from the wall
-                # neighbourhood: the rooms whose rects share that wall edge.
-                for r in storey.rooms:
-                    rect = r.rect
-                    if wall.orientation == "vertical":
-                        if abs(rect.x2 - wall.x) < 1 or abs(rect.x - (wall.x + wall.w)) < 1:
-                            if rect.y < wall.y + wall.h and rect.y2 > wall.y:
-                                rooms.append(r)
-                    else:
-                        if abs(rect.y2 - wall.y) < 1 or abs(rect.y - (wall.y + wall.h)) < 1:
-                            if rect.x < wall.x + wall.w and rect.x2 > wall.x:
-                                rooms.append(r)
-            room_labels = [rooms_by_id.get(r.id, r.id) for r in rooms[:2]]
-            if not room_labels:
-                room_labels = ["exterior", "?"]
+            # Deep interface (C1): the compiled model records the authored
+            # adjacency; no geometry re-derivation and no wall lookup here.
+            room_labels = storey.opening_room_names(o)
+            # The wall lookup for rooms is now inside the model; writers
+            # never repeat the linear search over walls.
             rows.append({
                 "id": o.id,
                 "storey": storey.level,

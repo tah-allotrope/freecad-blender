@@ -17,26 +17,15 @@ def check_door_reachability(model: CompiledModel) -> list[SpecError]:
     exterior door (level 0) or from a stairwell/elevator room (upper levels)."""
     errors: list[SpecError] = []
     for storey in model.storeys:
-        # Build the door graph: room_id <-> room_id (or "exterior") for doors.
+        # Deep interface (C1): adjacency comes from the model, not a
+        # geometry walk. One rule, not four private copies.
         graph: dict[str, set[str]] = {}
         for o in storey.openings:
             if o.type != "door":
                 continue
-            # Find the two room ids the opening connects via its wall.
-            wall = next((w for w in storey.walls if w.id == o.wall_id), None)
-            if wall is None:
-                continue
-            touching = {
-                r.id for r in storey.rooms if _wall_touches_room(wall, r.rect)
-            }
-            if wall.kind == "exterior":
-                touching.add("exterior")
-            ids = list(touching)
-            for a in ids:
-                for b in ids:
-                    if a != b:
-                        graph.setdefault(a, set()).add(b)
-                        graph.setdefault(b, set()).add(a)
+            a_id, b_id = storey.opening_rooms(o)
+            graph.setdefault(a_id, set()).add(b_id)
+            graph.setdefault(b_id, set()).add(a_id)
 
         reachable: set[str] = set()
         if storey.level == 0:
@@ -97,13 +86,9 @@ def check_habitable_daylight(model: CompiledModel) -> list[SpecError]:
         for room in storey.rooms:
             if room.type not in HABITABLE_TYPES:
                 continue
+            # C1: ask the model which rooms each window serves.
             has_window = any(
-                o.type == "window"
-                and any(
-                    _wall_touches_room(w, room.rect)
-                    for w in storey.walls
-                    if w.id == o.wall_id
-                )
+                o.type == "window" and room.id in storey.opening_rooms(o)
                 for o in storey.openings
             )
             if not has_window:
@@ -280,19 +265,11 @@ def check_storey_order(spec_levels: list[int]) -> list[SpecError]:
             severity="warning",
         )
     ]
-
-
 def _wall_touches_room(wall, rect, eps: float = 1.0) -> bool:
-    tol = wall.thickness / 2 + eps
-    if wall.orientation == "vertical":
-        coord = wall.x + wall.thickness / 2
-        on_edge = abs(coord - rect.x) < tol or abs(coord - rect.x2) < tol
-        overlaps = not (wall.y + wall.h <= rect.y + eps or rect.y2 <= wall.y + eps)
-    else:
-        coord = wall.y + wall.thickness / 2
-        on_edge = abs(coord - rect.y) < tol or abs(coord - rect.y2) < tol
-        overlaps = not (wall.x + wall.w <= rect.x + eps or rect.x2 <= wall.x + eps)
-    return on_edge and overlaps
+    """Deprecated duplicate (C1): use model._wall_touches_room_canonical."""
+    from .model import _wall_touches_room_canonical
+
+    return _wall_touches_room_canonical(wall, rect, eps)
 
 
 # The registry: order matters only for stable error ordering in output.
