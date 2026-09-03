@@ -141,15 +141,20 @@ def cmd_pdf(args) -> int:
     code = _handle_errors(errors, args)
     if code is not None:
         return code
-    out_dir = args.out
+    out_dir = Path(args.out).resolve()
+    from .artifacts import all_drawing_paths
 
-    svg_dir = out_dir / "svg"
-    needs_drawings = not all((svg_dir / f"{model.name}_f{s.level}.svg").exists() for s in model.storeys)
-    if not needs_drawings:
-        needs_drawings = not (svg_dir / f"{model.name}_elev_north.svg").exists() \
-            or not any(svg_dir.glob(f"{model.name}_section_*.svg"))
+    # C4: catalogue owns what the drawing set is; we ask, not restate.
+    # Missing drawing is an error downstream (pdf raises), so we regenerate
+    # when any expected drawing is absent. Freshness is owned by C5.
+    expected = all_drawing_paths(model, out_dir)
+    needs_drawings = any(not p.exists() for p in expected)
     if needs_drawings:
         plan2d.write_plans(model, out_dir)
+        # Verify the writers delivered what the catalogue asked for
+        missing = [p for p in expected if not p.exists()]
+        if missing:
+            raise FileNotFoundError(f"drawing write incomplete, missing {missing[0]}")
 
     brief_path = Path(args.brief) if args.brief else REPO_ROOT / "spec" / "briefs" / f"{model.name}.json"
     if not brief_path.exists():

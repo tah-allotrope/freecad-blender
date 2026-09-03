@@ -215,7 +215,9 @@ def _plan_pages(model: CompiledModel, svg_dir: Path) -> str:
     pages = []
     for storey in model.storeys:
         svg_path = svg_dir / f"{model.name}_f{storey.level}.svg"
-        body = _svg_inline(svg_path) if svg_path.exists() else "<p>(plan not generated)</p>"
+        if not svg_path.exists():
+            raise FileNotFoundError(f"required drawing missing: {svg_path} -- run homedesign plans first")
+        body = _svg_inline(svg_path)
         pages.append(f'<section class="page plan-page"><h2>{escape_text(storey.name)} &mdash; Floor Plan</h2>{body}</section>')
     return "".join(pages)
 
@@ -224,7 +226,9 @@ def _elevation_pages(model: CompiledModel, svg_dir: Path) -> str:
     pages = []
     for side in ("north", "south", "east", "west"):
         svg_path = svg_dir / f"{model.name}_elev_{side}.svg"
-        body = _svg_inline(svg_path) if svg_path.exists() else "<p>(elevation not generated)</p>"
+        if not svg_path.exists():
+            raise FileNotFoundError(f"required drawing missing: {svg_path} -- run homedesign plans first")
+        body = _svg_inline(svg_path)
         pages.append(f'<section class="page plan-page"><h2>{side.title()} Elevation</h2>{body}</section>')
     return "".join(pages)
 
@@ -238,7 +242,9 @@ def _section_pages(model: CompiledModel, svg_dir: Path) -> str:
     for cut in cuts:
         label = "Long Section" if cut["axis"] == "x" else "Cross Section"
         svg_path = svg_dir / f"{model.name}_section_{cut['name']}.svg"
-        body = _svg_inline(svg_path) if svg_path.exists() else "<p>(section not generated)</p>"
+        if not svg_path.exists():
+            raise FileNotFoundError(f"required drawing missing: {svg_path} -- run homedesign plans first")
+        body = _svg_inline(svg_path)
         pages.append(f'<section class="page plan-page"><h2>{escape_text(cut["name"])} &mdash; {label}</h2>{body}</section>')
     return "".join(pages)
 
