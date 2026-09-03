@@ -561,8 +561,12 @@ most of this session's value was in the second category.
 - **PR TASK-06-05, the full Cycles bake.** This machine has no GPU render path
   (UHD 620, 2018 driver — see `lessons.md`), so Cycles is CPU-only. The
   published stills are the `final` EEVEE profile at 1920x1080/256 samples,
-  which took ~65 minutes for twelve views; a 512-sample Cycles pass over the
-  same set is a multi-hour job that is not a single-session operation.
+  which took 2691 s (~45 min) for twelve views. Measured, rather than assumed:
+  a Cycles pass on the `khach` view at the profile's 512 samples reached
+  sample 41/512 in 6 min 41 s with Blender reporting **1 h 16 m remaining for
+  that single frame** — about 17 hours for the twelve-view set. That is an
+  overnight job on dedicated hardware, not a session step, so it is left open
+  with this figure attached rather than silently ticked.
 - **A question for the owner:** the design's `finishes.by_room_type` lists
   floor materials (`living: wood_board`, `bedroom: wood_board`), and S3 rule 3
   applies `by_room_type` to floors *and wall faces*. Living and bedroom walls
