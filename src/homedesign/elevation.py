@@ -387,6 +387,8 @@ def _svg(items: list[dict], title: str, width_mm: float, total_h_mm: float) -> s
             parts.append(f'<text x="{sx:.1f}" y="{sy:.1f}" font-size="12" text-anchor="middle" fill="#222">{escape_text(item["label"])}</text>')
         elif kind == "head_annotation":
             parts.append(f'<text x="{sx + 2:.1f}" y="{sy:.1f}" font-size="9" fill="#555">{escape_text(item["label"])}</text>')
+        else:
+            raise ValueError(f"elevation SVG: unknown primitive kind {kind!r}")
 
     # Overall height dimension on the right, labelled in metres.
     solid = [i for i in items if i["kind"] in ("wall", "roof", "parapet", "structure", "facade")]
@@ -457,6 +459,10 @@ def _dxf(items: list[dict], out_path: Path) -> None:
             msp.add_text(item["label"] or "", dxfattribs={"layer": "TEXT", "height": 120}).set_placement(
                 (x + 100, z), align=ezdxf.enums.TextEntityAlignment.LEFT
             )
+        elif kind == "outline":
+            poly(item, "ELEV")
+        else:
+            raise ValueError(f"elevation DXF: unknown primitive kind {kind!r}")
     doc.saveas(out_path)
 
 

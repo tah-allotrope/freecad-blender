@@ -22,6 +22,71 @@ ROOM_FILL = {
     "office": "#e0e0d0", "storage": "#dcdcdc", "elevator": "#c9c9d9",
     "terrace": "#d9e8d0", "wc": "#cfe3e8", "utility": "#dcdcdc", "courtyard": "#e8f0e0",
 }
+# -- C2 deep module: one neutral draw model, two writers over it --
+def _plan_setback_items(model):
+    """Setback lines in model coordinates (one per declared setback)."""
+    setbacks = model.setbacks or {}
+    depth = model.plot_depth_mm
+    items = []
+    for key, dist, label in (
+        ("front_mm", float(setbacks.get("front_mm", 0.0)), "Ranh khoảng lùi trước"),
+        ("rear_mm", float(setbacks.get("rear_mm", 0.0)), "Ranh khoảng lùi sau"),
+    ):
+        if not setbacks.get(key):
+            continue
+        y_model = dist if key == "front_mm" else depth - dist
+        items.append({"kind": "setback", "y_mm": y_model, "label": label, "key": key})
+    return items
+
+
+def _plan_furniture_items(storey):
+    """Furniture footprints in model millimetres, from the single placement rule."""
+    from .placement import plan_room
+    items = []
+    for room in storey.rooms:
+        rect = room.interior or room.rect
+        for it in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+            x_mm = rect.x + it.x * 1000
+            y_mm = rect.y + it.y * 1000
+            items.append({
+                "kind": "furniture",
+                "x_mm": x_mm,
+                "y_mm": y_mm,
+                "w_mm": it.w * 1000,
+                "d_mm": it.d * 1000,
+                "f_kind": it.kind,
+                "rot_deg": it.rot_deg,
+            })
+    return items
+
+
+def build_plan(model, storey):
+    """Typed draw-model for one storey (C2): neutral, writers are adapters."""
+    items = []
+    # Core geometry
+    for room in storey.rooms:
+        items.append({"kind": "room", "room": room})
+    for wall in storey.walls:
+        items.append({"kind": "wall", "wall": wall})
+    for opening in storey.openings:
+        items.append({"kind": "opening", "opening": opening, "wall": storey.wall_by_id(opening.wall_id)})
+    # Voids, furniture, treads, setbacks, annotations
+    for void, reason in zip(storey.authored_voids, storey.authored_void_reasons):
+        items.append({"kind": "void", "void": void, "reason": reason})
+    for f in _plan_furniture_items(storey):
+        items.append(f)
+    if storey.stairs:
+        for idx, t in enumerate(storey.stairs.treads, start=1):
+            items.append({"kind": "tread", "t": t, "number": idx})
+    for s in _plan_setback_items(model):
+        items.append(s)
+    # Dimension tiers (neutral)
+    for tier, coords in enumerate(_dimension_tiers(storey.rooms, "h", model.plot_width_mm, model.plot_depth_mm), start=1):
+        items.append({"kind": "dimension_tier", "axis": "h", "coords": coords, "tier": tier})
+    for tier, coords in enumerate(_dimension_tiers(storey.rooms, "v", model.plot_depth_mm, model.plot_width_mm), start=1):
+        items.append({"kind": "dimension_tier", "axis": "v", "coords": coords, "tier": tier})
+    return items
+
 
 
 def write_plans(model: CompiledModel, out_dir: Path) -> list[Path]:
@@ -200,31 +265,17 @@ def _render_svg(model: CompiledModel, storey: Storey) -> str:
 
 
 def _svg_furniture(storey, depth: float) -> str:
-    """Plan footprints for every furnishable room on this storey.
-
-    Deliberately calls the same `placement.plan_room` the Blender furnisher
-    calls, with the same interior-rect preference and the same room-local ->
-    world mapping, so the two views cannot drift apart. `FurnitureItem.x/.y`
-    is the footprint's min corner in room-local metres and `rot_deg` turns it
-    about the footprint centre (see `procedural_furniture._placer_for`).
-    """
-    from .placement import plan_room
-
+    """Adapter over the draw-model furniture (C2)."""
     parts = ['<g class="furniture" fill="none" stroke="#8a8375" stroke-width="0.8">']
-    for room in storey.rooms:
-        rect = room.interior or room.rect
-        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
-            x_mm = rect.x + item.x * 1000
-            y_mm = rect.y + item.y * 1000
-            w_px, d_px = item.w * 1000 / MM_PER_PX, item.d * 1000 / MM_PER_PX
-            x_px, y_px = _mm_to_px(x_mm), _y(y_mm + item.d * 1000, depth)
-            cx, cy = x_px + w_px / 2, y_px + d_px / 2
-            # SVG's y axis runs down while the model's runs north, so the plan
-            # is mirrored and a model-space CCW rotation reads as CW here.
-            transform = (f' transform="rotate({-item.rot_deg:.1f} {cx:.1f} {cy:.1f})"'
-                         if item.rot_deg else "")
-            parts.append(f'<rect data-furniture="{item.kind}" x="{x_px:.1f}" y="{y_px:.1f}" '
-                         f'width="{w_px:.1f}" height="{d_px:.1f}"{transform}/>')
+    for item in _plan_furniture_items(storey):
+        x_mm, y_mm, w_mm, d_mm = item["x_mm"], item["y_mm"], item["w_mm"], item["d_mm"]
+        w_px, d_px = w_mm / MM_PER_PX, d_mm / MM_PER_PX
+        x_px, y_px = _mm_to_px(x_mm), _y(y_mm + d_mm, depth)
+        cx, cy = x_px + w_px / 2, y_px + d_px / 2
+        transform = (f' transform="rotate({-item["rot_deg"]:.1f} {cx:.1f} {cy:.1f})"'
+                     if item["rot_deg"] else "")
+        parts.append(f'<rect data-furniture="{item["f_kind"]}" x="{x_px:.1f}" y="{y_px:.1f}" '
+                     f'width="{w_px:.1f}" height="{d_px:.1f}"{transform}/>')
     parts.append("</g>")
     return "\n".join(parts)
 
@@ -311,28 +362,21 @@ def _svg_plot_boundary(model) -> str:
 
 
 def _svg_setbacks(model) -> str:
-    """The building lines ("ranh khoảng lùi"): dash-dot rules spanning the
-    full plot width at the declared front/rear setback distances, labelled
-    like the sheets label them. Absent when the site declares none."""
-    setbacks = model.setbacks
-    if not setbacks:
+    """Adapter over the draw-model setbacks (C2)."""
+    items = _plan_setback_items(model)
+    if not items:
         return ""
     depth = model.plot_depth_mm
     x0 = _mm_to_px(0)
     x1 = _mm_to_px(model.plot_width_mm)
     parts = ['<g class="setback">']
-    for key, dist, label in (
-        ("front_mm", float(setbacks.get("front_mm", 0.0)), "Ranh khoảng lùi trước"),
-        ("rear_mm", float(setbacks.get("rear_mm", 0.0)), "Ranh khoảng lùi sau"),
-    ):
-        if not setbacks.get(key):
-            continue
-        y = _y(depth - dist, depth)
+    for it in items:
+        y = _y(it["y_mm"], depth)
         parts.append(f'<line x1="{x0:.1f}" y1="{y:.1f}" x2="{x1:.1f}" y2="{y:.1f}" '
                      f'stroke="#555" stroke-width="1" stroke-dasharray="14 3 2 3"/>')
         lx = x0 + 10
         parts.append(f'<text x="{lx:.1f}" y="{y - 4:.1f}" font-size="10" fill="#555" '
-                     f'transform="rotate(-90 {lx:.1f} {y - 4:.1f})">{escape_text(label)}</text>')
+                     f'transform="rotate(-90 {lx:.1f} {y - 4:.1f})">{escape_text(it["label"])}</text>')
     parts.append("</g>")
     return "\n".join(parts)
 
@@ -450,31 +494,20 @@ def _title_block(width_px: float, height_px: float, lines: list[str]) -> str:
 
 
 def _dxf_furniture(msp, storey, plot_depth: float) -> None:
-    """Furniture footprints on their own layer, from the same placement rules
-    the SVG and the Blender builder use."""
+    """Adapter over the draw-model furniture (C2)."""
     import math
-
-    from .placement import plan_room
-
-    for room in storey.rooms:
-        rect = room.interior or room.rect
-        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
-            x_mm = rect.x + item.x * 1000
-            y_mm = rect.y + item.y * 1000
-            w_mm, d_mm = item.w * 1000, item.d * 1000
-            cx, cy = x_mm + w_mm / 2, y_mm + d_mm / 2
-            theta = math.radians(item.rot_deg)
-            cos_t, sin_t = math.cos(theta), math.sin(theta)
-            corners = []
-            for dx, dy in ((-w_mm / 2, -d_mm / 2), (w_mm / 2, -d_mm / 2),
-                           (w_mm / 2, d_mm / 2), (-w_mm / 2, d_mm / 2)):
-                # Rotate about the footprint centre in model space, then flip
-                # into DXF's y-up frame (DXF keeps model orientation, unlike
-                # the mirrored SVG, so no sign change on the angle here).
-                rx = cx + dx * cos_t - dy * sin_t
-                ry = cy + dx * sin_t + dy * cos_t
-                corners.append(_dxf_pt(rx, ry, plot_depth))
-            msp.add_lwpolyline(corners, close=True, dxfattribs={"layer": "FURNITURE"})
+    for item in _plan_furniture_items(storey):
+        x_mm, y_mm, w_mm, d_mm = item["x_mm"], item["y_mm"], item["w_mm"], item["d_mm"]
+        cx, cy = x_mm + w_mm / 2, y_mm + d_mm / 2
+        theta = math.radians(item["rot_deg"])
+        cos_t, sin_t = math.cos(theta), math.sin(theta)
+        corners = []
+        for dx, dy in ((-w_mm / 2, -d_mm / 2), (w_mm / 2, -d_mm / 2),
+                       (w_mm / 2, d_mm / 2), (-w_mm / 2, d_mm / 2)):
+            rx = cx + dx * cos_t - dy * sin_t
+            ry = cy + dx * sin_t + dy * cos_t
+            corners.append(_dxf_pt(rx, ry, plot_depth))
+        msp.add_lwpolyline(corners, close=True, dxfattribs={"layer": "FURNITURE"})
 
 
 def _dxf_pt(x_mm: float, y_mm: float, plot_depth_mm: float) -> tuple[float, float]:
@@ -731,18 +764,12 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
             msp.add_text(reason, dxfattribs={"layer": "VOIDS", "height": 100}).set_placement(
                 _dxf_pt(cx, cy - 200, plot_depth), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
 
-    setbacks = model.setbacks or {}
-    for key, dist, label in (
-        ("front_mm", float(setbacks.get("front_mm", 0.0)), "Ranh khoảng lùi trước"),
-        ("rear_mm", float(setbacks.get("rear_mm", 0.0)), "Ranh khoảng lùi sau"),
-    ):
-        if not setbacks.get(key):
-            continue
-        y = plot_depth - dist
-        msp.add_line(_dxf_pt(0.0, y, plot_depth), _dxf_pt(model.plot_width_mm, y, plot_depth),
+    for it in _plan_setback_items(model):
+        y_model = it["y_mm"]
+        msp.add_line(_dxf_pt(0.0, y_model, plot_depth), _dxf_pt(model.plot_width_mm, y_model, plot_depth),
                      dxfattribs={"layer": "SETBACK"})
-        tx, ty = _dxf_pt(100.0, y - 100.0, plot_depth)
-        msp.add_text(label, dxfattribs={"layer": "SETBACK", "height": 120, "rotation": 90}).set_placement(
+        tx, ty = _dxf_pt(100.0, y_model - 100.0, plot_depth)
+        msp.add_text(it["label"], dxfattribs={"layer": "SETBACK", "height": 120, "rotation": 90}).set_placement(
             (tx, ty), align=ezdxf.enums.TextEntityAlignment.MIDDLE_LEFT)
 
     for ann in storey.annotations:
@@ -756,10 +783,10 @@ def _render_dxf(model: CompiledModel, storey: Storey, out_path: Path) -> None:
         msp.add_text(str(ann["text"]), dxfattribs={"layer": "ANNOT", "height": 120}).set_placement(
             (cx_f, cy_f), align=ezdxf.enums.TextEntityAlignment.MIDDLE_CENTER)
 
-    h_coords = sorted({c for r in storey.rooms for c in (r.rect.x, r.rect.x2)})
-    v_coords = sorted({c for r in storey.rooms for c in (r.rect.y, r.rect.y2)})
-    _dxf_dimension_chain(msp, h_coords, "h", 500.0, plot_depth)
-    _dxf_dimension_chain(msp, v_coords, "v", 500.0, plot_depth)
+    for tier, coords in enumerate(_dimension_tiers(storey.rooms, "h", model.plot_width_mm, model.plot_depth_mm), start=1):
+        _dxf_dimension_chain(msp, coords, "h", 500.0 * tier, plot_depth)
+    for tier, coords in enumerate(_dimension_tiers(storey.rooms, "v", model.plot_depth_mm, model.plot_width_mm), start=1):
+        _dxf_dimension_chain(msp, coords, "v", 500.0 * tier, plot_depth)
 
     if storey.stairs:
         for t in storey.stairs.treads:
