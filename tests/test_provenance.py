@@ -63,6 +63,17 @@ def test_write_and_read_sidecar_roundtrip(tmp_path):
     assert data["profile"] == "final"
 
 
+def test_write_and_read_glb_sidecar_roundtrip(tmp_path):
+    """The export-time GLB sidecar `publish` demands (freshness C5)."""
+    glb = tmp_path / "mini.glb"
+    glb.write_bytes(b"glb")
+    sidecar = write_render_sidecar(glb, "abc123def456", "glb", "final")
+    assert sidecar.exists()
+    assert sidecar.name == "mini.glb.json"
+    assert read_render_sidecar(glb)["model_hash"] == "abc123def456"
+
+
+
 def test_pdf_require_fresh_raises_on_stale_render(tmp_path, monkeypatch):
     # Use tmp_path so we never mutate deliverables
     out = tmp_path / "out"

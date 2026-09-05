@@ -74,6 +74,10 @@
         "name": "san_thuong",
         "kind": "room",
         "room_id": "san_thuong_sau"
+      },
+      {
+        "name": "street",
+        "kind": "exterior_street"
       }
     ]
   },
@@ -376,7 +380,7 @@
       "facade_elements": [
         {
           "kind": "column",
-          "side": "south",
+          "side": "north",
           "x_mm": 300,
           "z_mm": 0,
           "w_mm": 300,
@@ -386,7 +390,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 1200,
           "z_mm": 200,
           "w_mm": 150,
@@ -395,7 +399,7 @@
         },
         {
           "kind": "panel",
-          "side": "south",
+          "side": "north",
           "x_mm": 800,
           "z_mm": 500,
           "w_mm": 800,
@@ -588,7 +592,7 @@
       "facade_elements": [
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 300,
           "z_mm": 100,
           "w_mm": 150,
@@ -597,7 +601,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 3500,
           "z_mm": 100,
           "w_mm": 150,
@@ -919,7 +923,7 @@
       "facade_elements": [
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 600,
           "z_mm": 100,
           "w_mm": 120,
@@ -928,7 +932,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 2000,
           "z_mm": 100,
           "w_mm": 120,
@@ -937,7 +941,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 3200,
           "z_mm": 100,
           "w_mm": 120,
@@ -946,7 +950,7 @@
         },
         {
           "kind": "column",
-          "side": "south",
+          "side": "north",
           "x_mm": 300,
           "z_mm": 0,
           "w_mm": 250,
@@ -1269,7 +1273,7 @@
       "facade_elements": [
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 600,
           "z_mm": 100,
           "w_mm": 120,
@@ -1278,7 +1282,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 2000,
           "z_mm": 100,
           "w_mm": 120,
@@ -1287,7 +1291,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 3200,
           "z_mm": 100,
           "w_mm": 120,
@@ -1296,7 +1300,7 @@
         },
         {
           "kind": "column",
-          "side": "south",
+          "side": "north",
           "x_mm": 300,
           "z_mm": 0,
           "w_mm": 250,
@@ -1619,7 +1623,7 @@
       "facade_elements": [
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 600,
           "z_mm": 100,
           "w_mm": 120,
@@ -1628,7 +1632,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 2000,
           "z_mm": 100,
           "w_mm": 120,
@@ -1637,7 +1641,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 3200,
           "z_mm": 100,
           "w_mm": 120,
@@ -1646,7 +1650,7 @@
         },
         {
           "kind": "column",
-          "side": "south",
+          "side": "north",
           "x_mm": 300,
           "z_mm": 0,
           "w_mm": 250,
@@ -1926,7 +1930,7 @@
       "facade_elements": [
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 800,
           "z_mm": 100,
           "w_mm": 150,
@@ -1935,7 +1939,7 @@
         },
         {
           "kind": "fin",
-          "side": "south",
+          "side": "north",
           "x_mm": 3000,
           "z_mm": 100,
           "w_mm": 150,
@@ -2138,7 +2142,7 @@
       "facade_elements": [
         {
           "kind": "band",
-          "side": "south",
+          "side": "north",
           "x_mm": 0,
           "z_mm": 2800,
           "w_mm": 3960,
@@ -2147,7 +2151,7 @@
         },
         {
           "kind": "awning",
-          "side": "south",
+          "side": "north",
           "x_mm": 1000,
           "z_mm": 2200,
           "w_mm": 1960,

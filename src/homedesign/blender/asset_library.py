@@ -22,9 +22,45 @@ except Exception:  # pragma: no cover
     asset_cache = None
     _HAS_CACHE = False
 
+# Phone-build LOD: curated CC0 meshes arrive dense (a draped mattress is
+# ~2 MB of vertices). Meshes over this polygon count are collapsed once at
+# import so both builds share one deterministic LOD; smooth upholstery loses
+# nothing visible at room scale, and the phone GLB sheds ~1.7 MB.
+LOD_POLY_THRESHOLD = 20000
+LOD_DECIMATE_RATIO = 0.4
+
+ # kind -> cached GLB to reuse when the exact kind has no mesh (offline-safe;
+# at placement scale; procedural fallback remains for everything else).
+KIND_ALIASES = {"coffee_table": "table", "dining_table": "table"}
+
 # kind -> (list of mesh datablocks, local bbox min, local bbox max) or None
 _templates: dict[str, tuple | None] = {}
 
+
+def _apply_phone_lod(obj) -> None:
+    """Collapse an over-dense imported mesh once, deterministically.
+
+    Never fails the import: skinned/shape-keyed meshes are skipped and any
+    operator error falls back to the original mesh.
+    """
+    import bpy
+
+    try:
+        data = obj.data
+        if data is None or getattr(data, "shape_keys", None):
+            return
+        if len(data.polygons) < LOD_POLY_THRESHOLD:
+            return
+        mod = obj.modifiers.new("phone_lod", "DECIMATE")
+        mod.ratio = LOD_DECIMATE_RATIO
+        prev_active = bpy.context.view_layer.objects.active
+        bpy.context.view_layer.objects.active = obj
+        try:
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        finally:
+            bpy.context.view_layer.objects.active = prev_active
+    except Exception as exc:
+        print(f"phone LOD skipped for {getattr(obj, 'name', '?')}: {exc}")
 
 def _import_template(kind: str, path: Path):
     """Import a kind's GLB once and keep its mesh datablocks.
@@ -37,10 +73,12 @@ def _import_template(kind: str, path: Path):
     before = set(bpy.data.objects.keys())
     bpy.ops.import_scene.gltf(filepath=str(path))
     new_names = [n for n in bpy.data.objects.keys() if n not in before]
-    if not new_names:
-        return None
-
     meshes: list[tuple] = []
+    for name in new_names:
+        obj = bpy.data.objects[name]
+        if obj.type != "MESH" or obj.data is None:
+            continue
+        _apply_phone_lod(obj)
     lo = [float("inf")] * 3
     hi = [float("-inf")] * 3
     for name in new_names:
@@ -72,16 +110,21 @@ def _template(kind: str):
         return _templates[kind]
     result = None
     if _HAS_CACHE and asset_cache is not None:
-        try:
-            path = asset_cache.furniture(kind)
-        except Exception:
-            path = None
-        if path and Path(path).exists():
+        for candidate in (kind, KIND_ALIASES.get(kind, "")):
+            if not candidate:
+                continue
             try:
-                result = _import_template(kind, Path(path))
-            except Exception as exc:
-                print(f"asset import failed for {kind}: {exc}")
-                result = None
+                path = asset_cache.furniture(candidate)
+            except Exception:
+                path = None
+            if path and Path(path).exists():
+                try:
+                    result = _import_template(kind, Path(path))
+                except Exception as exc:
+                    print(f"asset import failed for {kind}: {exc}")
+                    result = None
+                if result is not None:
+                    break
     _templates[kind] = result
     return result
 

@@ -33,11 +33,14 @@ class _Placer:
     explicit pivot line before the object is created.
     """
 
-    def __init__(self, pivot_x: float, pivot_y: float, angle_rad: float):
+    def __init__(self, pivot_x: float, pivot_y: float, angle_rad: float,
+                 ceiling_z: float | None = None):
         self.pivot_x = pivot_x
         self.pivot_y = pivot_y
         self.angle_rad = angle_rad
-
+        # Storey ceiling elevation (m, world); only ceiling-hung builders
+        # (pendant) read it. None = unknown, fall back to 2.6 m above base.
+        self.ceiling_z = ceiling_z
     def box(self, name, x, y, z, w, d, h, collection, material=None, bevel: float = 0.0):
         if abs(self.angle_rad) < 1e-9:
             return make_box(name, x, y, z, w, d, h, collection, material, bevel=bevel)
@@ -69,15 +72,20 @@ class _Placer:
                              segments=segments, axis=axis_out)
 
 
-def _placer_for(item, x, y):
+def _placer_for(item, x, y, ceiling_z=None):
     """A placer that rotates the item's whole footprint about its centre."""
-    return _Placer(x + item.w / 2, y + item.d / 2, math.radians(item.rot_deg))
+    return _Placer(x + item.w / 2, y + item.d / 2, math.radians(item.rot_deg),
+                   ceiling_z=ceiling_z)
 
 
-def build_item(item, room_x, room_y, base_z, style, collection):
+def build_item(item, room_x, room_y, base_z, style, collection, ceiling_z=None):
     """item is a placement.FurnitureItem (room-local meters); room_x/room_y
-    offset it into world space; base_z is the storey floor elevation (m)."""
-    if _HAS_ASSET:
+    offset it into world space; base_z is the storey floor elevation (m);
+    ceiling_z (m, world) is the storey ceiling, used only by ceiling-hung
+    builders such as the pendant."""
+    # The cached planter box ships empty (concrete + soil, no plants); the
+    # procedural builder is planted, so it wins for this kind only.
+    if item.kind not in PROCEDURAL_FIRST and _HAS_ASSET:
         try:
             obj = asset_library.build_from_asset(item, room_x, room_y, base_z, collection)
             if obj is not None:
@@ -90,13 +98,30 @@ def build_item(item, room_x, room_y, base_z, style, collection):
     z = base_z
 
     builder = _BUILDERS.get(item.kind, _default_block)
-    place = _placer_for(item, x, y)
+    place = _placer_for(item, x, y, ceiling_z)
     builder(item, x, y, z, mat, collection, place)
-
 
 def _default_block(item, x, y, z, mat, collection, place):
     return place.box(f"furn_{item.kind}_{x:.2f}_{y:.2f}", x, y, z, item.w, item.d, item.h,
                      collection, mat, bevel=BEVEL)
+def _build_motorbike(item, x, y, z, mat, collection, place):
+    """Two wheels, low body, seat, fork post and a bar handle."""
+    tag = f"{x:.2f}_{y:.2f}"
+    wheel_r = 0.25
+    for wy in (y + 0.3, y + item.d - 0.3):
+        place.cylinder(f"bike_wheel_{tag}_{wy:.2f}", x + item.w / 2, wy, z + wheel_r,
+                       wheel_r, 0.07, collection, mat, axis="X")
+    place.box(f"bike_body_{tag}", x + 0.12, y + 0.45, z + 0.35,
+              item.w - 0.24, item.d - 0.9, 0.35, collection, mat, bevel=0.04)
+    place.box(f"bike_seat_{tag}", x + 0.15, y + item.d / 2 - 0.1, z + 0.72,
+              item.w - 0.3, 0.55, 0.1, collection, mat, bevel=0.03)
+    front_y = y + item.d - 0.35
+    place.cylinder(f"bike_fork_{tag}", x + item.w / 2, front_y, z + 0.55,
+                   0.02, 0.45, collection, mat)
+    place.cylinder(f"bike_bar_{tag}", x + item.w / 2, front_y, z + 1.0,
+                   0.015, item.w * 0.8, collection, mat, axis="X")
+    return None
+
 
 
 def _build_bed(item, x, y, z, mat, collection, place):
@@ -334,13 +359,83 @@ def _build_planter(item, x, y, z, mat, collection, place):
     place.box(f"planter_soil_{tag}", x + 0.03, y + 0.03, z + box_h - 0.06,
               item.w - 0.06, item.d - 0.06, 0.02, collection, mat, bevel=0.0)
     foliage_h = max(0.15, item.h - box_h)
-    for i in range(3):
-        fx = x + item.w * (0.10 + i * 0.29)
-        place.box(f"planter_foliage_{i}_{tag}", fx, y + item.d * 0.18,
-                  z + box_h - 0.02 + foliage_h * 0.05 * i,
-                  item.w * 0.26, item.d * 0.62, foliage_h * (0.7 + 0.12 * i),
-                  collection, mat, bevel=0.06)
+    # Two overlapping rounded mounds, not three crisp slabs (which read as
+    # storage boxes): heavy bevels sell the shrub silhouette at terrace scale.
+    place.box(f"planter_foliage_0_{tag}", x + item.w * 0.08, y + item.d * 0.14,
+              z + box_h - 0.02, item.w * 0.58, item.d * 0.72, foliage_h,
+              collection, mat, bevel=0.09)
+    place.box(f"planter_foliage_1_{tag}", x + item.w * 0.38, y + item.d * 0.22,
+              z + box_h - 0.02, item.w * 0.54, item.d * 0.60, foliage_h * 0.72,
+              collection, mat, bevel=0.09)
     return None
+
+
+def _build_pendant(item, x, y, z, mat, collection, place):
+    """Canopy, drop cord and drum shade hung from the storey ceiling — the
+    visible source of the room's warm light. Shade bottom hangs at dining
+    height (~1.6 m, max(base+1.6, ceiling-2.0)) so the drum sits inside the
+    interior camera's frame instead of above it."""
+    tag = f"{x:.2f}_{y:.2f}"
+    cx, cy = x + item.w / 2, y + item.d / 2
+    ceiling = place.ceiling_z if place.ceiling_z is not None else z + 2.6
+    shade_d = z + max(1.6, ceiling - z - 2.0)
+    shade_h = 0.26
+    place.cylinder(f"pendant_canopy_{tag}", cx, cy, ceiling - 0.02, 0.05, 0.02, collection, mat)
+    if ceiling - (shade_d + shade_h) > 0.05:
+        place.cylinder(f"pendant_cord_{tag}", cx, cy, shade_d + shade_h,
+                       0.006, ceiling - (shade_d + shade_h), collection, mat)
+    # 32 segments: 16 shows flat facets on a 0.38 m drum at hero distance.
+    place.cylinder(f"pendant_shade_{tag}", cx, cy, shade_d, 0.19, shade_h, collection, mat,
+                   segments=32)
+    place.cylinder(f"pendant_bulb_{tag}", cx, cy, shade_d + 0.02, 0.05, 0.08, collection, mat)
+    return None
+
+def _build_floor_lamp(item, x, y, z, mat, collection, place):
+    """Weighted base, slim pole and a drum shade at eye height — the bright
+    vertical accent beside the sofa."""
+    tag = f"{x:.2f}_{y:.2f}"
+    cx, cy = x + item.w / 2, y + item.d / 2
+    pole_h = max(1.0, item.h - 0.3)
+    place.cylinder(f"lamp_base_{tag}", cx, cy, z, 0.14, 0.03, collection, mat)
+    place.cylinder(f"lamp_pole_{tag}", cx, cy, z + 0.03, 0.018, pole_h, collection, mat)
+    place.cylinder(f"lamp_shade_{tag}", cx, cy, z + 0.03 + pole_h, 0.17, 0.26, collection, mat,
+                   segments=32)
+    return None
+
+
+def _build_nightstand(item, x, y, z, mat, collection, place):
+    """Bedside cabinet: carcase, proud top and a drawer front with knob."""
+    tag = f"{x:.2f}_{y:.2f}"
+    body_h = max(0.3, item.h - 0.04)
+    place.box(f"nightstand_body_{tag}", x, y, z, item.w, item.d, body_h,
+              collection, mat, bevel=BEVEL)
+    place.box(f"nightstand_top_{tag}", x - 0.01, y - 0.01, z + body_h,
+              item.w + 0.02, item.d + 0.02, 0.04, collection, mat, bevel=0.006)
+    place.box(f"nightstand_drawer_{tag}", x + 0.03, y - 0.012, z + body_h - 0.22,
+              item.w - 0.06, 0.012, 0.16, collection, mat, bevel=0.004)
+    place.cylinder(f"nightstand_knob_{tag}", x + item.w / 2, y - 0.03, z + body_h - 0.14,
+                   0.012, 0.03, collection, mat, axis="Y")
+    return None
+
+def _build_rug(item, x, y, z, mat, collection, place):
+    """Flat bordered rug: base slab plus a raised inset field that reads as
+    a woven border under interior light."""
+    tag = f"{x:.2f}_{y:.2f}"
+    h = max(0.015, item.h)
+    place.box(f"rug_base_{tag}", x, y, z, item.w, item.d, h,
+              collection, mat, bevel=0.004)
+    inset = 0.12
+    if item.w > inset * 2 + 0.2 and item.d > inset * 2 + 0.2:
+        place.box(f"rug_field_{tag}", x + inset, y + inset, z + h,
+                  item.w - inset * 2, item.d - inset * 2, 0.006,
+                  collection, mat, bevel=0.002)
+    return None
+
+
+# Kinds whose procedural builder beats the cached mesh. Currently only the
+# planter: planter_box_01 ships as an empty concrete box + soil while the
+# procedural one is planted.
+PROCEDURAL_FIRST = {"planter"}
 
 
 _BUILDERS = {
@@ -356,4 +451,9 @@ _BUILDERS = {
     "console": _build_console,
     "car": _build_car,
     "planter": _build_planter,
+    "rug": _build_rug,
+    "floor_lamp": _build_floor_lamp,
+    "nightstand": _build_nightstand,
+    "pendant": _build_pendant,
+    "motorbike": _build_motorbike,
 }

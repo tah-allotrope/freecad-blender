@@ -408,3 +408,243 @@ documented UTF-8 convention. No logic changed. This fix is still in effect and
 was re-verified this pass (`python -c "...json.load(...,encoding='utf-8')..."`
 prints every room name with correct diacritics).
 \n\n## Rev.4 — 2026-08-29 Render Fidelity\nClosed k,l,m. Added finishes, facade_elements, alley, neighbours. Ledger items a,c,g remain excluded.\n
+## Rev.5 — 2026-09-04 Fidelity push (3D only; no geometry moved)
+
+No room rect, opening, stair, void or roof was moved, resized or re-typed.
+All changes are finish routing, light rig, or Blender-side detail:
+
+- **Walls render as plaster, not timber.** `by_room_type` (`living=wood_board`)
+  leaked into the wall channel via `resolve_finish`, so every living/bedroom
+  wall rendered as deck-boards. `by_room_type` now scopes to `floor` only
+  (`src/homedesign/finishes.py`); `room:khach:wall` resolves `plaster_painted`
+  while `room:khach:floor` stays `wood_board`.
+- **Frames render as satin aluminium, not diamond plate.** Spec authors
+  `frame=aluminium`, which had no procedural family and silently degraded to
+  `metal_brushed` → cached `metal_plate` PBR. `aluminium` is now a real family
+  (procedural satin graph, offline-safe); `frame` maps to it.
+- **Facade articulation moved to the street face.** All 21 `facade_elements`
+  were authored `side:south` (rear plane) while the hero camera and
+  `SÂN TRƯỚC` face north — the front render was correctly empty. Flipped
+  south→north; north elevation now carries 21 facade items (was 0). Added
+  `facade_trim`/`facade_field`/`metal_sheet` palette entries so fins read as
+  concrete trim, not wall-white camouflage.
+- **Interior light rig: one warm omni per room + per-view isolation.**
+  Cool-white ceiling AREAs left camera-side party walls near-black under AgX.
+  Each enclosed room now gets one warm `(1.0, 0.83, 0.64)` POINT scaled by
+  floor area (`area_m2 * 10`, 20–250 W, C3 rule kept as floor), unshadowed
+  (56 cube-shadow maps exhausted the iGPU atlas — proven by OOM crash), and
+  each view renders with only its own room's fill alive (`render(...,
+  view_rooms)`). Spot-check pixels (sRGB): khach W160/E112, ngu_f2 W167/E111,
+  bep_an W160/E99, gara W161/E97 — shaded side reads as warm plaster, no blue
+  cast anywhere. Lesson recorded the hard way: verify against pixels
+  (`PIL`), never eyeballed previews.
+- **Doors read as doors.** Leaves were flat zero-swing slabs; each leaf now
+  carries a lever handle (backplate + lever, both faces, frame material) at
+  1000 mm above the sill. Same opening size/position.
+- **Skirting follows the room floor.** `_add_skirting` used the generic
+  `element:floor` (ceramic checker in timber rooms); now scoped by `room_id`.
+- **Furniture hits the cache.** `coffee_table`/`dining_table` never matched
+  `table.glb` (exact-kind lookup) and always fell back to boxes; aliased to
+  the cached dining-table mesh.
+
+Known gaps (unchanged, finish-level only): flat door leaves (no recessed
+panels), no textiles (rug/curtains/throws), no pendant/cove fixtures or wall
+art, head-on fins sub-pixel at 40 m standoff (a 3/4 aerial would show them),
+hero stills omit neighbour massing by DEC-009 toggle (assess street feel via
+`homedesign build ... --show-neighbours --out <dir>`).
+
+## Rev.6 — 2026-09-04 Detail pass (rugs + panelled doors; no geometry moved)
+
+- **Rugs.** `living` gains a 1.6×1.1 m rug under the coffee table, `bedroom`
+  a runner across the foot of the bed (`placement._plan_living/_plan_bedroom`;
+  kind `rug`, h 20 mm, procedural bordered builder, `upholstery` fabric
+  material). Rugs are collision-exempt in `resolve_collisions` (clamped only)
+  and flow to plans and DXF through the same `plan_room` source — footprint
+  verified on `contractor-as-drawn_f0/f2.svg` (`data-furniture="rug"`).
+  Preview-visibility note: 20 mm pile at 3–4 m is ~3 px at 960×540, so the
+  hero stills barely move; the payoff is in the orbited GLB viewer and any
+  `--profile final` plates.
+- **Panelled doors.** Every leaf keeps its size/position but gains two
+  stacked rail frames per face plus the earlier lever handle (`joinery.py`;
+  static coords, valid while `DOOR_SWING_RAD == 0`). Same honest limitation
+  as rugs: shadow-line detail for close/final views, subtle at preview range.
+
+## Rev.7 — 2026-09-04 Furnishing pass (floor lamp + nightstands; no geometry moved)
+
+- **Floor lamp** (`living`, rooms >3×3 m): weighted base + slim pole + drum
+  shade in porcelain white at the far corner — the bright vertical accent the
+  hero stills were missing, and a direct probe of the east-wall wash.
+  Verified in `cam_khach` frame and by blend query (`lamp_shade_3.31_11.60`).
+- **Nightstands** (`bedroom`): cabinet + proud top + drawer + knob on each
+  fitting side of the headboard. Verified in blend (`nightstand_body_*`);
+  `ngu_f2` re-render pixel-checked (bed-grey dominant lower half).
+- Process lesson (tooling, not design): the image-read path served stale
+  bytes for freshly overwritten PNGs more than once this session (including
+  one fully crossed pair), sending two diagnoses down wrong paths. Ground
+  truth is `PIL` pixel sampling and `blender --background` probes of
+  `output/blend/` — never a re-read of a just-written render.
+
+## Rev.8 — 2026-09-04 Street hero view (new camera kind; no geometry moved)
+
+- **New `exterior_street` view kind** (schema + `View` literal + skill doc +
+  mirror synced): 3/4 hero from the south-east street corner, +8° up at the
+  facade plane's 55% height — the angle pro VN tubehouse renders actually use.
+  Pure `camera_fit.exterior_street_camera` (whole-box fit, 35 mm), thin Blender
+  wrapper, per-view light isolation treats it as exterior (sun only).
+  Framing test sweeps every spec (SE of plot, street side, above ground,
+  facade-plane target). Added as 13th view `street` on the flagship.
+- Measured on the render: 39% building mass, 76% vertical fill, zero cropped
+  edges. Balcony slabs + slatted parapets + bedroom glazing read on every
+  level; pilotis + entrance + roof plant room all present. The 120 mm fins
+  stay subtle even at parallax (3% of facade width — drawn dimension, kept
+  honestly). Heros with `--show-neighbours` remain a separate assessment
+  (`output_streetscape/`): the 14 m party block swallows the lower storeys,
+  which is authentic siting and useless facade assessment — hence DEC-009
+  default stands.
+
+## Rev.9 — 2026-09-04 Pendant sources (new kind; no geometry moved)
+
+- **Pendants** over dining tables, coffee zones and room centres
+  (`placement` + `_build_pendant`: canopy, drop cord, drum shade, bulb, all
+  in dark-bronze `frame` — porcelain-white drums proved camouflaged against
+  the plaster ceiling, the third instance of the material-camouflage class).
+  Ceiling height threads `furnish_storey → build_item → _Placer.ceiling_z`
+  so drops land at dining height (~1.6–1.8 m, inside the interior frame, not
+  above it); pendants are collision-exempt like rugs. Drops were tuned by
+  pixel measurement, not eyeballing (a 2.2 m drop clears the 12–24 mm
+  interior frame entirely).
+- Scale note: each pendant is 4 small objects; ~20 new objects per full
+  build, negligible next to 2500+.
+
+## Rev.10 — 2026-09-05 Print handover (pipeline fix; no geometry moved)
+
+- **Final gallery + brief + publish.** 13-view `final` gallery (1920×1080,
+  legacy EEVEE 256spp), A3 brief under `--require-fresh` (18.6 MB), and a
+  hash-verified `deliverables/contractor-as-drawn/` (png + gltf + viewer +
+  pdf). No plan/spec/model change in this pass.
+- **Pipeline fix this handover exposed:** the GLB export never wrote the
+  `.glb.json` sidecar `freshness.check_freshness` demands, so `publish`
+  refused every model-changed GLB without `--force` (prior publishes must
+  have forced past it). The export now writes one via the same
+  `write_render_sidecar` helper as PNGs (`build_scene.py`, after optimize);
+  covered by a pure round-trip test. The current GLB's sidecar was backfilled
+  with the verified current hash (`a34fd59b479a`) — recorded here, not hidden.
+
+## Rev.11 — 2026-09-05 Phone GLB back inside budget (LOD, no geometry moved)
+
+- **Failure:** `test_the_published_glbs_are_inside_their_budgets` went red —
+  `contractor-as-drawn-light.glb` 8.87 MB vs the 6 MiB phone budget. The old
+  committed file was 5.84 MB (97% of budget); the furnishing pushes added
+  ~3 MB. GLB inspection (`gltf-transform inspect`) attributed it exactly:
+  curated asset meshes 6.07 MB (a draped mattress alone is 1.9 MB), new
+  ornament (panels/handles/knobs/rug fields) ~1.4 MB.
+- **Fix, two halves, desktop untouched:** (1) meshes over 20k polys are
+  collapsed once at asset import (ratio 0.4 — smooth upholstery, UVs kept);
+  (2) the light source is exported with sub-15 cm ornament hidden
+  (`viewer.LIGHT_EXCLUDE_FRAGMENTS`, substring match — joinery names carry
+  the opening id first) and derived normally. Along the way: `hide_render`
+  alone does NOT exclude objects from the glTF exporter; `use_visible=True`
+  plus `hide_viewport` is required (verified: decor stayed in without it).
+- **Measured:** light 8.87 → 5.54 MB (dry-run proven before committing to a
+  full rebuild), main 20.1 → 18.3 MB. Full suite 309 passed, publish clean.
+
+## Rev.12 — 2026-09-05 Calm teak doors (finish-only; no geometry moved)
+
+- **Door leaves muted past the deck texture.** The cached `wood_floor_deck`
+  PBR set rendered every leaf as high-contrast orange striping that shouted
+  over the muted room (fresh-eyes audit of the final khach). Leaves now skip
+  the image-texture path (`use_textures=False` on `door_leaf`) and render the
+  procedural wood graph in a deep teak base, whose contrast is tuned for
+  joinery — safe because no other `wood_board` user reaches that branch (all
+  hit the cache first). Measured on the hero: stripe-contrast stdev 1.7 with
+  R-B spread 39 (was high-contrast banding) at a muted mid-brown mean.
+
+## Rev.13 — 2026-09-05 Asphalt carriageway readout (finish-only; no geometry moved)
+
+- **Street section reads.** The authored carriageway + kerb boxes were built
+  but invisible: the `street` finish resolves to the `concrete_formed` family
+  whose cached PBR set renders near-identical to the ground plane (fourth
+  instance of the material-camouflage class). The `street` key now skips
+  image textures like `door_leaf`, rendering the procedural concrete graph in
+  its dark authored base — asphalt against beige ground, kerb edge between.
+  Finish-map families unchanged, so the model hash and all sidecars stand.
+
+## Rev.14 — 2026-09-05 Bedroom camera off bed axis (framing-only; no geometry moved)
+
+- **Bedrooms no longer render empty.** The interior camera stood centred on
+  the near wall — dead on the bed's long axis, inside its footprint — so the
+  mattress filled only the below-frame blind zone and the hero showed bare
+  walls. Bedroom cameras now anchor at quarter width with an asymmetric
+  half-width fit (other room types bit-identical by construction).
+  `ngu_f2` went from 0% to 51% bed-grey in-frame; nightstand + runner +
+  pendant join the composition with foreground depth. No clipping introduced
+  (0.00% pure white at frame bottom).
+
+## Rev.15 — 2026-09-05 Kitchen camera faces the run (framing-only; no geometry moved)
+
+- **Kitchen hero shows the kitchen.** The run hugs the near wall (under and
+  behind a centred lens), so the old view showed window + fridge + floor but
+  never a counter. Kitchen cameras now shoot from the far end back at the run
+  (mirrored for wide rooms); all other types bit-identical. The run reads as
+  dark timber with tap and panelled door behind it — honest: `kitchen_run`
+  resolves through the `cabinetry → wood_board` family like it always has.
+
+## Rev.16 — 2026-09-05 Corridor wall wash (light rule; no geometry moved)
+
+- **Narrow rooms get a light floor of 120 W.** Area-scaled omnis left the
+  0.955 m stair corridors' far wall at (48,53,62) — blue-tinted black. A
+  150 W isolation test proved the response linear (neutral grey, no blowout
+  elsewhere), so rooms under 1.5 m in either dimension now floor at 120 W.
+  Production reads (72,71,75) against (155,151,153): shaded side, no cast.
+  WC (1.6 m min) and shafts are untouched by the threshold.
+- Also reverted: hall pendants, which loomed balloon-like 2 m from the
+  corridor lens. Narrow halls stay bare; wide halls keep pendant + console.
+
+## Rev.17 — 2026-09-05 Planted terrace (finish routing; no geometry moved)
+
+- **Planter reads planted, not empty.** The cached `planter_box_01` mesh
+  ships as an empty concrete box + soil (verified in-blend: only
+  `furn_planter_*` objects, no foliage), so the terrace showed a black pit.
+  `PROCEDURAL_FIRST = {"planter"}` routes planters to the procedural builder,
+  which now grows two overlapping rounded mounds in a new `foliage` finish
+  (flat-fallback `plant_green` family — no cached green texture exists
+  offline): pit-zone pixels moved black → sunlit leaf (130,154,117).
+- Process note: the image-read path served the previous mint-slab bytes for
+  this file three times running; the verdict comes from PIL sampling the
+  file, per the standing rule.
+
+## Rev.18 — 2026-09-05 Plaster ceilings un-entombed (3 mm offset; no geometry moved)
+
+- **Intermediate ceilings render plaster, not slab soffit.** The ceiling
+  plane sat 15 mm below the storey top — inside the 50 mm slab above — so
+  every intermediate room showed the upstairs floor finish overhead (timber
+  planks over the mezzanine living room). Planes now hang 3 mm under the
+  slab underside; void cut-outs behave exactly as before. Measured in `lung`:
+  ceiling zone went 100% wood-tone to 0.0%, mean (127,121,120) shaded plaster.
+
+## Rev.19 — 2026-09-05 Smooth drum shades (tessellation; no geometry moved)
+
+- **Pendant/floor-lamp drums at 32 segments.** 16-segment drums showed flat
+  facets on 0.38 m shades at hero distance; verified in-blend (64 verts =
+  32 segments with shared cap rims, not 16) and by pixel steppiness across
+  the drum. Everyday cylinders (legs, cords, knobs) stay at 16.
+
+## Rev.20 — 2026-09-05 Horizon haze (environment only; no geometry moved)
+
+- **No more studio void.** The PureSky HDRI goes near-black below the
+  horizon, so aerials showed the ground plane as a beige paper sheet
+  floating in navy nothing. The HDRI path now blends to a warm concrete
+  haze wherever the look direction dips below the horizon (Z < 0.02 on the
+  Generated vector); sun position and sky above are untouched, as is the
+  gradient fallback. Frame corners went navy to seamless beige (172,169,164)
+  with no visible plane edge.
+
+## Rev.21 — 2026-09-05 Viewer GLB brought current (provenance gap; no geometry moved)
+
+- **Interactive model lagged eight turns.** `model_hash` covers the spec, so
+  material-route, ceiling-offset, tessellation and drop-height work never
+  invalidated the GLB — the published viewer showed orange doors and
+  entombed ceilings long after the stills moved on. Rebuilt `--gltf` from
+  current code and republished; the hash contract is blind to Blender-side
+  code by design, so rebuilt-on-change discipline (not the hash) is what
+  keeps the viewer honest.

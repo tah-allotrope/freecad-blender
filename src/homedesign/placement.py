@@ -14,7 +14,9 @@ CLEARANCE_M = 0.6  # minimum walkway clearance kept clear of furniture
 @dataclass
 class FurnitureItem:
     kind: str  # bed, wardrobe, nightstand, sofa, coffee_table, dining_table, chair,
-               # kitchen_run, fridge, wc, basin, shower, desk
+               # kitchen_run, fridge, wc, basin, shower, desk, rug (floor covering,
+               # collision-exempt: lies flat under furniture), floor_lamp,
+               # pendant (ceiling-hung, collision-exempt)
     x: float
     y: float
     z: float
@@ -53,8 +55,14 @@ def resolve_collisions(
         nx = max(0.0, min(fx, room_w_m - fw))
         ny = max(0.0, min(fy, room_d_m - fd))
         result[idx].x, result[idx].y = nx, ny
+        if result[idx].kind in ("rug", "pendant"):
+            # Floor covering / ceiling-hung: never moves and never
+            # displaces anything.
+            continue
         # Resolve overlaps with earlier items
         for j in range(idx):
+            if result[j].kind in ("rug", "pendant"):
+                continue
             for _attempt in range(10):
                 a = _footprint(result[idx])
                 b = _footprint(result[j])
@@ -137,6 +145,16 @@ def _plan_bedroom(w: float, d: float) -> list[FurnitureItem]:
     items.append(FurnitureItem("bed", bed_x, 0.1, 0, rot, bed_w, bed_d, bed_h))
     if w - fit_w > 0.7:
         items.append(FurnitureItem("wardrobe", w - 0.6, 0.0, 0, 0, 0.6, min(1.8, d * 0.4), 2.0))
+    if d - 0.1 - fit_d > 1.0:
+        # Runner across the foot of the bed; collision-exempt (lies flat).
+        items.append(FurnitureItem("rug", bed_x, 0.1 + fit_d + 0.1, 0, 0, fit_w, 0.8, 0.02))
+    if bed_x > 0.55:
+        items.append(FurnitureItem("nightstand", bed_x - 0.5, 0.05, 0, 0, 0.45, 0.4, 0.5))
+    if bed_x + fit_w + 0.5 < w:
+        items.append(FurnitureItem("nightstand", bed_x + fit_w + 0.05, 0.05, 0, 0, 0.45, 0.4, 0.5))
+    # Pendant at room centre (deep enough in frame to read; hangs clear).
+    items.append(FurnitureItem("pendant", w / 2 - 0.15, d / 2 - 0.15,
+                               0, 0, 0.3, 0.3, 0.0))
     return items
 
 
@@ -158,14 +176,29 @@ def _plan_kitchen(w: float, d: float) -> list[FurnitureItem]:
 
 
 def _plan_living(w: float, d: float) -> list[FurnitureItem]:
-    items = [FurnitureItem("sofa", 0.3, d - 0.9, 0, 0, min(2.2, w * 0.6), 0.9, 0.8)]
-    items.append(FurnitureItem("coffee_table", 0.3 + min(2.2, w * 0.6) / 2 - 0.5, d - 1.8, 0, 0, 1.0, 0.6, 0.4))
+    sofa_w = min(2.2, w * 0.6)
+    items = [FurnitureItem("sofa", 0.3, d - 0.9, 0, 0, sofa_w, 0.9, 0.8)]
+    coffee_x = 0.3 + sofa_w / 2 - 0.5
+    items.append(FurnitureItem("coffee_table", coffee_x, d - 1.8, 0, 0, 1.0, 0.6, 0.4))
+    # Rug centred under the coffee table; collision-exempt (lies flat).
+    items.append(FurnitureItem("rug", coffee_x - 0.3, d - 2.55, 0, 0, 1.6, 1.1, 0.02))
     if w > 3.0 and d > 3.0:
         table_x, table_w = w - 1.8, 1.6
         items.append(FurnitureItem("dining_table", table_x, 0.3, 0, 0, table_w, 0.9, 0.75))
         chair_w = 0.45
         for cx in (table_x + 0.05, table_x + 0.55, table_x + 1.05, table_x + table_w - chair_w - 0.05):
             items.append(FurnitureItem("chair", cx, 1.4, 0, 0, chair_w, chair_w, 0.9))
+        # Pendant over the dining table (correct dressing; near the camera so
+        # rarely in frame) plus one over the coffee zone (the hero-visible
+        # source in this room's rendered view). Both collision-exempt.
+        items.append(FurnitureItem("pendant", table_x + 0.65, 0.6, 0, 0, 0.3, 0.3, 0.0))
+        items.append(FurnitureItem("pendant", coffee_x + 0.35, d - 1.65, 0, 0, 0.3, 0.3, 0.0))
+        # Floor lamp in the far corner: bright vertical accent that also
+        # proves the wall wash on the camera-side party wall.
+        items.append(FurnitureItem("floor_lamp", w - 0.45, d - 0.65, 0, 0, 0.35, 0.35, 1.6))
+    else:
+        # Pendant over the coffee table (collision-exempt, hangs above it).
+        items.append(FurnitureItem("pendant", coffee_x + 0.35, d - 1.65, 0, 0, 0.3, 0.3, 0.0))
     return items
 
 
@@ -183,12 +216,15 @@ def _plan_wc(w: float, d: float) -> list[FurnitureItem]:
 
 
 def _plan_hall(w: float, d: float) -> list[FurnitureItem]:
+    # Narrow stair corridors stay bare: a 0.38 m drum 2 m from the lens
+    # reads as a balloon, not a light (verified in hanh_lang_thang).
     if w < 1.2:
         return []
     if d >= w:
-        return [FurnitureItem("console", 0.1, 0.1, 0, 0, 0.35, max(0.5, d - 0.2), 0.85)]
-    return [FurnitureItem("console", 0.1, 0.1, 0, 0, max(0.5, w - 0.2), 0.35, 0.85)]
-
+        return [FurnitureItem("pendant", w / 2 - 0.15, d / 2 - 0.15, 0, 0, 0.3, 0.3, 0.0),
+                FurnitureItem("console", 0.1, 0.1, 0, 0, 0.35, max(0.5, d - 0.2), 0.85)]
+    return [FurnitureItem("pendant", w / 2 - 0.15, d / 2 - 0.15, 0, 0, 0.3, 0.3, 0.0),
+            FurnitureItem("console", 0.1, 0.1, 0, 0, max(0.5, w - 0.2), 0.35, 0.85)]
 
 def _plan_shelving(w: float, d: float) -> list[FurnitureItem]:
     if d >= w:
@@ -199,6 +235,11 @@ def _plan_shelving(w: float, d: float) -> list[FurnitureItem]:
 def _plan_garage(w: float, d: float) -> list[FurnitureItem]:
     car_l, car_w, car_h = 4.5, 1.8, 1.4
     if max(w, d) < car_l or min(w, d) < car_w:
+        # No car fits (the tubehouse case): two motorbikes instead — the
+        # honest vehicle for a 4 m Saigon garage bay.
+        if max(w, d) >= 2.0 and min(w, d) >= 1.6:
+            return [FurnitureItem("motorbike", w / 2 - 0.75, (d - 2.0) / 2, 0, 0, 0.7, 2.0, 1.1),
+                    FurnitureItem("motorbike", w / 2 + 0.05, (d - 2.0) / 2, 0, 0, 0.7, 2.0, 1.1)]
         return []
     if d >= w:
         return [FurnitureItem("car", (w - car_w) / 2, (d - car_l) / 2, 0, 0, car_w, car_l, car_h)]

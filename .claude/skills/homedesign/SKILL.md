@@ -52,9 +52,9 @@ Cheat sheet:
   footprint merely untiled forfeits the wall/floor/section geometry around the
   shaft.
 - `meta.views` (optional) — a named camera gallery: each entry is
-  `{name, kind: exterior_front|exterior_aerial|room, room_id?}` (`room_id`
-  required when `kind: room`). Renders land at
-  `output/png/<slug>_<view name>.png`. Omit `views` entirely to get the old
+  `{name, kind: exterior_front|exterior_aerial|exterior_street|room, room_id?}` (`room_id`
+  required when `kind: room`; `exterior_street` is the 3/4 street-corner hero).
+  Renders land at `output/png/<slug>_<view name>.png`. Omit `views` entirely to get the old
   2-shot default (one exterior + one auto-picked interior).
 - `rooms[]` — each room is either an absolute `rect: {x,y,w,d}` (mm, origin
   at the plot's front-left corner) or a `relative: {adjacent_to, side, w, d}`

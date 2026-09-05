@@ -24,5 +24,7 @@ def furnish_storey(storey_mm, style, collection):
         room_x = rect["x"] / 1000
         room_y = rect["y"] / 1000
         base_z = storey_mm["base_z"] / 1000
+        ceiling_z = base_z + storey_mm["height_mm"] / 1000
         for item in items:
-            pf.build_item(item, room_x, room_y, base_z, style, collection)
+            pf.build_item(item, room_x, room_y, base_z, style, collection,
+                          ceiling_z=ceiling_z)

@@ -81,6 +81,7 @@
                 "enum": [
                   "exterior_front",
                   "exterior_aerial",
+                  "exterior_street",
                   "room"
                 ]
               },

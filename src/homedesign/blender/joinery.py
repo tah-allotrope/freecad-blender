@@ -120,3 +120,65 @@ def build_opening_furniture(opening_mm, wall_mm, storey_base_z_m, style, collect
             hinge_y = leaf_y
             make_hinged_box(f"{name_base}_leaf", x0 + FRAME_WIDTH, leaf_y, z,
                              leaf_w, DOOR_LEAF_THICKNESS, height, hinge_x, hinge_y, -DOOR_SWING_RAD, collection, leaf_mat)
+        # Lever handle on both faces: backplate + horizontal lever near the
+        # opening stile (~120mm from the frame edge) at 1000mm above the sill.
+        # Same opening size/position — finish-level detail only.
+        handle_z = z + 1.0
+        if span_axis == "y":
+            hx = x0 + thickness / 2
+            hy = y0 + width - FRAME_WIDTH - 0.12
+            for side in (-1.0, 1.0):
+                px = hx + side * (DOOR_LEAF_THICKNESS / 2 + 0.006)
+                make_box(f"{name_base}_handle_plate_{int(side)}", px - 0.006, hy - 0.025, handle_z - 0.11,
+                         0.012, 0.05, 0.22, collection, frame_mat)
+                make_box(f"{name_base}_handle_lever_{int(side)}", px - 0.01, hy - 0.14, handle_z + 0.05,
+                         0.02, 0.13, 0.025, collection, frame_mat)
+        else:
+            hx = x0 + width - FRAME_WIDTH - 0.12
+            hy = y0 + thickness / 2
+            for side in (-1.0, 1.0):
+                py = hy + side * (DOOR_LEAF_THICKNESS / 2 + 0.006)
+                make_box(f"{name_base}_handle_plate_{int(side)}", hx - 0.025, py - 0.006, handle_z - 0.11,
+                         0.05, 0.012, 0.22, collection, frame_mat)
+                make_box(f"{name_base}_handle_lever_{int(side)}", hx - 0.065, py - 0.01, handle_z + 0.05,
+                         0.13, 0.02, 0.025, collection, frame_mat)
+        # Recessed-look panel mouldings: two stacked rail frames per face in
+        # the leaf finish — the shadow lines read as panelled joinery at
+        # render distance. Static coordinates assume DOOR_SWING_RAD == 0 (the
+        # leaf itself is unrotated); revisit both if a swing is ever enabled.
+        inset, rail, proud = 0.14, 0.055, 0.012
+        panel_w = leaf_w - inset * 2
+        if panel_w > 0.25 and height > 1.6:
+            panels = [(z + 0.2, z + 0.95), (z + 1.1, min(z + height - 0.15, z + 1.85))]
+            if span_axis == "y":
+                for fi, sgn in enumerate((-1.0, 1.0)):
+                    fx = leaf_x + (0.0 if sgn < 0 else DOOR_LEAF_THICKNESS)
+                    px = fx - proud if sgn < 0 else fx
+                    for pi, (pz0, pz1) in enumerate(panels):
+                        if pz1 - pz0 <= 0.2:
+                            continue
+                        ya, yb = y0 + FRAME_WIDTH + inset, y0 + FRAME_WIDTH + leaf_w - inset
+                        make_box(f"{name_base}_panel_{fi}_{pi}_a", px, ya, pz0,
+                                 proud, rail, pz1 - pz0, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_b", px, yb - rail, pz0,
+                                 proud, rail, pz1 - pz0, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_c", px, ya + rail, pz0,
+                                 proud, panel_w - rail * 2, rail, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_d", px, ya + rail, pz1 - rail,
+                                 proud, panel_w - rail * 2, rail, collection, leaf_mat)
+            else:
+                for fi, sgn in enumerate((-1.0, 1.0)):
+                    fy = leaf_y + (0.0 if sgn < 0 else DOOR_LEAF_THICKNESS)
+                    py = fy - proud if sgn < 0 else fy
+                    for pi, (pz0, pz1) in enumerate(panels):
+                        if pz1 - pz0 <= 0.2:
+                            continue
+                        xa, xb = x0 + FRAME_WIDTH + inset, x0 + FRAME_WIDTH + leaf_w - inset
+                        make_box(f"{name_base}_panel_{fi}_{pi}_a", xa, py, pz0,
+                                 rail, proud, pz1 - pz0, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_b", xb - rail, py, pz0,
+                                 rail, proud, pz1 - pz0, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_c", xa + rail, py, pz0,
+                                 panel_w - rail * 2, proud, rail, collection, leaf_mat)
+                        make_box(f"{name_base}_panel_{fi}_{pi}_d", xa + rail, py, pz1 - rail,
+                                 panel_w - rail * 2, proud, rail, collection, leaf_mat)

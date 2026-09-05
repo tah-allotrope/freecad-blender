@@ -11,7 +11,7 @@ def resolve_finish(object_id: str, element_kind: str, room_type: str | None, exp
         overrides = finishes.get("overrides", {})
         if object_id in overrides:
             return overrides[object_id]
-        if room_type:
+        if room_type and element_kind == "floor":
             by_room = finishes.get("by_room_type", {})
             if room_type in by_room:
                 return by_room[room_type]
@@ -77,13 +77,9 @@ def finish_schedule_rows(model) -> list[dict]:
 #
 # `materials.get_material` is handed a palette key ("floor_bathroom"); the
 # compiled model carries a resolved finish map keyed by element kind
-# ("element:floor") and by room ("room:khach:floor"). This table is the join
-# between the two, and it lives here rather than in `materials` so it can be
-# tested without Blender.
-
 PROCEDURAL_FAMILIES = (
     "plaster_painted", "ceramic_tile", "stone_slab", "wood_board",
-    "metal_brushed", "glass_clear", "concrete_formed",
+    "metal_brushed", "glass_clear", "concrete_formed", "aluminium",
 )
 
 FAMILY_FOR_PALETTE_KEY = {
@@ -94,17 +90,21 @@ FAMILY_FOR_PALETTE_KEY = {
     "floor_kitchen": "ceramic_tile",
     "floor_garage": "stone_slab",
     "roof": "concrete_formed",
-    "frame": "metal_brushed",
+    "frame": "aluminium",
     "glass": "glass_clear",
     "door_leaf": "wood_board",
     "furniture": "wood_board",
     "upholstery": "plaster_painted",
     "cabinetry": "wood_board",
     "porcelain": "ceramic_tile",
-    "vehicle": "metal_brushed",
+    "vehicle": "aluminium",
     "ground": "concrete_formed",
     "neighbour": "plaster_painted",
     "street": "concrete_formed",
+    "facade_trim": "concrete_formed",
+    "facade_field": "plaster_painted",
+    "metal_sheet": "aluminium",
+    "foliage": "plant_green",
 }
 FAMILY_FOR_PALETTE_KEY.update({f: f for f in PROCEDURAL_FAMILIES})
 

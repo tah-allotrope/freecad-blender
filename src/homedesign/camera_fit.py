@@ -179,6 +179,34 @@ def exterior_aerial_camera(
     return position, centre, lens_mm
 
 
+def exterior_street_camera(
+    model: dict, res_x: int, res_y: int, lens_mm: float = 35.0
+) -> tuple[Vec3, Vec3, float]:
+    """`(position, target, lens_mm)` for the 3/4 street-level hero, in metres.
+
+    The pro-tubehouse angle: off the south-east street corner, looking
+    slightly up at the facade so fins and parapets get raking parallax
+    instead of the flat-frontal read. Target is the facade plane (y = 0) at
+    ~55% of total height; the whole-building fit sets the distance, which
+    lands the camera elevated (~opposite-balcony height, very Saigon) rather
+    than cropping the parapet.
+    """
+    bbox = building_bbox(model)
+    corners = corners_of(bbox)
+    total_h = sum(s["height_mm"] for s in model["storeys"]) / 1000
+    centre = (model["plot_width_mm"] / 2000, 0.0, total_h * 0.55)
+    # 35° off the south axis toward the east, +8° up.
+    forward = (-0.568, 0.811, 0.139)
+    right, up = basis_from_direction(forward)
+    dist = fit_distance(corners, centre, forward, right, up, lens_mm, res_x, res_y)
+    position = (
+        centre[0] - forward[0] * dist,
+        centre[1] - forward[1] * dist,
+        centre[2] - forward[2] * dist,
+    )
+    return position, centre, lens_mm
+
+
 def interior_camera(
     storey: dict,
     room: dict,
@@ -206,15 +234,30 @@ def interior_camera(
     long_is_depth = room["rect"]["d"] >= room["rect"]["w"]
     z = min(base_z + eye_height_m, ceil_z - 0.15)
     if long_is_depth:
-        position = (x + w / 2, y + wall_inset_m, z)
-        target = (x + w / 2, y + d - wall_inset_m, z - 0.2)
+        # Bedrooms anchor off-centre: a centred camera stares down the bed's
+        # long axis from inside its footprint and the hero reads empty.
+        px = x + w * 0.25 if room.get("type") == "bedroom" else x + w / 2
+        if room.get("type") == "kitchen":
+            # The run hugs the near wall (under/behind a centred lens), so
+            # the kitchen hero shows everything but the kitchen. Shoot from
+            # the far end back at the run instead.
+            position = (px, y + d - wall_inset_m, z)
+            target = (x + w / 2, y + wall_inset_m, z - 0.2)
+        else:
+            position = (px, y + wall_inset_m, z)
+            target = (x + w / 2, y + d - wall_inset_m, z - 0.2)
         available = d - 2 * wall_inset_m
-        half_w = w / 2 - wall_inset_m
+        half_w = max(px - x, x + w - px) - wall_inset_m
     else:
-        position = (x + wall_inset_m, y + d / 2, z)
-        target = (x + w - wall_inset_m, y + d / 2, z - 0.2)
+        py = y + d * 0.25 if room.get("type") == "bedroom" else y + d / 2
+        if room.get("type") == "kitchen":
+            position = (x + w - wall_inset_m, py, z)
+            target = (x + wall_inset_m, y + d / 2, z - 0.2)
+        else:
+            position = (x + wall_inset_m, py, z)
+            target = (x + w - wall_inset_m, y + d / 2, z - 0.2)
         available = w - 2 * wall_inset_m
-        half_w = d / 2 - wall_inset_m
+        half_w = max(py - y, y + d - py) - wall_inset_m
 
     available = max(available, 0.5)
     half_w = max(half_w, 0.3)

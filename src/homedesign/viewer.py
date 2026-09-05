@@ -114,6 +114,20 @@ def optimize_glb(glb_path: Path, compress_textures: bool = True,
     return True
 
 
+LIGHT_EXCLUDE_FRAGMENTS = (
+    # Sub-15 cm ornament, invisible at phone size but ~1.4 MB post-simplify:
+    # door panel mouldings + lever plates/handles, knobs, rug inset fields.
+    # Substring match: joinery names carry the opening id first
+    # (F0_O002_panel_0_0_a). Kept even in the phone build: shades, cords,
+    # leaves, glass, frames, skirting, reveals, sills, lintels, treads,
+    # rails, parapets, mullions, and every furniture body.
+    "_panel_",
+    "_handle_",
+    "knob",
+    "rug_field",
+)
+
+
 def derive_light_glb(full_glb: Path, light_glb: Path) -> Path:
     """Write the phone build's GLB from the desktop build's.
 

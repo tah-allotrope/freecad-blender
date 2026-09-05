@@ -40,7 +40,7 @@ def test_room_scoped_finish_beats_the_element_default():
 
 
 def test_unknown_finish_family_in_the_map_is_ignored_rather_than_crashing():
-    assert family_for_palette_key("frame", {"element:frame": "unobtanium"}) == "metal_brushed"
+    assert family_for_palette_key("frame", {"element:frame": "unobtanium"}) == "aluminium"
 
 
 # --- RF TASK-03-03: elevation draws opening divisions ----------------------
@@ -136,6 +136,38 @@ def test_the_published_glbs_are_inside_their_budgets():
         assert path.stat().st_size <= glb_size_budget(build), (
             f"{name} is {path.stat().st_size} bytes, over the {build} budget"
         )
+
+def test_light_exclude_fragments_hit_ornament_and_spare_structure():
+    from homedesign.viewer import LIGHT_EXCLUDE_FRAGMENTS
+
+    ornament = ["F0_O002_panel_0_0_a", "F0_O002_handle_plate_1",
+                "nightstand_knob_1.00_2.00", "rug_field_0.77_9.70",
+                "console_handle_0_0"]
+    structure = ["pendant_shade_1.42_10.60", "pendant_cord_1.42_10.60",
+                 "F0_O002_leaf", "glass", "rug_base_0.77_9.70",
+                 "skirting_khach_e", "wall_F0_W008_0", "sofa_03"]
+    for name in ornament:
+        assert any(f in name for f in LIGHT_EXCLUDE_FRAGMENTS), name
+    for name in structure:
+        assert not any(f in name for f in LIGHT_EXCLUDE_FRAGMENTS), name
+def test_asset_lod_constants_are_sane():
+    from homedesign.blender import asset_library
+
+    assert asset_library.LOD_POLY_THRESHOLD > 0
+    assert 0.0 < asset_library.LOD_DECIMATE_RATIO < 1.0
+def test_foliage_routes_to_plant_green_flat():
+    from homedesign.finishes import family_for_palette_key
+
+    assert family_for_palette_key("foliage", {}) == "plant_green"
+
+
+def test_planter_uses_foliage_finish():
+    bpy = pytest.importorskip("bpy")
+    from homedesign.blender.materials import furniture_material_key
+
+    assert bpy is not None
+    assert furniture_material_key("planter") == "foliage"
+
 
 
 # --- PR TASK-05-01/02/03: the full viewer loads an external GLB ------------

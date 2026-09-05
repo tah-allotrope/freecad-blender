@@ -124,7 +124,7 @@ class Roof:
 @dataclass
 class View:
     name: str
-    kind: Literal["exterior_front", "exterior_aerial", "room"]
+    kind: Literal["exterior_front", "exterior_aerial", "exterior_street", "room"]
     room_id: Optional[str] = None
 
 

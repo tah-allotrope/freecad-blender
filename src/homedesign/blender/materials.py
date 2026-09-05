@@ -20,17 +20,21 @@ PALETTES = {
         "floor_kitchen": {"base_color": (0.73, 0.70, 0.66, 1.0), "roughness": 0.38, "metallic": 0.0},
         "floor_garage": {"base_color": (0.52, 0.51, 0.50, 1.0), "roughness": 0.78, "metallic": 0.0},
         "roof": {"base_color": (0.24, 0.24, 0.26, 1.0), "roughness": 0.62, "metallic": 0.05},
-        "frame": {"base_color": (0.14, 0.14, 0.14, 1.0), "roughness": 0.45, "metallic": 0.25},
+        "frame": {"base_color": (0.16, 0.16, 0.17, 1.0), "roughness": 0.35, "metallic": 0.85},
         "glass": {"base_color": (0.78, 0.88, 0.93, 1.0), "roughness": 0.06, "metallic": 0.0, "transmission": 1.0},
-        "door_leaf": {"base_color": (0.42, 0.30, 0.22, 1.0), "roughness": 0.55, "metallic": 0.0},
+        "door_leaf": {"base_color": (0.23, 0.155, 0.105, 1.0), "roughness": 0.6, "metallic": 0.0},
         "furniture": {"base_color": (0.60, 0.50, 0.38, 1.0), "roughness": 0.58, "metallic": 0.0},
         "upholstery": {"base_color": (0.46, 0.48, 0.52, 1.0), "roughness": 0.88, "metallic": 0.0},
         "cabinetry": {"base_color": (0.34, 0.36, 0.38, 1.0), "roughness": 0.62, "metallic": 0.0},
         "porcelain": {"base_color": (0.92, 0.93, 0.94, 1.0), "roughness": 0.14, "metallic": 0.0},
         "vehicle": {"base_color": (0.20, 0.22, 0.28, 1.0), "roughness": 0.35, "metallic": 0.45},
         "ground": {"base_color": (0.32, 0.38, 0.29, 1.0), "roughness": 0.95, "metallic": 0.0},
+        "foliage": {"base_color": (0.14, 0.26, 0.10, 1.0), "roughness": 0.95, "metallic": 0.0},
         "neighbour": {"base_color": (0.62, 0.60, 0.58, 1.0), "roughness": 0.94, "metallic": 0.0},
         "street": {"base_color": (0.22, 0.23, 0.25, 1.0), "roughness": 0.96, "metallic": 0.0},
+        "facade_trim": {"base_color": (0.58, 0.55, 0.50, 1.0), "roughness": 0.80, "metallic": 0.0},
+        "facade_field": {"base_color": (0.82, 0.78, 0.72, 1.0), "roughness": 0.88, "metallic": 0.0},
+        "metal_sheet": {"base_color": (0.35, 0.36, 0.38, 1.0), "roughness": 0.40, "metallic": 0.80},
     }
 }
 
@@ -48,17 +52,21 @@ _FAMILY_FOR_KEY = {
     "floor_kitchen": "ceramic_tile",
     "floor_garage": "stone_slab",
     "roof": "concrete_formed",
-    "frame": "metal_brushed",
+    "frame": "aluminium",
     "glass": "glass_clear",
     "door_leaf": "wood_board",
     "furniture": "wood_board",
     "upholstery": "plaster_painted",
     "cabinetry": "wood_board",
     "porcelain": "ceramic_tile",
-    "vehicle": "metal_brushed",
+    "vehicle": "aluminium",
     "ground": "concrete_formed",
     "neighbour": "plaster_painted",
     "street": "concrete_formed",
+    "facade_trim": "concrete_formed",
+    "facade_field": "plaster_painted",
+    "metal_sheet": "aluminium",
+    "foliage": "plant_green",
     # finish-family passthrough (finishes.py already uses these names verbatim)
     "plaster_painted": "plaster_painted",
     "ceramic_tile": "ceramic_tile",
@@ -67,6 +75,7 @@ _FAMILY_FOR_KEY = {
     "metal_brushed": "metal_brushed",
     "glass_clear": "glass_clear",
     "concrete_formed": "concrete_formed",
+    "aluminium": "aluminium",
 }
 
 _cache: dict[str, "bpy.types.Material"] = {}
@@ -117,6 +126,11 @@ def get_material(style: str, key: str, room_id: str | None = None) -> "bpy.types
         base_color=tuple(spec["base_color"][:3]),
         roughness=float(spec["roughness"]),
         scale_mm=300.0 if family == "ceramic_tile" else 1000.0,
+        # Door leaves and the carriageway skip their image-texture sets: the
+        # deck boards read loud at room scale, and the concrete PBR set makes
+        # the asphalt carriageway indistinguishable from the ground plane.
+        # Both fall through to their procedural graphs in the authored base.
+        use_textures=(key not in ("door_leaf", "street")),
     )
     # Preserve metallic/transmission from the palette (the procedural
     # helper sets a sensible default per family but the palette is
@@ -154,6 +168,7 @@ def floor_material_key(room_type: str) -> str:
 FURNITURE_MATERIAL_KEY = {
     "bed": "upholstery",
     "sofa": "upholstery",
+    "rug": "upholstery",
     "dining_table": "furniture",
     "coffee_table": "furniture",
     "desk": "furniture",
@@ -164,10 +179,13 @@ FURNITURE_MATERIAL_KEY = {
     "kitchen_run": "cabinetry",
     "wc": "porcelain",
     "basin": "porcelain",
-    "shower": "porcelain",
+    "planter": "foliage",
     "fridge": "frame",
     "car": "vehicle",
-    "planter": "ground",
+    "motorbike": "vehicle",
+    "floor_lamp": "porcelain",
+    "nightstand": "furniture",
+    "pendant": "frame",
 }
 
 
@@ -293,7 +311,8 @@ def _build_textured_material(mat, nodes, links, family, textures,
         principled.inputs["Metallic"].default_value = 0.85
 
 
-def make_procedural_material(name: str, family: str, base_color, roughness: float, scale_mm: float):
+def make_procedural_material(name: str, family: str, base_color, roughness: float, scale_mm: float,
+                             use_textures: bool = True):
     """Create a procedural Principled material for `family`.
 
     No image textures are used -- every variation comes from
@@ -317,7 +336,7 @@ def make_procedural_material(name: str, family: str, base_color, roughness: floa
     # this family, an image-texture graph beats every procedural approximation,
     # so we build that and return. A family with no cached set (glass_clear)
     # falls through to the procedural graph below.
-    if _HAS_CACHE and asset_cache is not None:
+    if use_textures and _HAS_CACHE and asset_cache is not None:
         try:
             textures = asset_cache.texture_set(family)
         except Exception:
@@ -493,15 +512,18 @@ def make_procedural_material(name: str, family: str, base_color, roughness: floa
             pass
 
     elif family == "wood_board":
-        # Anisotropic grain: stretch mapping on X so noise bands like wood
+        # Anisotropic grain: stretch mapping on X so noise bands like wood.
+        # In practice this procedural branch now serves door leaves only
+        # (every other wood_board user hits the cached deck texture first),
+        # so its contrast is tuned for calm joinery, not flooring.
         mapping.inputs["Scale"].default_value = (tile_factor * 0.25, tile_factor * 2.0, 1.0)
         noise = nodes.new("ShaderNodeTexNoise")
-        noise.inputs["Scale"].default_value = 2.5
+        noise.inputs["Scale"].default_value = 4.5
         noise.inputs["Detail"].default_value = 3.0
         noise.location = (-400, 100)
         links.new(mapping.outputs["Vector"], noise.inputs["Vector"])
         ramp = nodes.new("ShaderNodeValToRGB")
-        ramp.color_ramp.elements[0].color = (float(base_color[0]) * 0.85, float(base_color[1]) * 0.78, float(base_color[2]) * 0.70, 1.0)
+        ramp.color_ramp.elements[0].color = (float(base_color[0]) * 0.68, float(base_color[1]) * 0.62, float(base_color[2]) * 0.58, 1.0)
         ramp.color_ramp.elements[1].color = (float(base_color[0]), float(base_color[1]), float(base_color[2]), 1.0)
         ramp.location = (-200, 100)
         links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
@@ -541,6 +563,29 @@ def make_procedural_material(name: str, family: str, base_color, roughness: floa
             principled.inputs["Anisotropic Rotation"].default_value = 0.5
         except Exception:
             pass
+    elif family == "aluminium":
+        # Satin powder-coated aluminium: flat dark colour, soft sheen, no
+        # diamond-plate imagery. Texture cache has no aluminium set by design,
+        # so this branch always runs (clean procedural, offline-safe).
+        mapping.inputs["Scale"].default_value = (tile_factor * 2.0, tile_factor * 0.5, 1.0)
+        noise = nodes.new("ShaderNodeTexNoise")
+        noise.inputs["Scale"].default_value = 6.0
+        noise.inputs["Detail"].default_value = 2.0
+        noise.location = (-400, 100)
+        links.new(mapping.outputs["Vector"], noise.inputs["Vector"])
+        ramp = nodes.new("ShaderNodeValToRGB")
+        ramp.color_ramp.elements[0].color = (0.30, 0.30, 0.30, 1.0)
+        ramp.color_ramp.elements[1].color = (0.55, 0.55, 0.55, 1.0)
+        ramp.location = (-200, 0)
+        links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+        principled.inputs["Metallic"].default_value = 0.85
+        principled.inputs["Roughness"].default_value = 0.35
+        try:
+            principled.inputs["Anisotropic"].default_value = 0.5
+            principled.inputs["Anisotropic Rotation"].default_value = 0.5
+        except Exception:
+            pass
+
 
     elif family == "glass_clear":
         principled.inputs["Base Color"].default_value = (float(base_color[0]), float(base_color[1]), float(base_color[2]), 1.0)

@@ -289,9 +289,10 @@ def _add_room_ceilings(storey, style, structure, is_topmost: bool = False):
     """Per-room ceiling plane for every enclosed room (beyond top-storey only).
 
     Topmost storey reuses the roof-coverage guard so a roof void stays open to
-    sky. Intermediate storeys place the plane 15 mm below the slab of the
-    level above (just enough to avoid Z-fighting) with a 12 mm thickness so
-    the interior camera sees a ceiling rather than a black void.
+    sky. Intermediate storeys hang the plane 3 mm below the slab underside
+    (the old 15 mm sat it *inside* the 50 mm slab, entombing it, so rooms
+    showed the slab soffit — timber over living rooms — instead of the
+    spec's plaster ceiling) with a 12 mm thickness.
     """
     base_z = storey["base_z"] / 1000
     height_m = storey["height_mm"] / 1000
@@ -301,7 +302,7 @@ def _add_room_ceilings(storey, style, structure, is_topmost: bool = False):
         # Delegate to the roof-aware path (keeps ledger behaviour identical).
         _add_top_storey_ceilings(storey, style, structure)
         return
-    ceil_top_z = base_z + height_m - 0.015
+    ceil_top_z = base_z + height_m - 0.05 - 0.003
     ceil_thick = 0.012
     voids_mm = [(v["x"], v["y"], v["w"], v["d"]) for v in storey.get("floor_voids", [])]
     mat = get_material(style, "wall_partition")
@@ -322,11 +323,12 @@ def _add_skirting(storey, style, structure):
     base_z = storey["base_z"] / 1000
     skirting_h = 0.08
     skirting_t = 0.012
-    # Slightly darker than walls so tonal variation reads.
-    mat = get_material(style, "floor_default")
+    # Slightly darker than walls so tonal variation reads. Scoped to the room
+    # so a timber-floor living room gets timber skirting, not ceramic tile.
     for room in storey["rooms"]:
         if room["type"] in OPEN_ROOM_TYPES:
             continue
+        mat = get_material(style, "floor_default", room_id=room["id"])
         rect = room.get("interior") or room["rect"]
         rx, ry, rw, rd = rect["x"] / 1000, rect["y"] / 1000, rect["w"] / 1000, rect["d"] / 1000
         # North (y = ry) and south (y+rd) runs along X.
@@ -489,7 +491,27 @@ def build_environment(model, structure):
                 for link in list(links):
                     if link.to_node == bg and link.to_socket.name == "Color":
                         links.remove(link)
-                links.new(env.outputs["Color"], bg.inputs["Color"])
+                # Pure-sky HDRIs go near-black below the horizon, which reads
+                # as a studio void around the ground plane in aerials. Blend
+                # to a warm concrete haze wherever the look direction dips
+                # below the horizon instead.
+                haze_coord = nodes.new("ShaderNodeTexCoord")
+                haze_coord.location = (-800, -200)
+                haze_sep = nodes.new("ShaderNodeSeparateXYZ")
+                haze_sep.location = (-600, -200)
+                haze_less = nodes.new("ShaderNodeMath")
+                haze_less.operation = "LESS_THAN"
+                haze_less.inputs[1].default_value = 0.02
+                haze_less.location = (-400, -200)
+                haze_mix = nodes.new("ShaderNodeMixRGB")
+                haze_mix.blend_type = "MIX"
+                haze_mix.inputs[2].default_value = (0.52, 0.49, 0.43, 1.0)
+                haze_mix.location = (-200, -100)
+                links.new(haze_coord.outputs["Generated"], haze_sep.inputs["Vector"])
+                links.new(haze_sep.outputs["Z"], haze_less.inputs[0])
+                links.new(haze_less.outputs["Value"], haze_mix.inputs["Fac"])
+                links.new(env.outputs["Color"], haze_mix.inputs["Color1"])
+                links.new(haze_mix.outputs["Color"], bg.inputs["Color"])
                 bg.inputs[1].default_value = 1.0
                 _hdri_loaded = True
             except Exception as e:
@@ -548,8 +570,13 @@ def build_environment(model, structure):
     fill.location = (plot_w / 2, -plot_d * 1.2, plot_d)
     bpy.context.scene.collection.objects.link(fill)
 
-
 def add_interior_lights(model, structure):
+    # One warm POINT per enclosed room, no AREAs. Proven by isolation test
+    # (2026-09-04): a lone omni renders every wall with a correct falloff,
+    # while the old AREA+POINT rig left the camera-side party wall pitch
+    # black — the extra lights contributed nothing there (silently culled or
+    # shadowed in EEVEE) yet cost budget. ~58 lights total, far under EEVEE's
+    # 128-light limit. shadow_soft_size stays 0 per lessons-learned.
     for storey in model["storeys"]:
         base_z = storey["base_z"] / 1000
         ceiling_z = base_z + storey["height_mm"] / 1000 - 0.03
@@ -561,42 +588,26 @@ def add_interior_lights(model, structure):
             cy = rect["y"] / 1000 + rect["d"] / 2000
             area_m2 = (rect["w"] / 1000) * (rect["d"] / 1000)
             height_m = storey["height_mm"] / 1000
-            energy = interior_light_energy(area_m2, height_m)
-            # Clamp to the same 5-25 W range the inline clamp previously enforced
-            energy = min(25.0, max(5.0, energy))
-            light_data = bpy.data.lights.new(f"light_{room['id']}", type="AREA")
-            light_data.energy = energy
-            light_data.size = 0.6
-            light_data.shape = "SQUARE"
-            light = bpy.data.objects.new(f"light_{room['id']}", light_data)
-            light.location = (cx, cy, ceiling_z)
-            structure.objects.link(light)
-            # Low-energy bounce plane so the ceiling reads as lit rather than
-            # dead black. A small upward-facing AREA light 10 cm below the
-            # main light kicks just enough light into the ceiling without
-            # contributing to wall wash (and therefore to blow-out).
-            bounce_energy = max(3.0, energy * 0.18)
-            bounce_data = bpy.data.lights.new(f"bounce_{room['id']}", type="AREA")
-            bounce_data.energy = bounce_energy
-            bounce_data.size = 0.45
-            bounce_data.shape = "SQUARE"
-            bounce = bpy.data.objects.new(f"bounce_{room['id']}", bounce_data)
-            bounce.location = (cx, cy, ceiling_z - 0.12)
-            # Face upward: rotate 180° around X so the AREA's -Z points +Z.
-            bounce.rotation_euler = (math.radians(180), 0, 0)
-            structure.objects.link(bounce)
-            # Portals: one per exterior window of this room (HDRI daylight)
-            try:
-                for op in storey.get("openings", []):
-                    if op.get("type") != "window":
-                        continue
-                    # crude check: if wall touches this room
-                    try:
-                        _rect = room.get("rect", {})
-                    except Exception:
-                        continue
-            except Exception:
-                pass
+            base_w = interior_light_energy(area_m2, height_m)
+            energy = min(250.0, max(20.0, max(area_m2 * 10.0, base_w)))
+            if min(rect["w"], rect["d"]) / 1000 < 1.5:
+                # Long narrow rooms (stair corridors): the visible wall is
+                # metres down the axis, deep in AgX's crushed toe at area
+                # energy (verified: 38 W reads (48,53,62), 150 W neutral).
+                energy = min(250.0, max(120.0, energy))
+            fill_data = bpy.data.lights.new(f"fill_{room['id']}", type="POINT")
+            fill_data.energy = energy
+            fill_data.color = (1.0, 0.83, 0.64)
+            fill_data.shadow_soft_size = 0
+            # No shadow maps from interior omnis: 56 cube-shadow maps exhaust
+            # the iGPU shadow atlas (proven by OOM crash + black walls that
+            # vanish the moment lights render unshadowed). The sun keeps its
+            # shadows for exterior grounding; room separation survives because
+            # EEVEE has no GI to leak.
+            fill_data.use_shadow = False
+            fill = bpy.data.objects.new(f"fill_{room['id']}", fill_data)
+            fill.location = (cx, cy, ceiling_z - 0.5)
+            structure.objects.link(fill)
 
 def _find_room(model, room_id):
     for storey in model["storeys"]:
@@ -643,6 +654,19 @@ def _build_exterior_aerial_camera(name, model):
     _point_at(cam, target)
     bpy.context.scene.collection.objects.link(cam)
     return cam
+def _build_exterior_street_camera(name, model):
+    from homedesign.camera_fit import exterior_street_camera
+
+    position, target, lens_mm = exterior_street_camera(model, 1920, 1080)
+    cam_data = bpy.data.cameras.new(name)
+    cam_data.lens = lens_mm
+    cam_data.sensor_fit = "HORIZONTAL"
+    cam = bpy.data.objects.new(name, cam_data)
+    cam.location = position
+    _point_at(cam, target)
+    bpy.context.scene.collection.objects.link(cam)
+    return cam
+
 
 
 def _build_room_camera(name, storey, room):
@@ -678,6 +702,8 @@ def add_cameras(model):
             cams.append(_build_exterior_front_camera(name, model))
         elif view["kind"] == "exterior_aerial":
             cams.append(_build_exterior_aerial_camera(name, model))
+        elif view["kind"] == "exterior_street":
+            cams.append(_build_exterior_street_camera(name, model))
         elif view["kind"] == "room":
             found = _find_room(model, view["room_id"])
             if found:
@@ -748,7 +774,17 @@ def _configure_cycles_device() -> str:
 
 
 def render(model_name, cams, out_dir, profile, views=None, skip_existing=False,
-           model_hash=None):
+           model_hash=None, view_rooms=None):
+    """Render one PNG per camera, isolating interior lights per view.
+
+    Proven by isolation test (2026-09-04): a room's omni renders every wall
+    correctly when it is the only interior light, but the camera-side party
+    wall goes pitch black in the 58-light full rig (silently culled or
+    shadow-corrupted on this iGPU — energy ruled out: 190W in-rig still
+    black, 216W solo clearly lit). So each interior view renders with only
+    its own room's fill alive (+ sun); exterior views render with sun only.
+    `view_rooms` maps view tag -> room_id (None for exteriors).
+    """
     from homedesign.model import write_render_sidecar
 
     scene = bpy.context.scene
@@ -809,6 +845,12 @@ def render(model_name, cams, out_dir, profile, views=None, skip_existing=False,
             print(f"skip: {target.name} exists")
             sys.stdout.flush()
             continue
+        if view_rooms is not None:
+            wanted = view_rooms.get(tag)
+            for o in bpy.context.scene.objects:
+                if o.type == "LIGHT" and o.name.startswith("fill_"):
+                    o.hide_render = (o.name != f"fill_{wanted}"
+                                     and not o.name.startswith(f"fill_{wanted}."))
         scene.camera = cam
         scene.render.filepath = str(target)
         bpy.ops.render.render(write_still=True)
@@ -906,14 +948,13 @@ def main():
             add_vertex_color_ao()
         except Exception as e:
             print(f"vertex AO: skipped ({e})")
-            sys.stdout.flush()
         cams = add_cameras(model)
 
         bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
-
     views = args.views.split(",") if args.views else None
+    view_rooms = {v.get("name"): v.get("room_id") for v in model.get("views", [])}
     render(model["name"], cams, out_dir, args.profile, views=views, skip_existing=args.skip_existing,
-           model_hash=model.get("model_hash"))
+           model_hash=model.get("model_hash"), view_rooms=view_rooms)
 
     if args.export_gltf:
         gltf_dir = out_dir / "gltf"
@@ -962,7 +1003,11 @@ def main():
             print(f"glb optimize: {before} -> {glb_path.stat().st_size} bytes")
         else:
             print("glb optimize: skipped (npx not available or gltf-transform failed)")
-        sys.stdout.flush()
+        # Provenance the freshness gate demands: without this sidecar every
+        # GLB reads stale and `publish` can never pass without --force.
+        from homedesign.model import write_render_sidecar as _write_sc
+
+        _write_sc(glb_path, model.get("model_hash", ""), "glb", args.profile)
 
         rooms = _viewer_room_labels(model)
         levels = _viewer_level_tags(model)
@@ -970,10 +1015,43 @@ def main():
         print(f"viewer: {written.html} (glb {written.glb})")
 
         # The phone build is derived from the desktop build rather than
-        # re-exported, so the two can never disagree about geometry.
+        # re-exported, so the two can never disagree about geometry — except
+        # sub-15 cm ornament (panel mouldings, lever plates, knobs, rug
+        # fields), which is invisible at phone size but ~1.4 MB post-simplify.
+        # The light source is exported with exactly that set hidden, then the
+        # normal derive chain (detexture + simplify) runs on it.
         light_glb = glb_path.with_name(f"{model['name']}-light.glb")
         try:
-            derive_light_glb(glb_path, light_glb)
+            from homedesign.viewer import LIGHT_EXCLUDE_FRAGMENTS
+
+            hidden = []
+            for o in bpy.data.objects:
+                if (o.type == "MESH" and not o.hide_render
+                        and any(f in o.name for f in LIGHT_EXCLUDE_FRAGMENTS)):
+                    # Both flags: the glTF exporter only omits objects hidden
+                    # from the viewport when use_visible=True (hide_render
+                    # alone still exports — verified: decor stayed in).
+                    o.hide_render = True
+                    o.hide_viewport = True
+                    hidden.append(o)
+            try:
+                light_src = gltf_dir / f"{model['name']}-lightsrc.glb"
+                bpy.ops.export_scene.gltf(
+                    filepath=str(light_src),
+                    export_format="GLB",
+                    use_selection=False,
+                    export_yup=False,
+                    use_visible=True,
+                )
+                derive_light_glb(light_src, light_glb)
+            finally:
+                for o in hidden:
+                    o.hide_render = False
+                    o.hide_viewport = False
+                try:
+                    light_src.unlink()
+                except OSError:
+                    pass
             light = write_viewer(model["name"], light_glb, out_dir, build="light",
                                  rooms=rooms, levels=levels)
             print(f"viewer light: {light.html} ({light_glb.stat().st_size} bytes)")
