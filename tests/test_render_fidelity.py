@@ -160,6 +160,50 @@ def test_foliage_routes_to_plant_green_flat():
 
     assert family_for_palette_key("foliage", {}) == "plant_green"
 
+def test_variant_textile_keys_resolve_to_flat_plaster():
+    """Seeded bedding/rug/shade colorways must never inherit a tiled family
+    (ceramic grout printed on a mattress reads as a checkerboard)."""
+    from homedesign.finishes import family_for_palette_key
+
+    for key in ("textile_light", "textile_sand", "textile_slate"):
+        assert family_for_palette_key(key, {}) == "plaster_painted"
+
+def test_bedroom_floors_vary_by_room_but_keep_legacy_defaults():
+    from homedesign.finishes import floor_variant_key
+
+    assert floor_variant_key("floor_default", "") == "floor_default"
+    assert floor_variant_key("floor_bathroom", "ngu_truoc_f2") == "floor_bathroom"
+    floors = {floor_variant_key("floor_default", r) for r in
+              ("ngu_truoc_f2", "ngu_truoc_f3", "ngu_truoc_f4")}
+    assert floors == {"floor_default", "floor_walnut", "floor_ash"}
+
+
+def test_bedroom_storeys_carry_their_own_partition_paint():
+    from homedesign.finishes import partition_key_for_level
+
+    assert partition_key_for_level(2) == "wall_sage"
+    assert partition_key_for_level(3) == "wall_sand"
+    assert partition_key_for_level(4) == "wall_mist"
+    for level in (0, 1, 5, 6, None):
+        assert partition_key_for_level(level) == "wall_partition"
+
+
+def test_new_floor_and_paint_keys_resolve_to_sane_families():
+    from homedesign.finishes import family_for_palette_key
+
+    assert family_for_palette_key("floor_walnut", {}) == "wood_board"
+    assert family_for_palette_key("floor_ash", {}) == "wood_board"
+    for key in ("wall_sage", "wall_sand", "wall_mist"):
+        assert family_for_palette_key(key, {}) == "plaster_painted"
+
+def test_lamp_temperature_varies_only_on_bedroom_storeys():
+    from homedesign.finishes import lamp_color_for_level
+
+    assert lamp_color_for_level(2) == (1.0, 0.83, 0.64)
+    assert lamp_color_for_level(3) != lamp_color_for_level(4) != lamp_color_for_level(2)
+    for level in (0, 1, 5, 6, None):
+        assert lamp_color_for_level(level) == (1.0, 0.83, 0.64)
+
 
 def test_planter_uses_foliage_finish():
     bpy = pytest.importorskip("bpy")

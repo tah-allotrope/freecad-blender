@@ -23,6 +23,7 @@ from homedesign.blender import furnish, joinery, railings, roof as roof_mod  # n
 from homedesign.blender.geom import make_box  # noqa: E402
 from homedesign.blender.materials import floor_material_key, get_material  # noqa: E402
 from homedesign.constants import FLOOR_SLAB_THICKNESS_MM, FLAT_ROOF_THICKNESS_MM, OPEN_ROOM_TYPES  # noqa: E402
+from homedesign.finishes import floor_variant_key, lamp_color_for_level, partition_key_for_level  # noqa: E402
 from homedesign.model import Rect  # noqa: E402
 from homedesign.rects import open_edges, subtract_rects, wall_face_fragments  # noqa: E402  # noqa: E402
 from homedesign.render_profiles import RENDER_PROFILES  # noqa: E402  # noqa: E402
@@ -85,7 +86,13 @@ def build_walls(storey, style, structure):
         ):
             continue
 
-        mat_key = "wall_exterior" if wall["kind"] == "exterior" else "wall_partition"
+        if wall["kind"] == "exterior":
+            mat_key = "wall_exterior"
+        else:
+            # Bedroom storeys carry a muted paint each (f2 sage, f3 sand,
+            # f4 mist) so repeated floor plates read differently; the facade
+            # and every other storey keep the legacy partition key.
+            mat_key = partition_key_for_level(storey.get("level"))
         mat = get_material(style, mat_key, room_id=wall.get("room_id"))
 
         # Build the wall face by pure rectangle subtraction (S4): openings are
@@ -121,7 +128,7 @@ def build_floors_and_stairs(storey, style, structure, topmost=False):
     for room in storey["rooms"]:
         rx, ry = room["rect"]["x"], room["rect"]["y"]
         rw, rd = room["rect"]["w"], room["rect"]["d"]
-        mat = get_material(style, floor_material_key(room["type"]), room_id=room["id"])
+        mat = get_material(style, floor_variant_key(floor_material_key(room["type"]), room.get("id", "")), room_id=room["id"])
         fragments = subtract_rects(rx, ry, rw, rd, voids_mm) if voids_mm else [(rx, ry, rw, rd)]
         for i, (fx, fy, fw, fd) in enumerate(fragments):
             x, y, w, d = fx / 1000, fy / 1000, fw / 1000, fd / 1000
@@ -597,7 +604,7 @@ def add_interior_lights(model, structure):
                 energy = min(250.0, max(120.0, energy))
             fill_data = bpy.data.lights.new(f"fill_{room['id']}", type="POINT")
             fill_data.energy = energy
-            fill_data.color = (1.0, 0.83, 0.64)
+            fill_data.color = lamp_color_for_level(storey.get("level"))
             fill_data.shadow_soft_size = 0
             # No shadow maps from interior omnis: 56 cube-shadow maps exhaust
             # the iGPU shadow atlas (proven by OOM crash + black walls that

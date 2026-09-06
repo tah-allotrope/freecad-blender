@@ -20,7 +20,7 @@ def furnish_storey(storey_mm, style, collection):
         rect = room.get("interior") or room["rect"]
         w_m = rect["w"] / 1000
         d_m = rect["d"] / 1000
-        items = plan_room(room["type"], w_m, d_m)
+        items = plan_room(room["type"], w_m, d_m, seed=room.get("id", ""))
         room_x = rect["x"] / 1000
         room_y = rect["y"] / 1000
         base_z = storey_mm["base_z"] / 1000

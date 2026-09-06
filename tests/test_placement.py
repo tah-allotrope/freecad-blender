@@ -103,3 +103,46 @@ def test_small_garage_gets_two_motorbikes():
 def test_narrow_hall_stays_bare():
     # A 0.38 m drum 2 m from the lens reads as a balloon, not a light.
     assert plan_room("hall", 0.955, 4.0) == []
+
+def test_empty_seed_preserves_legacy_layout():
+    assert [(i.kind, i.x, i.y) for i in plan_room("bedroom", 3.96, 4.0)] == \
+           [(i.kind, i.x, i.y) for i in plan_room("bedroom", 3.96, 4.0, seed="")]
+
+
+def test_seed_gives_repeated_floors_distinct_layouts():
+    f2 = [(i.kind, round(i.x, 3), round(i.y, 3))
+          for i in plan_room("bedroom", 3.96, 4.0, seed="ngu_truoc_f2")]
+    f3 = [(i.kind, round(i.x, 3), round(i.y, 3))
+          for i in plan_room("bedroom", 3.96, 4.0, seed="ngu_truoc_f3")]
+    f4 = [(i.kind, round(i.x, 3), round(i.y, 3))
+          for i in plan_room("bedroom", 3.96, 4.0, seed="ngu_truoc_f4")]
+    assert len({tuple(f2), tuple(f3), tuple(f4)}) == 3
+
+
+def test_worship_seed_dresses_altar_not_sofa():
+    items = plan_room("living", 3.96, 4.0, seed="tho_f5")
+    kinds = [i.kind for i in items]
+    assert "sofa" not in kinds
+    assert "console" in kinds and "rug" in kinds
+
+
+def test_large_kitchen_gets_dining_set():
+    items = plan_room("kitchen", 3.96, 4.1)
+    kinds = [i.kind for i in items]
+    assert "dining_table" in kinds
+    assert len([i for i in items if i.kind == "chair"]) == 4
+    assert "dining_table" not in [i.kind for i in plan_room("kitchen", 2.0, 2.0)]
+
+def test_legacy_layout_has_zero_variant():
+    assert all(i.variant == 0 for i in plan_room("bedroom", 3.96, 4.0))
+
+
+def test_variant_is_stable_per_seed_and_spread_across_floors():
+    kinds = ("bed", "rug", "pendant")
+    layouts = {}
+    for s in ("ngu_truoc_f2", "ngu_truoc_f3", "ngu_truoc_f4"):
+        items = plan_room("bedroom", 3.96, 4.0, seed=s)
+        layouts[s] = tuple(next(i.variant for i in items if i.kind == k) for k in kinds)
+        again = plan_room("bedroom", 3.96, 4.0, seed=s)
+        assert layouts[s] == tuple(next(i.variant for i in again if i.kind == k) for k in kinds)
+    assert len(set(layouts.values())) == 3

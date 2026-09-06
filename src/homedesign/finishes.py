@@ -1,6 +1,10 @@
 """Finish resolution (S3). Pure Python, no bpy."""
 from __future__ import annotations
+
+import hashlib
+
 ALLOWED_FAMILIES = {"plaster_painted","ceramic_tile","stone_slab","wood_board","metal_brushed","glass_clear","concrete_formed","aluminium","painted_metal","formed_concrete"}
+
 def resolve_finish(object_id: str, element_kind: str, room_type: str | None, explicit: str | None, finishes: dict) -> str:
     if explicit:
         if explicit not in ALLOWED_FAMILIES and explicit not in {"wood_board","ceramic_tile","stone_slab","metal_brushed","glass_clear","concrete_formed","plaster_painted"}:
@@ -105,6 +109,14 @@ FAMILY_FOR_PALETTE_KEY = {
     "facade_field": "plaster_painted",
     "metal_sheet": "aluminium",
     "foliage": "plant_green",
+    "textile_light": "plaster_painted",
+    "textile_sand": "plaster_painted",
+    "textile_slate": "plaster_painted",
+    "floor_walnut": "wood_board",
+    "floor_ash": "wood_board",
+    "wall_sage": "plaster_painted",
+    "wall_sand": "plaster_painted",
+    "wall_mist": "plaster_painted",
 }
 FAMILY_FOR_PALETTE_KEY.update({f: f for f in PROCEDURAL_FAMILIES})
 
@@ -150,3 +162,41 @@ def family_for_palette_key(key: str, finish_map: dict | None,
         if value in PROCEDURAL_FAMILIES:
             return value
     return default
+# --- Seeded per-room / per-storey finish selection (no bpy) -----------------
+#
+# Floor-tone and paint cycles that keep repeated floor plates from rendering
+# as clones. Any room on the default wood floor gets a seeded tone (walnut /
+# ash/default); authored floors (bathroom tile, garage slab) and empty seeds
+# keep their legacy key exactly. Interior partitions on the bedroom storeys
+# carry a muted paint each (f2 sage, f3 sand, f4 mist); the facade, ceilings
+# and every other storey keep the legacy key.
+BEDROOM_FLOOR_KEYS = ("floor_default", "floor_walnut", "floor_ash")
+_FLOOR_VARIANT_BYTE = 6
+
+PARTITION_PAINT_BY_LEVEL = {2: "wall_sage", 3: "wall_sand", 4: "wall_mist"}
+
+
+def floor_variant_key(base_key: str, room_id: str = "") -> str:
+    """Seeded floor tone for default-wood rooms; anything else is untouched."""
+    if base_key != "floor_default" or not room_id:
+        return base_key
+    return BEDROOM_FLOOR_KEYS[hashlib.md5(room_id.encode("utf-8")).digest()[_FLOOR_VARIANT_BYTE] % 3]
+
+
+def partition_key_for_level(level: int | None) -> str:
+    """Interior partition paint per bedroom storey; legacy key everywhere else."""
+    return PARTITION_PAINT_BY_LEVEL.get(level, "wall_partition")
+
+LAMP_TEMP_BY_LEVEL = {
+    2: (1.0, 0.83, 0.64),
+    3: (1.0, 0.93, 0.84),
+    4: (0.88, 0.93, 1.0),
+}
+_LEGACY_LAMP_TEMP = (1.0, 0.83, 0.64)
+
+
+def lamp_color_for_level(level: int | None) -> tuple[float, float, float]:
+    """Point-lamp colour per bedroom storey (warm/neutral/cool); the legacy
+    warm everywhere else. Energy is untouched -- only the grade shifts, so the
+    2026-09-04 isolation result (one omni per room, no shadows) still holds."""
+    return LAMP_TEMP_BY_LEVEL.get(level, _LEGACY_LAMP_TEMP)

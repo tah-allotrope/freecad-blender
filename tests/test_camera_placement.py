@@ -96,28 +96,34 @@ def test_degenerate_room_still_gets_an_inside_camera():
     assert lens == 12.0
 
 
-def test_bedroom_camera_anchors_off_centre():
-    """A centred camera stares down the bed's long axis from inside its
-    footprint and the hero reads empty; bedrooms anchor at quarter width
-    while other rooms stay centred."""
+def test_bedroom_camera_shoots_from_far_end_at_bed():
+    """The bed hugs the near wall, so bedrooms shoot from the far end back at
+    it; other rooms keep the near anchor."""
     storey = {"base_z": 7000, "height_mm": 3400}
     rect = {"x": 0, "y": 4900, "w": 3960, "d": 4000}
     bed = {"id": "ngu", "type": "bedroom", "rect": dict(rect)}
     position, target, _lens = interior_camera(storey, bed, 1920, 1080)
-    assert position[0] == pytest.approx(0.99)
-    assert target[0] == pytest.approx(1.98)
+    assert position[1] == pytest.approx(4900 / 1000 + 4.0 - 0.35)
+    assert target[1] == pytest.approx(4900 / 1000 + 0.35)
     living = {"id": "khach", "type": "living", "rect": dict(rect)}
     position, _target, _lens = interior_camera(storey, living, 1920, 1080)
-    assert position[0] == pytest.approx(1.98)
-def test_kitchen_camera_faces_the_run_from_the_far_end():
-    """The run hugs the near wall (under a centred lens), so kitchens shoot
-    from the far end back at it; other rooms keep the near anchor."""
+    assert position[1] == pytest.approx(4900 / 1000 + 0.35)
+def test_kitchen_camera_dodges_the_fridge_corner():
+    """The run spans the full near wall, so kitchens shoot diagonally from the
+    far corner opposite the tall fridge; other rooms keep the axial anchor."""
     storey = {"base_z": 0, "height_mm": 3400}
     rect = {"x": 0, "y": 19700, "w": 3960, "d": 4100}
+    # bep_an mirrors: the fridge stands right, so the stance goes left.
     kitchen = {"id": "bep_an", "type": "kitchen", "rect": dict(rect)}
     position, target, _lens = interior_camera(storey, kitchen, 1920, 1080)
+    assert position[0] == pytest.approx(0.35)
     assert position[1] == pytest.approx(19700 / 1000 + 4.1 - 0.35)
+    assert target[0] == pytest.approx(3.96 / 2 + 0.4)
     assert target[1] == pytest.approx(19700 / 1000 + 0.35)
+    # Unseeded (unmirrored): the fridge stands left, so the stance goes right.
+    plain = {"id": "", "type": "kitchen", "rect": dict(rect)}
+    position, _target, _lens = interior_camera(storey, plain, 1920, 1080)
+    assert position[0] == pytest.approx(3.96 - 0.35)
     living = {"id": "khach", "type": "living", "rect": dict(rect)}
     position, target, _lens = interior_camera(storey, living, 1920, 1080)
     assert position[1] == pytest.approx(19700 / 1000 + 0.35)

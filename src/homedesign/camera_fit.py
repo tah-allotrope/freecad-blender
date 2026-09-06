@@ -207,6 +207,29 @@ def exterior_street_camera(
     return position, centre, lens_mm
 
 
+def _tall_item_at(room: dict, px: float, py: float, eye_m: float) -> bool:
+    """Whether a furniture item tall enough to swallow the lens stands at (px, py).
+
+    World-space point-in-footprint test against the seeded placement (the same
+    rule the 3D scene was furnished with), with a 0.15 m margin. Only items
+    reaching the eye height count -- rugs and tables never block a stance.
+    """
+    from .placement import plan_room
+
+    r = room.get("interior") or room["rect"]
+    x, y = r["x"] / 1000, r["y"] / 1000
+    w, d = r["w"] / 1000, r["d"] / 1000
+    seed = room.get("id", "")
+    for item in plan_room(room.get("type", ""), w, d, seed=seed):
+        if item.h < eye_m - 0.2:
+            continue
+        iw = item.d if item.rot_deg in (90, 270) else item.w
+        id_ = item.w if item.rot_deg in (90, 270) else item.d
+        if x + item.x - 0.15 <= px <= x + item.x + iw + 0.15 and \
+           y + item.y - 0.15 <= py <= y + item.y + id_ + 0.15:
+            return True
+    return False
+
 def interior_camera(
     storey: dict,
     room: dict,
@@ -233,29 +256,45 @@ def interior_camera(
 
     long_is_depth = room["rect"]["d"] >= room["rect"]["w"]
     z = min(base_z + eye_height_m, ceil_z - 0.15)
-    if long_is_depth:
+    if room.get("type") == "bedroom":
+        # The bed hugs the near wall (y ~ 0.1); a near-wall camera stares away
+        # from it and the hero reads as an empty room with doors. Shoot from
+        # the far end back at the bed so the hero shows the dressed asset.
+        # The stance dodges the seeded far-corner wardrobe variant.
+        px = x + w * 0.75
+        if _tall_item_at(room, px, y + d - wall_inset_m, eye_height_m):
+            px = x + w * 0.25
+        position = (px, y + d - wall_inset_m, z)
+        target = (x + w / 2, y + wall_inset_m, z - 0.35)
+        available = d - 2 * wall_inset_m
+        half_w = max(px - x, x + w - px) - wall_inset_m
+    elif room.get("type") == "kitchen":
+        # Diagonal corner shot: the run spans the full near wall, so an axial
+        # view fills the frame with carcase back. From the far corner opposite
+        # the tall fridge the run reads with depth, tap, handles and the new
+        # dining set behind. The fridge corner is seeded (mirrored layouts put
+        # it right), so pick the clear corner -- a stance inside the fridge
+        # renders a black frame.
+        if _tall_item_at(room, x + w - wall_inset_m, y + d - wall_inset_m, z - base_z):
+            position = (x + wall_inset_m, y + d - wall_inset_m, z)
+            target = (x + w / 2 + 0.4, y + wall_inset_m, z - 0.35)
+        else:
+            position = (x + w - wall_inset_m, y + d - wall_inset_m, z)
+            target = (x + w / 2 - 0.4, y + wall_inset_m, z - 0.35)
+        available = max(w, d) - 2 * wall_inset_m
+        half_w = w / 2
+    elif long_is_depth:
         # Bedrooms anchor off-centre: a centred camera stares down the bed's
         # long axis from inside its footprint and the hero reads empty.
-        px = x + w * 0.25 if room.get("type") == "bedroom" else x + w / 2
-        if room.get("type") == "kitchen":
-            # The run hugs the near wall (under/behind a centred lens), so
-            # the kitchen hero shows everything but the kitchen. Shoot from
-            # the far end back at the run instead.
-            position = (px, y + d - wall_inset_m, z)
-            target = (x + w / 2, y + wall_inset_m, z - 0.2)
-        else:
-            position = (px, y + wall_inset_m, z)
-            target = (x + w / 2, y + d - wall_inset_m, z - 0.2)
+        px = x + w / 2
+        position = (px, y + wall_inset_m, z)
+        target = (x + w / 2, y + d - wall_inset_m, z - 0.2)
         available = d - 2 * wall_inset_m
         half_w = max(px - x, x + w - px) - wall_inset_m
     else:
-        py = y + d * 0.25 if room.get("type") == "bedroom" else y + d / 2
-        if room.get("type") == "kitchen":
-            position = (x + w - wall_inset_m, py, z)
-            target = (x + wall_inset_m, y + d / 2, z - 0.2)
-        else:
-            position = (x + wall_inset_m, py, z)
-            target = (x + w - wall_inset_m, y + d / 2, z - 0.2)
+        py = y + d / 2
+        position = (x + wall_inset_m, py, z)
+        target = (x + w - wall_inset_m, y + d / 2, z - 0.2)
         available = w - 2 * wall_inset_m
         half_w = max(py - y, y + d - py) - wall_inset_m
 

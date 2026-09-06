@@ -45,7 +45,7 @@ def _plan_furniture_items(storey):
     items = []
     for room in storey.rooms:
         rect = room.interior or room.rect
-        for it in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+        for it in plan_room(room.type, rect.w / 1000, rect.d / 1000, seed=room.id):
             x_mm = rect.x + it.x * 1000
             y_mm = rect.y + it.y * 1000
             items.append({

@@ -78,6 +78,17 @@ def _placer_for(item, x, y, ceiling_z=None):
                    ceiling_z=ceiling_z)
 
 
+# Variant colorways per kind: index 0 is the legacy look, 1-2 are seeded
+# alternates in dedicated flat textile keys (plaster family -- no grout grid,
+# no deck boards). Bedding cycles grey-blue/white/sand, rugs grey-blue/sand/
+# slate, pendant shades near-black/white/slate.
+_VARIANT_KEYS = {
+    "bed": ("upholstery", "textile_light", "textile_sand"),
+    "rug": ("upholstery", "textile_sand", "textile_slate"),
+    "pendant": ("frame", "textile_light", "textile_slate"),
+    "sofa": ("upholstery", "textile_light", "textile_sand"),
+}
+
 def build_item(item, room_x, room_y, base_z, style, collection, ceiling_z=None):
     """item is a placement.FurnitureItem (room-local meters); room_x/room_y
     offset it into world space; base_z is the storey floor elevation (m);
@@ -92,7 +103,11 @@ def build_item(item, room_x, room_y, base_z, style, collection, ceiling_z=None):
                 return obj
         except Exception:
             pass
-    mat = get_material(style, furniture_material_key(item.kind))
+    key = furniture_material_key(item.kind)
+    variant_keys = _VARIANT_KEYS.get(item.kind)
+    if variant_keys and getattr(item, "variant", 0):
+        key = variant_keys[item.variant % len(variant_keys)]
+    mat = get_material(style, key)
     x = room_x + item.x
     y = room_y + item.y
     z = base_z
@@ -240,35 +255,37 @@ def _build_kitchen_run(item, x, y, z, mat, collection, place):
               collection, mat, bevel=BEVEL)
 
     # One door per ~600 mm module, each with a recessed panel and a bar handle.
+    # The run sits against the near wall (y ~ 0) with the room opening toward
+    # +y, so fronts face +y (into the room) -- never the wall side.
     modules = max(1, int(round(item.w / 0.6)))
     door_w = item.w / modules
     for i in range(modules):
         dx = x + i * door_w + 0.006
         w = door_w - 0.012
-        place.box(f"kitchen_door_{i}_{tag}", dx, y - 0.018, z + plinth_h + 0.01,
+        place.box(f"kitchen_door_{i}_{tag}", dx, y + item.d, z + plinth_h + 0.01,
                   w, 0.018, carcase_h - 0.02, collection, mat, bevel=0.006)
-        place.box(f"kitchen_panel_{i}_{tag}", dx + 0.06, y - 0.026,
+        place.box(f"kitchen_panel_{i}_{tag}", dx + 0.06, y + item.d + 0.018,
                   z + plinth_h + 0.07, max(0.05, w - 0.12), 0.008,
                   max(0.05, carcase_h - 0.14), collection, mat, bevel=0.004)
-        place.cylinder(f"kitchen_handle_{i}_{tag}", dx + w / 2, y - 0.045,
+        place.cylinder(f"kitchen_handle_{i}_{tag}", dx + w / 2, y + item.d + 0.045,
                        z + plinth_h + carcase_h - 0.09, 0.009, w * 0.5,
                        collection, mat, axis="X")
 
     top_z = z + plinth_h + carcase_h
     place.box(f"kitchen_worktop_{tag}", x - 0.015, y - 0.03, top_z,
               item.w + 0.03, item.d + 0.03, top_h, collection, mat, bevel=0.008)
-    place.box(f"kitchen_upstand_{tag}", x, y + item.d - 0.02, top_z + top_h,
+    place.box(f"kitchen_upstand_{tag}", x, y - 0.02, top_z + top_h,
               item.w, 0.02, 0.09, collection, mat, bevel=BEVEL)
-    # Sink: a shallow recess rim plus a mixer tap and spout.
+    # Sink: a shallow recess rim plus a mixer tap and spout at the wall side.
     sink_w = min(0.5, item.w * 0.35)
     sx = x + item.w * 0.62
-    place.box(f"kitchen_sink_{tag}", sx, y + item.d * 0.25, top_z + top_h - 0.008,
+    place.box(f"kitchen_sink_{tag}", sx, y + item.d * 0.3, top_z + top_h - 0.008,
               sink_w, item.d * 0.45, 0.01, collection, mat, bevel=0.004)
     tap_x = sx + sink_w / 2
-    tap_y = y + item.d * 0.78
+    tap_y = y + 0.1
     place.cylinder(f"kitchen_tap_{tag}", tap_x, tap_y, top_z + top_h, 0.016, 0.24,
                    collection, mat)
-    place.cylinder(f"kitchen_spout_{tag}", tap_x, tap_y - 0.09, top_z + top_h + 0.23,
+    place.cylinder(f"kitchen_spout_{tag}", tap_x, tap_y + 0.09, top_z + top_h + 0.23,
                    0.011, 0.18, collection, mat, axis="Y")
     return None
 
@@ -432,11 +449,72 @@ def _build_rug(item, x, y, z, mat, collection, place):
     return None
 
 
-# Kinds whose procedural builder beats the cached mesh. Currently only the
-# planter: planter_box_01 ships as an empty concrete box + soil while the
-# procedural one is planted.
-PROCEDURAL_FIRST = {"planter"}
+def _build_wardrobe(item, x, y, z, mat, collection, place):
+    """Carcase, double panelled doors with bar handles, top cornice, plinth."""
+    tag = f"{x:.2f}_{y:.2f}"
+    place.box(f"wardrobe_plinth_{tag}", x + 0.03, y + 0.03, z,
+              item.w - 0.06, item.d - 0.06, 0.08, collection, mat, bevel=BEVEL)
+    place.box(f"wardrobe_carcase_{tag}", x, y, z + 0.08, item.w, item.d,
+              item.h - 0.14, collection, mat, bevel=BEVEL)
+    place.box(f"wardrobe_top_{tag}", x - 0.01, y - 0.01, z + item.h - 0.06,
+              item.w + 0.02, item.d + 0.02, 0.06, collection, mat, bevel=0.006)
+    door_w = (item.w - 0.012) / 2
+    for i in range(2):
+        dx = x + 0.006 + i * door_w
+        place.box(f"wardrobe_door_{i}_{tag}", dx, y + item.d, z + 0.12,
+                  door_w - 0.006, 0.018, item.h - 0.24, collection, mat, bevel=0.006)
+        place.cylinder(f"wardrobe_handle_{i}_{tag}", dx + door_w / 2, y + item.d + 0.04,
+                       z + item.h / 2, 0.008, 0.22, collection, mat)
+    return None
 
+
+def _build_basin(item, x, y, z, mat, collection, place):
+    """Pedestal, bowl, mixer tap and a wall mirror above."""
+    tag = f"{x:.2f}_{y:.2f}"
+    place.box(f"basin_pedestal_{tag}", x + item.w * 0.3, y + item.d * 0.25, z,
+              item.w * 0.4, item.d * 0.4, 0.62, collection, mat, bevel=0.02)
+    place.box(f"basin_bowl_{tag}", x + 0.03, y + 0.02, z + 0.62,
+              item.w - 0.06, item.d - 0.04, 0.16, collection, mat, bevel=0.03)
+    place.cylinder(f"basin_tap_{tag}", x + item.w / 2, y + 0.08, z + 0.78,
+                   0.012, 0.16, collection, mat)
+    place.box(f"basin_mirror_{tag}", x + 0.05, y - 0.015, z + 1.15,
+              item.w - 0.1, 0.02, 0.6, collection, mat, bevel=0.004)
+    return None
+
+
+def _build_shower(item, x, y, z, mat, collection, place):
+    """Tray, two glass side panels, riser rail and a head disc."""
+    tag = f"{x:.2f}_{y:.2f}"
+    place.box(f"shower_tray_{tag}", x, y, z, item.w, item.d, 0.08,
+              collection, mat, bevel=0.01)
+    place.box(f"shower_glass_a_{tag}", x + item.w - 0.015, y, z + 0.08,
+              0.015, item.d, 1.9, collection, mat, bevel=0.0)
+    place.box(f"shower_glass_b_{tag}", x, y + item.d - 0.015, z + 0.08,
+              item.w, 0.015, 1.9, collection, mat, bevel=0.0)
+    place.cylinder(f"shower_riser_{tag}", x + 0.08, y + item.d - 0.08, z + 0.08,
+                   0.012, 1.9, collection, mat)
+    place.cylinder(f"shower_head_{tag}", x + 0.2, y + item.d - 0.2, z + 1.95,
+                   0.09, 0.02, collection, mat)
+    return None
+
+
+def _build_fridge(item, x, y, z, mat, collection, place):
+    """Tall split-door box: freezer/fridge split line, two bar handles, hinge caps."""
+    tag = f"{x:.2f}_{y:.2f}"
+    place.box(f"fridge_body_{tag}", x, y, z, item.w, item.d, item.h,
+              collection, mat, bevel=0.01)
+    place.box(f"fridge_split_{tag}", x - 0.002, y + item.d * 0.62, z + 0.1,
+              item.w + 0.004, 0.012, item.h - 0.2, collection, mat, bevel=0.0)
+    for i, fy in enumerate((0.45, 1.15)):
+        place.cylinder(f"fridge_handle_{i}_{tag}", x + item.w - 0.06, y + item.d + 0.03,
+                       z + fy, 0.012, 0.4, collection, mat)
+    return None
+
+# Kinds whose procedural builder beats the cached mesh. The planter box ships
+# empty (concrete + soil, no plants) while the procedural one is planted; the
+# cached bed is a bare frame with no mattress while the procedural one is
+# dressed (mattress, pillows, headboard) -- the hero asset in every bedroom.
+PROCEDURAL_FIRST = {"planter", "bed"}
 
 _BUILDERS = {
     "bed": _build_bed,
@@ -447,6 +525,10 @@ _BUILDERS = {
     "chair": _build_chair,
     "kitchen_run": _build_kitchen_run,
     "wc": _build_wc,
+    "basin": _build_basin,
+    "shower": _build_shower,
+    "fridge": _build_fridge,
+    "wardrobe": _build_wardrobe,
     "shelving": _build_shelving,
     "console": _build_console,
     "car": _build_car,

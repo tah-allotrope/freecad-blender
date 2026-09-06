@@ -4,11 +4,12 @@ No bpy import here so this is unit-testable outside Blender. The Blender-side
 `blender/furnish.py` executes the plans this module produces; it never
 computes layout math itself.
 """
-from __future__ import annotations
-
 from dataclasses import dataclass
+import hashlib
 
 CLEARANCE_M = 0.6  # minimum walkway clearance kept clear of furniture
+
+
 
 
 @dataclass
@@ -24,6 +25,7 @@ class FurnitureItem:
     w: float
     d: float
     h: float
+    variant: int = 0  # deterministic per-room colorway index (0 = legacy look)
 
 
 def _footprint(item: FurnitureItem) -> tuple[float, float, float, float]:
@@ -31,6 +33,24 @@ def _footprint(item: FurnitureItem) -> tuple[float, float, float, float]:
     if item.rot_deg == 90:
         return (item.x, item.y, item.d, item.w)
     return (item.x, item.y, item.w, item.d)
+def _seed_mirror(seed: str) -> bool:
+    """Deterministic per-room mirror flag so repeated floors don't clone layouts.
+
+    Empty seed (unit tests, legacy callers) never mirrors: old expectations hold.
+    """
+    if not seed:
+        return False
+    return hashlib.md5(seed.encode("utf-8")).digest()[0] & 1 == 1
+
+
+def _mirror_items(items: list[FurnitureItem], w_m: float) -> list[FurnitureItem]:
+    """Mirror room-local x positions about the room centreline."""
+    out = []
+    for it in items:
+        fw = it.d if it.rot_deg in (90, 270) else it.w
+        out.append(FurnitureItem(it.kind, w_m - it.x - fw, it.y, it.z,
+                                 it.rot_deg, it.w, it.d, it.h))
+    return out
 
 
 def _overlaps(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> bool:
@@ -47,7 +67,7 @@ def resolve_collisions(
     if door_swings is None:
         door_swings = []
     # Work on mutable copies
-    result = [FurnitureItem(i.kind, i.x, i.y, i.z, i.rot_deg, i.w, i.d, i.h) for i in items]
+    result = [FurnitureItem(i.kind, i.x, i.y, i.z, i.rot_deg, i.w, i.d, i.h, i.variant) for i in items]
     for idx in range(len(result)):
         # Clamp inside room
         fx, fy, fw, fd = _footprint(result[idx])
@@ -100,9 +120,64 @@ def resolve_collisions(
     return result
 
 
-def plan_room(room_type: str, w_m: float, d_m: float) -> list[FurnitureItem]:
+def _offset_pendant(items: list[FurnitureItem], w_m: float, d_m: float, seed: str) -> list[FurnitureItem]:
+    """Shift pendants off the camera sightline by a deterministic per-room nudge.
+
+    The interior camera aims at the room centre, so a centre-hung pendant sits
+    dead-centre in frame on every floor. The nudge is continuous in the seed
+    hash (not just a sign), so even identically-mirrored rooms get a visibly
+    different drop; clamped in-room.
+    """
+    digest = hashlib.md5(seed.encode("utf-8")).digest()
+    dx = (digest[1] - 127.5) / 127.5 * 0.55
+    dy = (digest[2] - 127.5) / 127.5 * 0.55
+    out = []
+    for it in items:
+        if it.kind == "pendant":
+            nx = min(max(it.x + dx, 0.1), max(0.1, w_m - it.w - 0.1))
+            ny = min(max(it.y + dy, 0.1), max(0.1, d_m - it.d - 0.1))
+            out.append(FurnitureItem(it.kind, nx, ny, it.z, it.rot_deg, it.w, it.d, it.h))
+        else:
+            out.append(it)
+    return out
+
+
+def _variant_wardrobe_end(items: list[FurnitureItem], seed: str, d_m: float) -> list[FurnitureItem]:
+    """Alternate which corner of the bedroom the wardrobe stands in.
+
+    Mirror alone only yields two layouts, so two of the three identical flagship
+    front bedrooms would still clone. The variant end is the far corner (not
+    just the other end of the same wall) so all four combinations read
+    differently in the hero view.
+    """
+    digest = hashlib.md5(seed.encode("utf-8")).digest()
+    if not digest[3] & 1:
+        return items
+    return [FurnitureItem(it.kind, 0.05, max(0.05, d_m - it.d - 0.15), it.z,
+                           it.rot_deg, it.w, it.d, it.h)
+            if it.kind == "wardrobe" else it for it in items]
+def _plan_altar(w: float, d: float) -> list[FurnitureItem]:
+    """Worship room: altar console against the far wall, rug, plant, pendant."""
+    items = [FurnitureItem("console", w / 2 - 0.7, d - 0.55, 0, 0, 1.4, 0.45, 1.1)]
+    items.append(FurnitureItem("rug", w / 2 - 0.8, d - 2.2, 0, 0, 1.6, 1.1, 0.02))
+    if w > 2.0:
+        items.append(FurnitureItem("planter", 0.25, 0.25, 0, 0, 0.5, 0.5, 0.5))
+    items.append(FurnitureItem("pendant", w / 2 - 0.15, d / 2 - 0.15, 0, 0, 0.3, 0.3, 0.0))
+    return items
+
+def plan_room(room_type: str, w_m: float, d_m: float, seed: str = "") -> list[FurnitureItem]:
     """Return furniture placements in room-local coordinates (origin at the
-    room's x,y corner, +x along width, +y along depth)."""
+    room's x,y corner, +x along width, +y along depth).
+
+    `seed` (the room id in production) deterministically mirrors the layout
+    and offsets the pendant so repeated floor plates don't render as clones.
+    Empty seed preserves the legacy layout exactly (unit tests).
+    """
+    if "tho" in seed.lower():
+        # Worship room drawn as a living room reads as a sofa set in 3D --
+        # wrong use. Dress it as an altar room instead (same 2D/3D rule).
+        items = _plan_altar(w_m, d_m)
+        return resolve_collisions(_assign_variant(items, seed), w_m, d_m, [])
     if room_type == "bedroom":
         items = _plan_bedroom(w_m, d_m)
     elif room_type == "bathroom":
@@ -125,7 +200,33 @@ def plan_room(room_type: str, w_m: float, d_m: float) -> list[FurnitureItem]:
         items = _plan_outdoor(w_m, d_m)
     else:
         items = []
+    if seed:
+        items = _offset_pendant(items, w_m, d_m, seed)
+        if room_type == "bedroom":
+            items = _variant_wardrobe_end(items, seed, d_m)
+        if _seed_mirror(seed):
+            items = _mirror_items(items, w_m)
+        items = _assign_variant(items, seed)
     return resolve_collisions(items, w_m, d_m, [])
+
+
+# Kind -> seed-hash byte driving its colorway, so each kind varies
+# independently across repeated floors (one shared byte would move them
+# in lockstep and halve the combinations).
+_VARIANT_BYTE = {"bed": 5, "rug": 6, "pendant": 7, "sofa": 5}
+
+
+def _assign_variant(items: list[FurnitureItem], seed: str) -> list[FurnitureItem]:
+    """Stamp a deterministic colorway index on textile items.
+
+    Runs last so the mirror/offset rebuilds (which construct fresh items)
+    cannot drop it; `resolve_collisions` only mutates positions.
+    """
+    digest = hashlib.md5(seed.encode("utf-8")).digest()
+    for it in items:
+        if it.kind in _VARIANT_BYTE:
+            it.variant = digest[_VARIANT_BYTE[it.kind]] % 3
+    return items
 
 def _plan_bedroom(w: float, d: float) -> list[FurnitureItem]:
     items = []
@@ -166,12 +267,20 @@ def _plan_bathroom(w: float, d: float) -> list[FurnitureItem]:
         items.append(FurnitureItem("shower", w - 0.9, d - 0.9, 0, 0, 0.9, 0.9, 2.0))
     return items
 
-
 def _plan_kitchen(w: float, d: float) -> list[FurnitureItem]:
     run_len = min(w - 0.4, w * 0.9)
     items = [FurnitureItem("kitchen_run", 0.2, 0.0, 0, 0, run_len, 0.6, 0.9)]
     if d > 1.8:
         items.append(FurnitureItem("fridge", 0.2, d - 0.7, 0, 0, 0.7, 0.7, 1.8))
+    if w > 3.0 and d > 3.0:
+        # Eat-in kitchen: dining set mid-room, clear of the far-corner fridge.
+        table_x, table_y, table_w = w - 1.8, d - 2.5, 1.6
+        items.append(FurnitureItem("dining_table", table_x, table_y, 0, 0, table_w, 0.9, 0.75))
+        chair_w = 0.45
+        for cx in (table_x + 0.12, table_x + table_w - chair_w - 0.12):
+            items.append(FurnitureItem("chair", cx, table_y - 0.6, 0, 0, chair_w, chair_w, 0.9))
+            items.append(FurnitureItem("chair", cx, table_y + 1.0, 0, 0, chair_w, chair_w, 0.9))
+        items.append(FurnitureItem("pendant", table_x + 0.65, table_y + 0.3, 0, 0, 0.3, 0.3, 0.0))
     return items
 
 

@@ -279,7 +279,7 @@ def test_svg_draws_furniture_for_furnishable_rooms(tmp_path):
     expected_kinds = set()
     for room in ground.rooms:
         rect = room.interior or room.rect
-        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000):
+        for item in plan_room(room.type, rect.w / 1000, rect.d / 1000, seed=room.id):
             expected_kinds.add(item.kind)
     assert expected_kinds, "fixture has no furnishable rooms; test would be vacuous"
 
@@ -301,9 +301,9 @@ def test_svg_furniture_sits_inside_its_room(tmp_path):
 
     ground = model.storeys[0]
     room = next(r for r in ground.rooms
-                if plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000))
+                if plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000, seed=r.id))
     rect = room.interior or room.rect
-    items = plan_room(room.type, rect.w / 1000, rect.d / 1000)
+    items = plan_room(room.type, rect.w / 1000, rect.d / 1000, seed=room.id)
 
     # Every drawn footprint centre for this room must fall within the room rect.
     for item in items:
@@ -385,7 +385,7 @@ def test_dxf_has_furniture_layer_matching_svg(tmp_path):
 
     ground = model.storeys[0]
     expected = sum(
-        len(plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000))
+        len(plan_room(r.type, (r.interior or r.rect).w / 1000, (r.interior or r.rect).d / 1000, seed=r.id))
         for r in ground.rooms
     )
     assert expected, "fixture has no furnishable rooms; test would be vacuous"
